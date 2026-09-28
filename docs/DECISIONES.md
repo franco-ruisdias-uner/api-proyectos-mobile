@@ -126,3 +126,80 @@ Decisión:
   interna `version`, reintentando). El PRD no lo pide explícito, pero R18 dice que las
   preferencias se mezclan campo a campo.
 - Un token firmado con el secreto pero sin un `sub` válido da `NO_AUTENTICADO`.
+
+### D1 — Horarios de verano e invierno
+Estado: PROVISORIA
+Hueco: el PRD §1 pide que las termas tengan horario de verano y de invierno, pero el tipo
+`Horario` no tiene temporada.
+Opciones: A) guardar la temporada en la base y devolver sólo los horarios vigentes hoy;
+B) devolver todos y que el teléfono elija (necesita un campo que el tipo no tiene).
+Decisión: A. Cada tramo se guarda con una temporada interna (`todo-el-anio`, `verano`,
+`invierno`). Verano: del 1/12 al 31/3, con el corte a la medianoche de Buenos Aires. La API
+devuelve los de todo el año más los de la temporada de hoy, ordenados por día y hora.
+Además, para que la copia del teléfono no se quede con los horarios de la temporada anterior:
+en un lugar con horarios de temporada, `actualizadoEn` es el más nuevo entre su fecha de
+edición y el comienzo de la temporada vigente (1/12 o 1/4 a las 00:00), y `actualizadoDesde`
+lo vuelve a mandar cuando empieza una temporada nueva.
+Consecuencia en el contrato: ninguna en la forma. `horarios` cambia solo el 1/12 y el 1/4, y con
+él `actualizadoEn` de esos lugares.
+
+### D5 — Formato del QR
+Estado: PROVISORIA
+Hueco: el PRD §4 dice que el formato "lo definimos con ustedes".
+Decisión: `COLON:<lugarId>`, como el ejemplo (`"COLON:lug-004"`). `GET /lugares/qr/:codigo`
+acepta el texto codificado para URL; tolera espacios y saltos de línea alrededor (algunos
+lectores los agregan). Sólo resuelve si el lugar existe **y tiene ese código** (`codigoQr` no
+nulo): un lugar sin cartel no tiene QR. Todo lo demás —otro prefijo, minúsculas, una URL
+(codificada o con las barras sin codificar), un escape `%` roto, un texto vacío o larguísimo—
+es `404 QR_NO_RECONOCIDO`, nunca 500.
+Consecuencia en el contrato: `codigoQr` es `COLON:<id>` o `null`.
+
+### D6 — Lugar dado de baja
+Estado: PROVISORIA
+Hueco: el PRD pide guardar "si está activo o lo dimos de baja", pero no qué ve la app.
+Decisión: sale del listado (`GET /lugares` sin `actualizadoDesde`); el detalle, el QR y
+`actualizadoDesde` lo devuelven con `activo: false`, para que el teléfono lo saque de su copia.
+Consecuencia en el contrato: `activo: false` sólo aparece en el detalle, en el QR y en
+`actualizadoDesde`.
+
+### M1-1 — Filtros de `GET /lugares`: detalles
+Estado: PROVISORIA (autónomo)
+Hueco: la especificación define los filtros pero no todos los bordes.
+Decisión:
+- `accesible` sólo acepta `true` (otro valor, incluido `false`, es `VALIDACION_FALLIDA`). Deja
+  abierta la puerta de darle un sentido a `false` más adelante sin cambiar uno existente.
+  Descartado: `false` = sin filtro (cerraba esa puerta) o `false` = sólo los no accesibles
+  (nadie lo pidió).
+- `radioMetros`: entero de 1 a 200.000 (200 km alcanza para el Palmar y el Palacio San José).
+- `actualizadoDesde` es **estrictamente** posterior; acepta cualquier instante ISO con offset o
+  `Z` (con o sin milisegundos). Sin hora o sin zona es `VALIDACION_FALLIDA`.
+- `q` busca sólo en el nombre; vacío no filtra. `%`, `_` y `\` se buscan como texto, no como
+  comodines.
+- `categoriaId` con un id que no existe (o mal escrito, o en otras mayúsculas) da lista vacía.
+- Un número vacío (`latitud=`) es `VALIDACION_FALLIDA`, no 0.
+- Orden por nombre sin distinguir mayúsculas ni tildes; por distancia, desempate por nombre y
+  por id. El orden se calcula en TypeScript para que dé igual en los cuatro motores.
+Consecuencia en el contrato: mensajes de `VALIDACION_FALLIDA` que nombran el filtro.
+
+### M1-2 — Un id mal formado en la ruta del detalle
+Estado: PROVISORIA (autónomo)
+Hueco: AGENTS §7.3 pide validar el prefijo antes de ir a la base, pero no dice con qué código.
+Opciones: A) `404 LUGAR_NO_ENCONTRADO`; B) `400 VALIDACION_FALLIDA`.
+Decisión: A. `GET /lugares/otra-cosa` es un lugar que no existe; para la app es el mismo caso.
+Los ids se comparan exactos (en MySQL y MariaDB `lug-ABC` encontraría `lug-abc`).
+Consecuencia en el contrato: ninguna nueva.
+
+### M1-3 — Catálogo de demo
+Estado: PROVISORIA (autónomo)
+Decisión:
+- Además de las 7 categorías del PRD §1 hay una octava, `cat-bodegas` (el PRD nombra las
+  bodegas entre los lugares), sin lugares: es la "lista vacía" que pide la especificación §8,
+  sin dejar vacía una categoría del PRD.
+- 27 lugares reales de Colón y alrededores (coordenadas aproximadas al acceso); los comercios
+  (restaurantes, hostería) son inventados. `lug-004` es el ejemplo del PRD tal cual, salvo las
+  URLs (son de esta API) y la descripción, que el PRD corta en "...".
+- Las audioguías de demo son MP3 de silencio (MPEG-2 capa III, 16 kHz, 8 kbps), generados sin
+  dependencias por `scripts/generar-medios.mjs`; no había un codificador disponible para un
+  tono. La duración que publica la API se lee del archivo (R20). Las imágenes son PNG generados.
+- El anfiteatro (`lug-009`) no tiene horarios: abre sólo con eventos.
+Consecuencia en el contrato: ninguna.

@@ -1,5 +1,5 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiExcludeEndpoint, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { RespuestaLista, RespuestaUno } from '../../../contrato/api.js';
 import type { Lugar } from '../../../contrato/tipos.js';
 import { Publico } from '../../comun/auth/decoradores.js';
@@ -39,8 +39,8 @@ export class LugaresControlador {
 
   @Publico()
   @Get('qr')
-  @ApiOperation({ summary: 'QR vacío', description: 'Siempre `QR_NO_RECONOCIDO`.' })
-  @ApiResponse({ status: 404, description: 'QR_NO_RECONOCIDO', schema: ejemploError('QR_NO_RECONOCIDO') })
+  @ApiExcludeEndpoint()
+  /** Un QR vacío (R6): sin esta ruta, `/lugares/qr` caería en el detalle con id `qr`. */
   sinCodigo(): never {
     throw new ErrorApi('QR_NO_RECONOCIDO');
   }

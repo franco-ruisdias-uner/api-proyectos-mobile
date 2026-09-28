@@ -9,8 +9,9 @@ devuelve **exactamente** los tipos del PRD que ya tienen en `src/tipos/`: cuando
 por `fetch`, no tienen que tocar los tipos. Lo único nuevo es el "sobre" de cada respuesta y
 algunos tipos que agrega la API (`contrato/api.ts`: `Sesion`, `ArchivoSubido`, `Salud`…).
 
-> **Estado:** está hecha la base (cuentas, `/yo`, archivos, notificaciones, `/salud`). Lugares,
-> agenda, favoritos y recorrido llegan en las próximas versiones: miren el `CHANGELOG.md`.
+> **Estado:** está hecha la base (cuentas, `/yo`, archivos, notificaciones, `/salud`) y el
+> catálogo (categorías, lugares, búsqueda, cercanía, QR y audioguías). Agenda, favoritos y
+> recorrido llegan en las próximas versiones: miren el `CHANGELOG.md`.
 
 ---
 
@@ -111,7 +112,7 @@ configurar nada más.
 
 | Email | Contraseña | Para qué |
 |---|---|---|
-| `lucia@mail.com` | `lucia1234` | La usuaria del PRD (`usr-201`). En las próximas versiones trae favoritos, visitas y un evento guardado. |
+| `lucia@mail.com` | `lucia1234` | La usuaria del PRD (`usr-201`), con `cat-museos` y `cat-playas` como categorías favoritas. En las próximas versiones trae favoritos, visitas y un evento guardado. |
 | `nuevo@demo.ar` | `nuevo1234` | No tiene nada: para ver cómo quedan las listas vacías. |
 | `turismo@colon.demo.ar` | `turismo1234` | Cuenta de la Dirección de Turismo: puede suspender y cancelar eventos. |
 
@@ -143,6 +144,45 @@ Para **mirar** lugares, mapa y agenda no hace falta cuenta. La cuenta es para gu
 - La documentación completa, con ejemplos y los errores de cada endpoint, está en
   <http://localhost:3000/docs>.
 
+### Lugares y categorías
+
+- `GET /categorias` trae las categorías por `orden`. `GET /lugares` trae los lugares activos
+  por nombre; `GET /lugares/:id`, el detalle.
+- Filtros de `GET /lugares`, que se pueden combinar:
+
+  | Parámetro | Qué hace |
+  |---|---|
+  | `categoriaId=cat-museos` | Sólo esa categoría. Una que no existe da la lista vacía. |
+  | `q=colon` | Busca en el nombre, sin importar mayúsculas ni tildes («colon» encuentra «Colón»). |
+  | `latitud=-32.2236&longitud=-58.1427` | Dónde está la persona. Van siempre juntas. |
+  | `radioMetros=2000` | Con la ubicación: sólo los lugares a 2 km o menos. |
+  | `orden=distancia` | Con la ubicación: del más cerca al más lejos (si no, por nombre). |
+  | `accesible=true` | Sólo los accesibles para silla de ruedas. |
+  | `actualizadoDesde=2026-11-01T10:00:00-03:00` | Los que cambiaron después de ese momento, **incluidos los dados de baja** (`activo: false`). |
+
+- **La distancia no viene en la respuesta** (tampoco "abierto ahora"): el PRD no la tiene en
+  el tipo `Lugar`. Calcúlenla en el teléfono con las `coordenadas` del lugar y la ubicación de
+  la persona; la API sólo ordena y filtra.
+- **Para usar sin señal:** bajen el catálogo entero una vez con
+  `GET /lugares?porPagina=500&actualizadoDesde=2000-01-01T00:00:00-03:00` (trae también los
+  dados de baja) y guárdenlo. Después pidan sólo las novedades con `actualizadoDesde` = el
+  `actualizadoEn` más nuevo que tengan: reemplazan los que vengan y sacan de la lista los que
+  vengan con `activo: false`. El detalle (`/lugares/:id`) también devuelve los dados de baja.
+- **Horarios:** hay un elemento por tramo (un lugar que abre mañana y tarde tiene dos con el
+  mismo `dia`), y un día que no aparece es un día cerrado. Son los de la temporada de hoy: el
+  verano va del 1/12 al 31/3. Cuando cambia la temporada, los lugares con horario de temporada
+  vuelven a venir en `actualizadoDesde`. Un tramo como `20:30`–`01:00` cierra al día siguiente.
+- **Códigos QR:** el cartel tiene el texto `COLON:<id del lugar>` (por ejemplo
+  `COLON:lug-004`). Lo que lee la cámara se manda tal cual, codificado:
+  ``fetch(`${BASE}/lugares/qr/${encodeURIComponent(texto)}`)``. Si no es un QR de Mi Ciudad
+  (otro sistema, una URL, algo roto) responde `404 QR_NO_RECONOCIDO`, con un mensaje para
+  mostrar.
+- **Audioguías:** `audioguia.url` se puede reproducir directo con `expo-audio` (admite
+  adelantar) o bajar con `expo-file-system` para escucharla sin señal. Los audios de demo son
+  silencio: sirven para probar el reproductor.
+- Las fotos y audios de demo están generados por código. Los lugares son reales, con
+  coordenadas aproximadas; los restaurantes y el hotel son inventados.
+
 ### Endpoints
 
 `🌐` sin cuenta · `🔒` con sesión
@@ -161,7 +201,6 @@ Para **mirar** lugares, mapa y agenda no hace falta cuenta. La cuenta es para gu
 | `DELETE` | `/dispositivos/:tokenExpo` | 🔒 | Dejar de recibir notificaciones en este teléfono |
 | `GET` | `/categorias` | 🌐 | Categorías de lugares |
 | `GET` | `/lugares` | 🌐 | Lugares |
-| `GET` | `/lugares/qr` | 🌐 | QR vacío |
 | `GET` | `/lugares/qr/:codigo` | 🌐 | Lugar de un código QR |
 | `GET` | `/lugares/:id` | 🌐 | Detalle de un lugar |
 | `GET` | `/salud` | 🌐 | ¿Anda la API? |
@@ -202,7 +241,11 @@ según el `codigo`, que no cambia nunca.
   milisegundos). Sirve para ver el indicador de carga.
 - Esto anda cuando `SIMULACION_HABILITADA=true` en `.env` (viene así).
 - **Congelar el reloj:** con `RELOJ_FIJO=2026-11-14T21:00:00-03:00` en `.env`, la API arranca
-  pensando que es ese momento. Sirve para probar casos como "el evento ya terminó".
+  pensando que es ese momento. Sirve para probar casos como "el evento ya terminó" o los
+  horarios de verano de las termas (`RELOJ_FIJO=2027-01-15T12:00:00-03:00`).
+- **Casos feos del catálogo de demo:** `lug-025` tiene un nombre y una descripción larguísimos;
+  `lug-003` no tiene fotos; varios no tienen teléfono; la categoría `cat-bodegas` no tiene
+  lugares; `lug-026` está dado de baja; `lug-009` (el anfiteatro) no tiene horarios.
 
 ## 8. Volver los datos al estado inicial
 
@@ -220,4 +263,6 @@ según el `codigo`, que no cambia nunca.
 | Con XAMPP la base queda rara o falla | Pongan `DB_MOTOR=mariadb`, no `mysql`. |
 | `Could not locate the bindings file` (better-sqlite3) | Borren `node_modules` y corran `pnpm install` de nuevo, con Node 24. |
 | Docker: `port is already allocated` | Otro programa usa ese puerto. `PUERTO=3001 docker compose up`. |
+| `400 VALIDACION_FALLIDA` en `/lugares` con la ubicación | `latitud` y `longitud` van juntas, y `orden=distancia` o `radioMetros` las necesitan. |
+| Un QR da `404` aunque es de un cartel | Manden el texto con `encodeURIComponent`, sin sacarle nada. |
 | Una respuesta `401 NO_AUTENTICADO` | Falta el token, está mal escrito (`Bearer ` con espacio) o venció: vuelvan a ingresar. |

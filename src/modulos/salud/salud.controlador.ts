@@ -27,7 +27,7 @@ export class SaludControlador {
     status: 200,
     schema: {
       example: {
-        datos: { estado: 'ok', motor: 'better-sqlite3', almacen: 'local', version: '0.1.0' },
+        datos: { estado: 'ok', motor: 'better-sqlite3', almacen: 'local', version: '0.2.0' },
         meta: null,
       },
     },

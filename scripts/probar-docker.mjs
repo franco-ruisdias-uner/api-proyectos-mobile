@@ -44,8 +44,17 @@ async function probar({ motor }) {
     throw new Error(`/salud respondió ${salud.estado}: ${JSON.stringify(salud.cuerpo)}`);
   }
   if (salud.cuerpo.datos.motor !== motor) throw new Error(`/salud dice motor ${salud.cuerpo.datos.motor}, esperaba ${motor}`);
-  // 2. Las semillas se cargaron: la usuaria de demo ingresa y ve su perfil.
-  //    (En M1 se agrega el listado público de lugares.)
+  // 2. Las semillas se cargaron: el listado público de lugares trae datos, y la usuaria de
+  //    demo ingresa y ve su perfil.
+  const lugares = await pedir('/lugares?porPagina=500');
+  if (lugares.estado !== 200 || !(lugares.cuerpo?.datos?.length > 0)) {
+    throw new Error(`GET /lugares respondió ${lugares.estado} sin datos: ${JSON.stringify(lugares.cuerpo)?.slice(0, 300)}`);
+  }
+  const molino = lugares.cuerpo.datos.find((l) => l.id === 'lug-004');
+  if (!molino?.audioguia) throw new Error('El Molino Forclaz (lug-004) no vino con su audioguía');
+  const audio = await fetch(molino.audioguia.url.replace(/^https?:\/\/[^/]+/, BASE), { headers: { Range: 'bytes=0-99' } });
+  if (audio.status !== 206) throw new Error(`La audioguía con Range respondió ${audio.status}`);
+  await audio.arrayBuffer();
   const ingreso = await pedir('/auth/ingreso', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
