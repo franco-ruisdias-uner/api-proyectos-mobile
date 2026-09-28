@@ -6,7 +6,16 @@ import { DEFINICIONES } from '../utilidades/contrato.js';
  * AGENTS §10.3 — Ninguna entidad que la API devuelve queda sin un `esperarContrato`.
  * Cada módulo pasa sus entidades de PENDIENTES a DEVUELTAS cuando las implementa.
  */
-const DEVUELTAS = ['Usuario', 'Sesion', 'ArchivoSubido', 'Salud', 'Dispositivo', 'PruebaNotificacion'];
+const DEVUELTAS = [
+  'Usuario',
+  'Sesion',
+  'ArchivoSubido',
+  'Salud',
+  'Dispositivo',
+  'PruebaNotificacion',
+  'Lugar',
+  'Categoria',
+];
 /** Partes de otras entidades: se validan dentro de ellas. */
 const ANIDADAS = [
   'Coordenadas',
@@ -20,8 +29,6 @@ const ANIDADAS = [
 ];
 /** Entidades de módulos que todavía no están. */
 const PENDIENTES: Record<string, string> = {
-  Lugar: 'M1',
-  Categoria: 'M1',
   Evento: 'M2',
   Favorito: 'M3',
   Visita: 'M4',

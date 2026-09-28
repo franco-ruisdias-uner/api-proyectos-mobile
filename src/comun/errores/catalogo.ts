@@ -26,6 +26,12 @@ export const CATALOGO_ERRORES = {
   // Archivos
   ARCHIVO_NO_ENCONTRADO: { estado: 404, mensaje: 'No encontramos ese archivo.' },
   ARCHIVO_NO_SUBIDO: { estado: 422, mensaje: 'Primero hay que subir la foto.' },
+  // Catálogo
+  LUGAR_NO_ENCONTRADO: { estado: 404, mensaje: 'No existe ese lugar.' },
+  QR_NO_RECONOCIDO: {
+    estado: 404,
+    mensaje: 'Ese código no es de Mi Ciudad. Probá con el cartel de otro lugar.',
+  },
   // Proyecto
   CATEGORIA_NO_ENCONTRADA: { estado: 422, mensaje: 'Alguna de las categorías elegidas no existe.' },
 } as const satisfies Record<string, { estado: number; mensaje: string }>;

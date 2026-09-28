@@ -14,6 +14,13 @@ const POR_ESTADO: Record<number, CodigoError> = {
 };
 
 /**
+ * Rutas donde un `%` roto en la dirección (Express no lo puede decodificar y Nest lo convierte
+ * en un 400) tiene un código
+ * propio en vez de `VALIDACION_FALLIDA`. R6: un QR ilegible es un QR que no es nuestro.
+ */
+const ILEGIBLE_POR_RUTA: [prefijo: string, codigo: CodigoError][] = [['/lugares/qr/', 'QR_NO_RECONOCIDO']];
+
+/**
  * Toda respuesta de error sale como `{ error: { codigo, mensaje } }` y nada más: errores de
  * negocio, de Nest, de validación, de la base o inesperados (AGENTS §4.1 y §4.6).
  */
@@ -53,6 +60,13 @@ export class FiltroExcepciones implements ExceptionFilter {
         const texto = String((detalle as { message?: unknown }).message ?? '');
         if (/unexpected field|multipart/i.test(texto)) {
           return { estado, codigo, mensaje: 'Falta el archivo: mandalo en el campo «archivo».' };
+        }
+        const ilegible = texto.startsWith('Failed to decode param')
+          ? ILEGIBLE_POR_RUTA.find(([prefijo]) => req.path.startsWith(prefijo))?.[1]
+          : undefined;
+        if (ilegible) {
+          const { estado: e, mensaje } = CATALOGO_ERRORES[ilegible];
+          return { estado: e, codigo: ilegible, mensaje };
         }
         if (/json/i.test(texto)) {
           return { estado, codigo, mensaje: 'El cuerpo del pedido no es un JSON válido.' };

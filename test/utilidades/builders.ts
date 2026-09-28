@@ -1,7 +1,11 @@
 import { JwtService } from '@nestjs/jwt';
 import type { Sesion } from '../../contrato/api.js';
+import type { Categoria } from '../../contrato/tipos.js';
 import { hashearContrasena } from '../../src/comun/auth/contrasenas.js';
 import { nuevoId } from '../../src/comun/ids/ids.js';
+import { CategoriasServicio } from '../../src/modulos/categorias/categorias.servicio.js';
+import type { LugarACargar } from '../../src/modulos/lugares/lugar-a-cargar.js';
+import { LugaresServicio } from '../../src/modulos/lugares/lugares.servicio.js';
 import { UsuarioEntidad } from '../../src/modulos/usuarios/usuario.entidad.js';
 import type { AppDePrueba } from './crear-app.js';
 
@@ -79,3 +83,47 @@ export async function subirArchivo(
   if (res.status !== 201) throw new Error(`No se pudo subir: ${res.status} ${JSON.stringify(res.body)}`);
   return (res.body as { datos: { url: string } }).datos.url;
 }
+
+/** Crea una categoría por el servicio del catálogo (no hay endpoint: las carga la semilla). */
+export async function crearCategoria(ctx: AppDePrueba, datos: Partial<Categoria> = {}): Promise<Categoria> {
+  contador++;
+  const categoria: Categoria = {
+    id: datos.id ?? `cat-prueba-${contador}-${nuevoId('x').slice(2, 8)}`,
+    nombre: datos.nombre ?? `Categoría ${contador}`,
+    icono: datos.icono ?? 'leaf-outline',
+    color: datos.color ?? '#336699',
+    orden: datos.orden ?? contador,
+  };
+  await ctx.app.get(CategoriasServicio).cargar(categoria);
+  return categoria;
+}
+
+/**
+ * Crea un lugar por el servicio del catálogo, con todos los opcionales en `null` salvo que se
+ * pidan. Si no se dice la categoría, crea una. Devuelve el id.
+ */
+export async function crearLugar(ctx: AppDePrueba, datos: Partial<LugarACargar> = {}): Promise<string> {
+  contador++;
+  const categoriaId = datos.categoriaId ?? (await crearCategoria(ctx)).id;
+  return ctx.app.get(LugaresServicio).cargar({
+    nombre: `Lugar ${contador}`,
+    descripcionCorta: 'Un lugar para conocer.',
+    descripcion: 'Un lugar para conocer, con una descripción más larga para el detalle.',
+    coordenadas: { latitud: -32.2236, longitud: -58.1427 },
+    direccion: 'Calle 12 de Abril 100, Colón',
+    imagenes: [],
+    horarios: [],
+    telefono: null,
+    sitioWeb: null,
+    precioEntrada: null,
+    audioguia: null,
+    conQr: false,
+    accesible: false,
+    activo: true,
+    ...datos,
+    categoriaId,
+  });
+}
+
+/** Clave del almacén a partir de la URL que devolvió `POST /archivos`. */
+export const claveDe = (url: string) => new URL(url).pathname.replace(/^\/archivos\//, '');

@@ -1,9 +1,11 @@
 import { Inject, Logger, Module, type OnApplicationBootstrap } from '@nestjs/common';
 import { ENTORNO } from '../config/entorno.modulo.js';
 import type { Entorno } from '../config/entorno.js';
+import { CategoriasModulo } from '../modulos/categorias/categorias.modulo.js';
+import { LugaresModulo } from '../modulos/lugares/lugares.modulo.js';
 import { Sembrador } from './sembrador.js';
 
-@Module({ providers: [Sembrador], exports: [Sembrador] })
+@Module({ imports: [CategoriasModulo, LugaresModulo], providers: [Sembrador], exports: [Sembrador] })
 export class SemillasModulo implements OnApplicationBootstrap {
   constructor(
     @Inject(ENTORNO) private readonly entorno: Entorno,

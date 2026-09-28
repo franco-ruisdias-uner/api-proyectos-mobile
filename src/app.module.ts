@@ -10,7 +10,9 @@ import { RelojModulo } from './comun/reloj/reloj.modulo.js';
 import { ENTORNO, EntornoModulo } from './config/entorno.modulo.js';
 import type { Entorno } from './config/entorno.js';
 import { ArchivosModulo } from './modulos/archivos/archivos.modulo.js';
+import { CategoriasModulo } from './modulos/categorias/categorias.modulo.js';
 import { DispositivosModulo } from './modulos/dispositivos/dispositivos.modulo.js';
+import { LugaresModulo } from './modulos/lugares/lugares.modulo.js';
 import { SaludModulo } from './modulos/salud/salud.modulo.js';
 import { UsuariosModulo } from './modulos/usuarios/usuarios.modulo.js';
 import { SemillasModulo } from './semillas/semillas.modulo.js';
@@ -36,6 +38,8 @@ export class AppModule {
         ArchivosModulo,
         UsuariosModulo,
         DispositivosModulo,
+        CategoriasModulo,
+        LugaresModulo,
         SaludModulo,
         SemillasModulo,
       ],

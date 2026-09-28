@@ -159,6 +159,11 @@ Para **mirar** lugares, mapa y agenda no hace falta cuenta. La cuenta es para gu
 | `POST` | `/dispositivos` | 🔒 | Registrar el teléfono para recibir notificaciones |
 | `POST` | `/dispositivos/prueba` | 🔒 | Mandarme una notificación de prueba |
 | `DELETE` | `/dispositivos/:tokenExpo` | 🔒 | Dejar de recibir notificaciones en este teléfono |
+| `GET` | `/categorias` | 🌐 | Categorías de lugares |
+| `GET` | `/lugares` | 🌐 | Lugares |
+| `GET` | `/lugares/qr` | 🌐 | QR vacío |
+| `GET` | `/lugares/qr/:codigo` | 🌐 | Lugar de un código QR |
+| `GET` | `/lugares/:id` | 🌐 | Detalle de un lugar |
 | `GET` | `/salud` | 🌐 | ¿Anda la API? |
 <!-- /tabla:endpoints -->
 
@@ -176,6 +181,8 @@ según el `codigo`, que no cambia nunca.
 | 403 | `SIN_PERMISO` | No tenés permiso para hacer esto. |
 | 404 | `RUTA_NO_ENCONTRADA` | Esa dirección no existe en la API. |
 | 404 | `ARCHIVO_NO_ENCONTRADO` | No encontramos ese archivo. |
+| 404 | `LUGAR_NO_ENCONTRADO` | No existe ese lugar. |
+| 404 | `QR_NO_RECONOCIDO` | Ese código no es de Mi Ciudad. Probá con el cartel de otro lugar. |
 | 409 | `EMAIL_YA_REGISTRADO` | Ya hay una cuenta con ese email. |
 | 413 | `PEDIDO_DEMASIADO_GRANDE` | El pedido es demasiado grande. |
 | 413 | `ARCHIVO_DEMASIADO_GRANDE` | El archivo es demasiado grande. |

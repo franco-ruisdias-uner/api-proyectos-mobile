@@ -1,9 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { AlmacenArchivos } from '../comun/archivos/almacen-archivos.js';
 import { hashearContrasena } from '../comun/auth/contrasenas.js';
 import { Reloj } from '../comun/reloj/reloj.js';
+import { CategoriasServicio } from '../modulos/categorias/categorias.servicio.js';
+import { LugaresServicio } from '../modulos/lugares/lugares.servicio.js';
 import { UsuarioEntidad } from '../modulos/usuarios/usuario.entidad.js';
+import { CATEGORIAS_SEMILLA, LUGARES_SEMILLA } from './datos/catalogo.js';
 import { USUARIOS_SEMILLA } from './datos/usuarios.js';
+import { duracionMp3, MediosSemilla } from './medios.js';
 
 const DIA = 24 * 60 * 60 * 1000;
 
@@ -18,6 +23,9 @@ export class Sembrador {
   constructor(
     private readonly dataSource: DataSource,
     private readonly reloj: Reloj,
+    private readonly almacen: AlmacenArchivos,
+    private readonly categorias: CategoriasServicio,
+    private readonly lugares: LugaresServicio,
   ) {}
 
   async estaVacia(): Promise<boolean> {
@@ -40,6 +48,34 @@ export class Sembrador {
         version: 0,
       });
     }
-    this.log.log(`Datos de demo cargados: ${USUARIOS_SEMILLA.length} usuarios.`);
+    await this.sembrarCatalogo(ahora);
+    this.log.log(
+      `Datos de demo cargados: ${USUARIOS_SEMILLA.length} usuarios, ${CATEGORIAS_SEMILLA.length} categorías ` +
+        `y ${LUGARES_SEMILLA.length} lugares.`,
+    );
+  }
+
+  /** M1: categorías, lugares, sus imágenes y sus audioguías (subidas por el puerto de archivos). */
+  private async sembrarCatalogo(ahora: Date): Promise<void> {
+    const medios = new MediosSemilla(this.almacen, ahora);
+    for (const categoria of CATEGORIAS_SEMILLA) await this.categorias.cargar(categoria);
+    for (const { imagenes, audioguia, actualizadoHaceDias, actualizadoEnFijo, ...lugar } of LUGARES_SEMILLA) {
+      const fijo = actualizadoEnFijo ? new Date(actualizadoEnFijo) : null;
+      await this.lugares.cargar({
+        ...lugar,
+        imagenes: await Promise.all(imagenes.map((archivo) => medios.subir(archivo))),
+        audioguia: audioguia
+          ? {
+              clave: await medios.subir(audioguia),
+              duracionSegundos: Math.round(duracionMp3(medios.leer(audioguia))),
+              idioma: 'es',
+            }
+          : null,
+        actualizadoEn:
+          fijo && fijo.getTime() <= ahora.getTime()
+            ? fijo
+            : new Date(ahora.getTime() - actualizadoHaceDias * DIA),
+      });
+    }
   }
 }
