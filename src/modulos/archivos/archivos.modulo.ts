@@ -16,10 +16,7 @@ export async function crearAlmacen(entorno: Entorno): Promise<AlmacenArchivos> {
 @Global()
 @Module({
   controllers: [ArchivosControlador],
-  providers: [
-    { provide: AlmacenArchivos, inject: [ENTORNO], useFactory: crearAlmacen },
-    VerificadorArchivos,
-  ],
+  providers: [{ provide: AlmacenArchivos, inject: [ENTORNO], useFactory: crearAlmacen }, VerificadorArchivos],
   exports: [AlmacenArchivos, VerificadorArchivos],
 })
 export class ArchivosModulo {}

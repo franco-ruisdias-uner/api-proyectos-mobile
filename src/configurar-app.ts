@@ -1,5 +1,5 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { DocumentBuilder, type OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import { middlewareOrigen } from './comun/origen/origen.js';
 import { middlewareSimulacion } from './comun/simulacion/middleware-simulacion.js';
 import { ENTORNO } from './config/entorno.modulo.js';
@@ -14,7 +14,12 @@ export function configurarApp(app: NestExpressApplication): void {
   app.use(middlewareOrigen(entorno.URL_PUBLICA));
   if (entorno.SIMULACION_HABILITADA) app.use(middlewareSimulacion);
 
-  const documento = SwaggerModule.createDocument(
+  SwaggerModule.setup('docs', app, crearDocumentoSwagger(app), { jsonDocumentUrl: 'docs-json' });
+}
+
+/** El documento de `/docs`. También lo usa el test que genera las tablas del README. */
+export function crearDocumentoSwagger(app: NestExpressApplication): OpenAPIObject {
+  return SwaggerModule.createDocument(
     app,
     new DocumentBuilder()
       .setTitle('Mi Ciudad · Guía turística de Colón')
@@ -28,5 +33,4 @@ export function configurarApp(app: NestExpressApplication): void {
       .addBearerAuth()
       .build(),
   );
-  SwaggerModule.setup('docs', app, documento, { jsonDocumentUrl: 'docs-json' });
 }

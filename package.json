@@ -13,6 +13,7 @@
     "start": "node dist/src/main.js",
     "db:reiniciar": "nest build && node dist/src/semillas/reiniciar.js",
     "contrato:esquema": "ts-json-schema-generator --path \"contrato/*.ts\" --type \"*\" --no-type-check --out contrato/esquema.json",
+    "readme:tablas": "ACTUALIZAR_README=1 vitest run --config ./vitest.config.e2e.ts test/e2e/readme.e2e-spec.ts",
     "lint": "oxlint --deny-warnings src/ test/ scripts/",
     "tipos": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",

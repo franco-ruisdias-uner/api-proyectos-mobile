@@ -16,7 +16,19 @@ export const LIMITES_BYTES: Record<TipoArchivo, number> = {
 export const LIMITE_MAXIMO_BYTES = Math.max(...Object.values(LIMITES_BYTES));
 
 const MARCAS_AUDIO_MP4 = new Set(['M4A ', 'M4B ', 'M4P ']);
-const MARCAS_VIDEO_MP4 = new Set(['isom', 'iso2', 'iso4', 'iso5', 'iso6', 'mp41', 'mp42', 'avc1', 'dash', 'MSNV', 'M4V ']);
+const MARCAS_VIDEO_MP4 = new Set([
+  'isom',
+  'iso2',
+  'iso4',
+  'iso5',
+  'iso6',
+  'mp41',
+  'mp42',
+  'avc1',
+  'dash',
+  'MSNV',
+  'M4V ',
+]);
 
 const empiezaCon = (c: Buffer, firma: number[], desde = 0) =>
   c.length >= desde + firma.length && firma.every((byte, i) => c[desde + i] === byte);

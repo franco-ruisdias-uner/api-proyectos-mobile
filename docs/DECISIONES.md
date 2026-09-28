@@ -58,3 +58,46 @@ servidor (un cambio de estado, algo nuevo publicado, algo cancelado por otro).
 ## Decisiones de este proyecto
 
 <!-- Copiar acá las entradas "D…" de ESPECIFICACION.md a medida que se implementan. -->
+
+### D2 — Quién suspende o cancela un evento
+Estado: PROVISORIA
+Hueco: el `Usuario` del PRD no tiene rol, pero alguien tiene que suspender eventos (§3).
+Opciones: A) rol interno `admin` creado por semilla; B) una clave fija de administración;
+C) sin endpoint (se edita la base).
+Decisión: A. La columna `rol` (`turista` | `admin`) existe en la base y viaja en el token, pero
+el mapeador no la devuelve. El registro público siempre crea `turista`. La cuenta de demo es
+`turismo@colon.demo.ar`.
+Consecuencia en el contrato: ninguna; `Usuario` sale sin `rol`.
+
+### M0-1 — Códigos de error extra del transporte
+Estado: PROVISORIA (autónomo)
+Hueco: AGENTS §4.6 no tiene código para un cuerpo JSON demasiado grande ni para un `Range`
+imposible de cumplir.
+Opciones: A) códigos propios; B) reusar `VALIDACION_FALLIDA` / `ERROR_INTERNO`.
+Decisión: A, con los estados HTTP estándar: `PEDIDO_DEMASIADO_GRANDE` (413, cuerpo no
+multipart que supera el límite de Express) y `RANGO_NO_SATISFACIBLE` (416, `Range` fuera del
+archivo). Es agregar códigos, lo que se permite aun con el contrato congelado.
+Consecuencia en el contrato: dos códigos más en el catálogo.
+
+### M0-2 — Categorías favoritas antes del catálogo
+Estado: PROVISORIA (autónomo)
+Hueco: `PATCH /yo` valida `categoriasFavoritas` contra las categorías existentes (R18), pero
+las categorías llegan en M1.
+Decisión: el chequeo pasa por un puerto (`CategoriasExistentes`); hasta M1, no existe ninguna
+categoría, así que cualquier lista no vacía da `CATEGORIA_NO_ENCONTRADA`. La semilla de
+`usr-201` ya trae `cat-museos` y `cat-playas`, que existirán cuando M1 siembre el catálogo.
+Consecuencia en el contrato: ninguna una vez hecho M1.
+
+### M0-3 — Respuesta de `/dispositivos`
+Estado: PROVISORIA (autónomo)
+Hueco: AGENTS §9 no fija qué devuelven `POST /dispositivos` y `POST /dispositivos/prueba`.
+Decisión: `POST /dispositivos` devuelve `Dispositivo` (`{ tokenExpo, plataforma }`), 201 si es
+nuevo y 200 si ya estaba; `POST /dispositivos/prueba` devuelve `{ enviadas }`. Los dos tipos
+están en `contrato/api.ts`.
+Consecuencia en el contrato: tipos nuevos en `contrato/api.ts`, ninguno en `tipos.ts`.
+
+### M0-4 — Ids de los usuarios de demo que no están en el PRD
+Estado: PROVISORIA (autónomo)
+Decisión: `usr-nuevo` (nuevo@demo.ar) y `usr-turismo` (turismo@colon.demo.ar), legibles como
+las categorías. Los que crea el registro siguen el formato `usr-` + 12 caracteres.
+

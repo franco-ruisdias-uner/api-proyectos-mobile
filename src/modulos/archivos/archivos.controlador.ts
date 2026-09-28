@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Headers,
-  Param,
-  Post,
-  Res,
-  UploadedFile,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Controller, Get, Headers, Param, Post, Res, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { createHash } from 'node:crypto';
@@ -51,17 +42,39 @@ export class ArchivosControlador {
     status: 201,
     schema: {
       example: {
-        datos: { url: 'http://192.168.0.10:3000/archivos/imagenes/2026/09/abc123def456.jpg', tipo: 'imagen', bytes: 184512 },
+        datos: {
+          url: 'http://192.168.0.10:3000/archivos/imagenes/2026/09/abc123def456.jpg',
+          tipo: 'imagen',
+          bytes: 184512,
+        },
         meta: null,
       },
     },
   })
-  @ApiResponse({ status: 400, description: 'VALIDACION_FALLIDA (falta el archivo)', schema: ejemploError('VALIDACION_FALLIDA') })
+  @ApiResponse({
+    status: 400,
+    description: 'VALIDACION_FALLIDA (falta el archivo)',
+    schema: ejemploError('VALIDACION_FALLIDA'),
+  })
   @ApiResponse({ status: 401, description: 'NO_AUTENTICADO', schema: ejemploError('NO_AUTENTICADO') })
-  @ApiResponse({ status: 413, description: 'ARCHIVO_DEMASIADO_GRANDE', schema: ejemploError('ARCHIVO_DEMASIADO_GRANDE') })
-  @ApiResponse({ status: 415, description: 'TIPO_DE_ARCHIVO_NO_PERMITIDO', schema: ejemploError('TIPO_DE_ARCHIVO_NO_PERMITIDO') })
-  @ApiResponse({ status: 503, description: 'ALMACEN_NO_DISPONIBLE', schema: ejemploError('ALMACEN_NO_DISPONIBLE') })
-  async subir(@UploadedFile() archivo: Express.Multer.File | undefined): Promise<RespuestaUno<ArchivoSubido>> {
+  @ApiResponse({
+    status: 413,
+    description: 'ARCHIVO_DEMASIADO_GRANDE',
+    schema: ejemploError('ARCHIVO_DEMASIADO_GRANDE'),
+  })
+  @ApiResponse({
+    status: 415,
+    description: 'TIPO_DE_ARCHIVO_NO_PERMITIDO',
+    schema: ejemploError('TIPO_DE_ARCHIVO_NO_PERMITIDO'),
+  })
+  @ApiResponse({
+    status: 503,
+    description: 'ALMACEN_NO_DISPONIBLE',
+    schema: ejemploError('ALMACEN_NO_DISPONIBLE'),
+  })
+  async subir(
+    @UploadedFile() archivo: Express.Multer.File | undefined,
+  ): Promise<RespuestaUno<ArchivoSubido>> {
     if (!archivo) {
       throw new ErrorApi('VALIDACION_FALLIDA', 'Falta el archivo: mandalo en el campo «archivo».');
     }
@@ -69,7 +82,10 @@ export class ArchivosControlador {
     if (!detectado) throw new ErrorApi('TIPO_DE_ARCHIVO_NO_PERMITIDO');
     if (archivo.size > LIMITES_BYTES[detectado.tipo]) {
       const mb = LIMITES_BYTES[detectado.tipo] / 1024 / 1024;
-      throw new ErrorApi('ARCHIVO_DEMASIADO_GRANDE', `El archivo es demasiado grande: puede pesar hasta ${mb} MB.`);
+      throw new ErrorApi(
+        'ARCHIVO_DEMASIADO_GRANDE',
+        `El archivo es demasiado grande: puede pesar hasta ${mb} MB.`,
+      );
     }
     const clave = nuevaClave(detectado, this.reloj.ahora());
     try {
@@ -89,8 +105,16 @@ export class ArchivosControlador {
   })
   @ApiResponse({ status: 200, description: 'El archivo entero.' })
   @ApiResponse({ status: 206, description: 'La parte pedida con `Range`.' })
-  @ApiResponse({ status: 404, description: 'ARCHIVO_NO_ENCONTRADO', schema: ejemploError('ARCHIVO_NO_ENCONTRADO') })
-  @ApiResponse({ status: 416, description: 'RANGO_NO_SATISFACIBLE', schema: ejemploError('RANGO_NO_SATISFACIBLE') })
+  @ApiResponse({
+    status: 404,
+    description: 'ARCHIVO_NO_ENCONTRADO',
+    schema: ejemploError('ARCHIVO_NO_ENCONTRADO'),
+  })
+  @ApiResponse({
+    status: 416,
+    description: 'RANGO_NO_SATISFACIBLE',
+    schema: ejemploError('RANGO_NO_SATISFACIBLE'),
+  })
   async bajar(
     @Param('clave') partes: string[] | string,
     @Headers('range') cabeceraRango: string | undefined,
