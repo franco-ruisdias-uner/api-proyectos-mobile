@@ -7,3 +7,4 @@ archivos/
 *.sqlite-journal
 .env
 .DS_Store
+*.tsbuildinfo

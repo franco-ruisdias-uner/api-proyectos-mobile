@@ -1,0 +1,597 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ArchivoSubido": {
+      "additionalProperties": false,
+      "description": "Respuesta de POST /archivos.",
+      "properties": {
+        "bytes": {
+          "type": "number"
+        },
+        "tipo": {
+          "enum": [
+            "imagen",
+            "audio",
+            "video"
+          ],
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "tipo",
+        "bytes"
+      ],
+      "type": "object"
+    },
+    "Audioguia": {
+      "additionalProperties": false,
+      "properties": {
+        "duracionSegundos": {
+          "type": "number"
+        },
+        "idioma": {
+          "enum": [
+            "es",
+            "en",
+            "pt"
+          ],
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "duracionSegundos",
+        "idioma"
+      ],
+      "type": "object"
+    },
+    "Categoria": {
+      "additionalProperties": false,
+      "properties": {
+        "color": {
+          "type": "string"
+        },
+        "icono": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "nombre": {
+          "type": "string"
+        },
+        "orden": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "nombre",
+        "icono",
+        "color",
+        "orden"
+      ],
+      "type": "object"
+    },
+    "Coordenadas": {
+      "additionalProperties": false,
+      "properties": {
+        "latitud": {
+          "type": "number"
+        },
+        "longitud": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "latitud",
+        "longitud"
+      ],
+      "type": "object"
+    },
+    "Dispositivo": {
+      "additionalProperties": false,
+      "description": "Respuesta de POST /dispositivos: el teléfono registrado para recibir push.",
+      "properties": {
+        "plataforma": {
+          "enum": [
+            "ios",
+            "android"
+          ],
+          "type": "string"
+        },
+        "tokenExpo": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "tokenExpo",
+        "plataforma"
+      ],
+      "type": "object"
+    },
+    "EstadoEvento": {
+      "enum": [
+        "programado",
+        "suspendido",
+        "cancelado",
+        "finalizado"
+      ],
+      "type": "string"
+    },
+    "Evento": {
+      "additionalProperties": false,
+      "properties": {
+        "coordenadas": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Coordenadas"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "descripcion": {
+          "type": "string"
+        },
+        "direccionLibre": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "estado": {
+          "$ref": "#/definitions/EstadoEvento"
+        },
+        "fin": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "imagenUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "inicio": {
+          "type": "string"
+        },
+        "lugarId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "precio": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "titulo": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "titulo",
+        "descripcion",
+        "lugarId",
+        "direccionLibre",
+        "coordenadas",
+        "inicio",
+        "fin",
+        "imagenUrl",
+        "precio",
+        "estado"
+      ],
+      "type": "object"
+    },
+    "Favorito": {
+      "additionalProperties": false,
+      "properties": {
+        "creadoEn": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "lugarId": {
+          "type": "string"
+        },
+        "usuarioId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "usuarioId",
+        "lugarId",
+        "creadoEn"
+      ],
+      "type": "object"
+    },
+    "Horario": {
+      "additionalProperties": false,
+      "properties": {
+        "abre": {
+          "type": "string"
+        },
+        "cierra": {
+          "type": "string"
+        },
+        "dia": {
+          "enum": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "type": "number"
+        }
+      },
+      "required": [
+        "dia",
+        "abre",
+        "cierra"
+      ],
+      "type": "object"
+    },
+    "Lugar": {
+      "additionalProperties": false,
+      "properties": {
+        "accesible": {
+          "type": "boolean"
+        },
+        "activo": {
+          "type": "boolean"
+        },
+        "actualizadoEn": {
+          "type": "string"
+        },
+        "audioguia": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Audioguia"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "categoriaId": {
+          "type": "string"
+        },
+        "codigoQr": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "coordenadas": {
+          "$ref": "#/definitions/Coordenadas"
+        },
+        "descripcion": {
+          "type": "string"
+        },
+        "descripcionCorta": {
+          "type": "string"
+        },
+        "direccion": {
+          "type": "string"
+        },
+        "horarios": {
+          "items": {
+            "$ref": "#/definitions/Horario"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "imagenes": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "nombre": {
+          "type": "string"
+        },
+        "precioEntrada": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "sitioWeb": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "telefono": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "nombre",
+        "categoriaId",
+        "descripcionCorta",
+        "descripcion",
+        "coordenadas",
+        "direccion",
+        "imagenes",
+        "horarios",
+        "telefono",
+        "sitioWeb",
+        "precioEntrada",
+        "audioguia",
+        "codigoQr",
+        "accesible",
+        "activo",
+        "actualizadoEn"
+      ],
+      "type": "object"
+    },
+    "Meta": {
+      "additionalProperties": false,
+      "description": "Paginación de toda respuesta de lista.",
+      "properties": {
+        "pagina": {
+          "type": "number"
+        },
+        "porPagina": {
+          "type": "number"
+        },
+        "total": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "total",
+        "pagina",
+        "porPagina"
+      ],
+      "type": "object"
+    },
+    "OrigenVisita": {
+      "enum": [
+        "qr",
+        "gps",
+        "manual"
+      ],
+      "type": "string"
+    },
+    "Preferencias": {
+      "additionalProperties": false,
+      "properties": {
+        "avisarProximidad": {
+          "type": "boolean"
+        },
+        "categoriasFavoritas": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "radioAvisoMetros": {
+          "type": "number"
+        },
+        "tema": {
+          "enum": [
+            "claro",
+            "oscuro",
+            "sistema"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "categoriasFavoritas",
+        "avisarProximidad",
+        "radioAvisoMetros",
+        "tema"
+      ],
+      "type": "object"
+    },
+    "PruebaNotificacion": {
+      "additionalProperties": false,
+      "description": "Respuesta de POST /dispositivos/prueba: a cuántos teléfonos se mandó la push de prueba.",
+      "properties": {
+        "enviadas": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "enviadas"
+      ],
+      "type": "object"
+    },
+    "RespuestaError": {
+      "additionalProperties": false,
+      "description": "Error: { error: { codigo, mensaje } } — sin otros campos.",
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "codigo": {
+              "type": "string"
+            },
+            "mensaje": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "codigo",
+            "mensaje"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "error"
+      ],
+      "type": "object"
+    },
+    "Salud": {
+      "additionalProperties": false,
+      "description": "Respuesta de GET /salud.",
+      "properties": {
+        "almacen": {
+          "enum": [
+            "local",
+            "aws",
+            "supabase",
+            "r2",
+            "b2",
+            "s3proxy",
+            "localstack"
+          ],
+          "type": "string"
+        },
+        "estado": {
+          "const": "ok",
+          "type": "string"
+        },
+        "motor": {
+          "enum": [
+            "better-sqlite3",
+            "postgres",
+            "mysql",
+            "mariadb"
+          ],
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "estado",
+        "motor",
+        "almacen",
+        "version"
+      ],
+      "type": "object"
+    },
+    "Sesion": {
+      "additionalProperties": false,
+      "description": "Respuesta de POST /auth/registro y POST /auth/ingreso.",
+      "properties": {
+        "token": {
+          "type": "string"
+        },
+        "usuario": {
+          "$ref": "#/definitions/Usuario"
+        }
+      },
+      "required": [
+        "token",
+        "usuario"
+      ],
+      "type": "object"
+    },
+    "Usuario": {
+      "additionalProperties": false,
+      "properties": {
+        "avatarUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "creadoEn": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "nombre": {
+          "type": "string"
+        },
+        "preferencias": {
+          "$ref": "#/definitions/Preferencias"
+        }
+      },
+      "required": [
+        "id",
+        "nombre",
+        "email",
+        "avatarUrl",
+        "creadoEn",
+        "preferencias"
+      ],
+      "type": "object"
+    },
+    "Visita": {
+      "additionalProperties": false,
+      "properties": {
+        "fechaHora": {
+          "type": "string"
+        },
+        "fotoUri": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "lugarId": {
+          "type": "string"
+        },
+        "nota": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "origen": {
+          "$ref": "#/definitions/OrigenVisita"
+        },
+        "sincronizada": {
+          "type": "boolean"
+        },
+        "usuarioId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "usuarioId",
+        "lugarId",
+        "fechaHora",
+        "origen",
+        "fotoUri",
+        "nota",
+        "sincronizada"
+      ],
+      "type": "object"
+    }
+  }
+}
