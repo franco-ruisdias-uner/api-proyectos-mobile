@@ -158,13 +158,10 @@ describe('AGENTS §7.1 — POST /auth/registro: entrada adversarial', () => {
     await ctx.http().post('/auth/ingreso').send({ email, contrasena }).expect(200);
   });
 
-  it('contraseña larguísima (700): 201 o 400 en castellano, nunca 500', async () => {
-    const res = await registro({
-      nombre: 'Ana',
-      email: emailUnico(),
-      contrasena: 'ñandú-canción-'.repeat(50),
-    });
-    if (res.status !== 201) esperarValidacion(res);
+  it('M0-6 — contraseña larguísima (700) → 400 en castellano', async () => {
+    esperarValidacion(
+      await registro({ nombre: 'Ana', email: emailUnico(), contrasena: 'ñandú-canción-'.repeat(50) }),
+    );
   });
 
   it('email con espacios alrededor se guarda recortado y en minúsculas', async () => {
@@ -780,5 +777,333 @@ describe('AGENTS §4.1, §11.4 y §11.5 — Sobre, CORS y Swagger', () => {
     ];
     for (const [ruta, metodo] of esperadas) expect(rutas[ruta]?.[metodo], `${metodo} ${ruta}`).toBeDefined();
     expect(Object.keys(rutas).some((r) => r.startsWith('/archivos/'))).toBe(true);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// Segunda pasada: decisiones M0-5 y M0-6 (docs/DECISIONES.md).
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+describe('M0-5 — Una URL de /archivos/<clave> existente se acepta con cualquier origen', () => {
+  let ctx: AppDePrueba;
+  let token: string;
+  let clave: string;
+  beforeEach(async () => {
+    ctx = await crearApp();
+    ({ token } = await registrarTurista(ctx, { email: emailUnico() }));
+    clave = new URL(await subirArchivo(ctx, token)).pathname;
+  });
+  afterEach(() => ctx.cerrar());
+  const patch = (cuerpo: object) => ctx.http().patch('/yo').set(conSesion(token)).send(cuerpo);
+
+  it.each([
+    ['la IP de la compu por wifi', 'http://192.168.0.10:3000'],
+    ['localhost', 'http://localhost:3000'],
+    ['un dominio https', 'https://mi-api.onrender.com'],
+  ])('origen distinto del pedido (%s) → 200 y sale con el origen del pedido', async (_c, origen) => {
+    const res = await patch({ avatarUrl: `${origen}${clave}` })
+      .set('Host', '10.0.0.5:3000')
+      .expect(200);
+    esperarContrato(res.body, 'Usuario');
+    expect(res.body.datos.avatarUrl).toBe(`http://10.0.0.5:3000${clave}`);
+  });
+
+  it('con ?query al final → 200 y la query no se guarda', async () => {
+    const res = await patch({ avatarUrl: `http://localhost:3000${clave}?v=2&t=abc` })
+      .set('Host', '10.0.0.5:3000')
+      .expect(200);
+    expect(res.body.datos.avatarUrl).toBe(`http://10.0.0.5:3000${clave}`);
+  });
+
+  it('con #fragmento al final → 200 o ARCHIVO_NO_SUBIDO, pero nunca se guarda el fragmento', async () => {
+    const res = await patch({ avatarUrl: `http://localhost:3000${clave}#x` }).set('Host', '10.0.0.5:3000');
+    if (res.status === 200) expect(res.body.datos.avatarUrl).toBe(`http://10.0.0.5:3000${clave}`);
+    else esperarError(res, 422, 'ARCHIVO_NO_SUBIDO');
+  });
+
+  it('un archivo que subió otra persona también se acepta (no se exige el mismo autor)', async () => {
+    const otro = await registrarTurista(ctx, { email: emailUnico() });
+    const res = await ctx
+      .http()
+      .patch('/yo')
+      .set(conSesion(otro.token))
+      .set('Host', '10.0.0.5:3000')
+      .send({ avatarUrl: `http://192.168.0.10:3000${clave}` })
+      .expect(200);
+    expect(res.body.datos.avatarUrl).toBe(`http://10.0.0.5:3000${clave}`);
+  });
+
+  it.each([
+    [
+      'origen ajeno con una clave que no existe',
+      (c: string) => `https://otro.com${c.replace(/[a-z0-9]{12}\.png$/, 'zzzzzzzzzzzz.png')}`,
+    ],
+    ['file:// con la ruta de una clave nuestra', (c: string) => `file://${c}`],
+    ['ruta que no es /archivos', (c: string) => `http://localhost:3000/otra${c}`],
+    ['sólo la ruta, sin origen', (c: string) => c],
+    ['ftp:// con la clave', (c: string) => `ftp://localhost${c}`],
+    ['/archivos/ sin clave', () => 'http://localhost:3000/archivos/'],
+    ['clave con ../ codificado', () => 'http://localhost:3000/archivos/imagenes/..%2F..%2F..%2Fetc%2Fpasswd'],
+    ['clave con %00', (c: string) => `http://localhost:3000${c}%00.png`],
+  ])('%s → 422 ARCHIVO_NO_SUBIDO (nunca 500) y no se guarda', async (_c, armar) => {
+    const res = await patch({ avatarUrl: armar(clave) });
+    // "sólo la ruta" podría leerse como 400 de formato; lo importante: no se guarda y no es 500.
+    expect([400, 422]).toContain(res.status);
+    esperarError(res, res.status, res.status === 400 ? 'VALIDACION_FALLIDA' : 'ARCHIVO_NO_SUBIDO');
+    const yo = await ctx.http().get('/yo').set(conSesion(token));
+    expect(yo.body.datos.avatarUrl).toBeNull();
+  });
+
+  it('una URL ajena con la ruta /archivos/<clave> existente sólo guarda la clave: la respuesta nunca trae el host ajeno', async () => {
+    const res = await patch({ avatarUrl: `https://sitio-malo.com${clave}` }).expect(200);
+    expect(res.body.datos.avatarUrl).not.toContain('sitio-malo');
+  });
+});
+
+// ───────────────────────────────────────────────────────────────────────────────────────────
+describe('M0-6 — La contraseña va de 8 a 200 caracteres', () => {
+  let ctx: AppDePrueba;
+  beforeAll(async () => {
+    ctx = await crearApp();
+  });
+  afterAll(() => ctx.cerrar());
+  const registro = (contrasena: string, email = emailUnico()) =>
+    ctx.http().post('/auth/registro').send({ nombre: 'Ana', email, contrasena });
+
+  it('exactamente 200 caracteres: registra e ingresa', async () => {
+    const email = emailUnico();
+    const contrasena = 'a'.repeat(200);
+    await registro(contrasena, email).expect(201);
+    await ctx.http().post('/auth/ingreso').send({ email, contrasena }).expect(200);
+  });
+
+  it('200 caracteres con tildes (más de 200 bytes) también entra', async () => {
+    await registro('ñ'.repeat(200)).expect(201);
+  });
+
+  it('201 caracteres → 400 y el mensaje dice el máximo', async () => {
+    const res = await registro('a'.repeat(201));
+    esperarValidacion(res);
+    expect(res.body.error.mensaje).toMatch(/200/);
+    expect(res.body.error.mensaje).toMatch(/contraseña/i);
+  });
+
+  it('7 caracteres → 400 y el mensaje dice el mínimo', async () => {
+    const res = await registro('a'.repeat(7));
+    esperarValidacion(res);
+    expect(res.body.error.mensaje).toMatch(/8/);
+  });
+
+  it('ingreso con una contraseña gigante (10.000) → 400 o 401 con sobre, nunca 500 ni lento', async () => {
+    const inicio = performance.now();
+    const res = await ctx
+      .http()
+      .post('/auth/ingreso')
+      .send({ email: emailUnico(), contrasena: 'x'.repeat(10_000) });
+    expect([400, 401]).toContain(res.status);
+    esperarError(res, res.status, res.status === 400 ? 'VALIDACION_FALLIDA' : 'CREDENCIALES_INVALIDAS');
+    expect(performance.now() - inicio).toBeLessThan(3000);
+  });
+
+  it('Swagger documenta minLength 8 y maxLength 200 en el registro', async () => {
+    const doc = (await ctx.http().get('/docs-json').expect(200)).body as {
+      paths: Record<
+        string,
+        Record<string, { requestBody?: { content: Record<string, { schema: { $ref?: string } }> } }>
+      >;
+      components: {
+        schemas: Record<string, { properties: Record<string, { minLength?: number; maxLength?: number }> }>;
+      };
+    };
+    const ref = doc.paths['/auth/registro'].post.requestBody?.content['application/json'].schema.$ref ?? '';
+    const esquema = doc.components.schemas[ref.split('/').pop() ?? ''];
+    expect(esquema.properties.contrasena).toMatchObject({ minLength: 8, maxLength: 200 });
+  });
+});
+
+// ───────────────────────────────────────────────────────────────────────────────────────────
+describe('M0-6 — DELETE /dispositivos/:tokenExpo de un token ajeno: 204 y no borra nada', () => {
+  let ctx: AppDePrueba;
+  let lucia: string;
+  let pedro: string;
+  const TOKEN = 'ExponentPushToken[ajenoajenoajenoajeno12]';
+  beforeEach(async () => {
+    ctx = await crearApp();
+    lucia = (await registrarTurista(ctx, { email: emailUnico() })).token;
+    pedro = (await registrarTurista(ctx, { email: emailUnico() })).token;
+    await ctx
+      .http()
+      .post('/dispositivos')
+      .set(conSesion(lucia))
+      .send({ tokenExpo: TOKEN, plataforma: 'ios' })
+      .expect(201);
+  });
+  afterEach(() => ctx.cerrar());
+
+  it('Pedro borra el token de Lucía → 204 sin cuerpo, y Lucía sigue recibiendo', async () => {
+    const res = await ctx
+      .http()
+      .delete(`/dispositivos/${encodeURIComponent(TOKEN)}`)
+      .set(conSesion(pedro));
+    expect(res.status).toBe(204);
+    expect(res.text).toBe('');
+    const prueba = await ctx.http().post('/dispositivos/prueba').set(conSesion(lucia)).expect(200);
+    esperarContrato(prueba.body, 'PruebaNotificacion');
+    expect(prueba.body.datos.enviadas).toBe(1);
+  });
+
+  it('la respuesta a un token ajeno es idéntica a la de uno inexistente (no revela de quién es)', async () => {
+    const ajeno = await ctx
+      .http()
+      .delete(`/dispositivos/${encodeURIComponent(TOKEN)}`)
+      .set(conSesion(pedro));
+    const inexistente = await ctx
+      .http()
+      .delete(`/dispositivos/${encodeURIComponent('ExponentPushToken[noexistenoexiste12345]')}`)
+      .set(conSesion(pedro));
+    expect(ajeno.status).toBe(inexistente.status);
+    expect(ajeno.text).toBe(inexistente.text);
+  });
+
+  it('Lucía borra el suyo → 204 y deja de recibir; repetir el DELETE sigue dando 204', async () => {
+    for (let i = 0; i < 2; i++) {
+      await ctx
+        .http()
+        .delete(`/dispositivos/${encodeURIComponent(TOKEN)}`)
+        .set(conSesion(lucia))
+        .expect(204);
+    }
+    const prueba = await ctx.http().post('/dispositivos/prueba').set(conSesion(lucia)).expect(200);
+    expect(prueba.body.datos.enviadas).toBe(0);
+  });
+
+  it('DELETE sin sesión → 401', async () => {
+    esperarError(
+      await ctx.http().delete(`/dispositivos/${encodeURIComponent(TOKEN)}`),
+      401,
+      'NO_AUTENTICADO',
+    );
+  });
+});
+
+// ───────────────────────────────────────────────────────────────────────────────────────────
+describe('M0-6 y R18 — PATCH /yo simultáneos: se mezclan todos', () => {
+  let ctx: AppDePrueba;
+  let token: string;
+  beforeEach(async () => {
+    ctx = await crearApp();
+    ({ token } = await registrarTurista(ctx, { email: emailUnico() }));
+  });
+  afterEach(() => ctx.cerrar());
+  const patch = (cuerpo: object) => ctx.http().patch('/yo').set(conSesion(token)).send(cuerpo);
+
+  it('cinco cambios a la vez (nombre, avatar y tres preferencias): todos 200 y quedan todos', async () => {
+    const url = await subirArchivo(ctx, token);
+    const res = await Promise.all([
+      patch({ nombre: 'Lucía Méndez' }),
+      patch({ avatarUrl: url }),
+      patch({ preferencias: { tema: 'oscuro' } }),
+      patch({ preferencias: { radioAvisoMetros: 100 } }),
+      patch({ preferencias: { avisarProximidad: false } }),
+    ]);
+    for (const r of res) expect(r.status).toBe(200);
+    const yo = await ctx.http().get('/yo').set(conSesion(token)).expect(200);
+    esperarContrato(yo.body, 'Usuario');
+    expect(yo.body.datos.nombre).toBe('Lucía Méndez');
+    expect(new URL(yo.body.datos.avatarUrl as string).pathname).toBe(new URL(url).pathname);
+    expect(yo.body.datos.preferencias).toEqual({
+      categoriasFavoritas: [],
+      avisarProximidad: false,
+      radioAvisoMetros: 100,
+      tema: 'oscuro',
+    });
+  });
+
+  it('diez PATCH del mismo campo a la vez: todos 200 y queda uno de los valores mandados', async () => {
+    const radios = [100, 250, 500, 100, 250, 500, 100, 250, 500, 100];
+    const res = await Promise.all(radios.map((r) => patch({ preferencias: { radioAvisoMetros: r } })));
+    for (const r of res) {
+      expect(r.status).toBe(200);
+      esperarContrato(r.body, 'Usuario');
+    }
+    const yo = await ctx.http().get('/yo').set(conSesion(token)).expect(200);
+    expect([100, 250, 500]).toContain(yo.body.datos.preferencias.radioAvisoMetros);
+    expect(yo.body.datos.preferencias.tema).toBe('sistema');
+  });
+
+  it('un PATCH inválido en medio de los simultáneos no se lleva puestos a los otros', async () => {
+    const [a, b, c] = await Promise.all([
+      patch({ preferencias: { tema: 'claro' } }),
+      patch({ preferencias: { radioAvisoMetros: 300 } }),
+      patch({ preferencias: { avisarProximidad: false } }),
+    ]);
+    expect(a.status).toBe(200);
+    esperarValidacion(b);
+    expect(c.status).toBe(200);
+    const yo = await ctx.http().get('/yo').set(conSesion(token)).expect(200);
+    expect(yo.body.datos.preferencias).toMatchObject({
+      tema: 'claro',
+      avisarProximidad: false,
+      radioAvisoMetros: 250,
+    });
+  });
+
+  it('la columna interna de versión no se filtra en la respuesta', async () => {
+    const res = await patch({ nombre: 'Otro' }).expect(200);
+    esperarContrato(res.body, 'Usuario');
+    expect(JSON.stringify(res.body)).not.toMatch(/"version"/);
+  });
+});
+
+// ───────────────────────────────────────────────────────────────────────────────────────────
+describe('M0-6 — Token firmado con el secreto pero sin un sub válido → NO_AUTENTICADO', () => {
+  let ctx: AppDePrueba;
+  beforeAll(async () => {
+    ctx = await crearApp();
+  });
+  afterAll(() => ctx.cerrar());
+  const firmar = (carga: Record<string, unknown>) => ctx.app.get(JwtService).signAsync(carga);
+
+  it.each([
+    ['sub vacío', { sub: '', rol: 'turista' }],
+    ['sub numérico', { sub: 42, rol: 'turista' }],
+    ['sub nulo', { sub: null, rol: 'turista' }],
+    ['sub objeto', { sub: { id: 'usr-x' }, rol: 'turista' }],
+    ['sub arreglo', { sub: ['usr-x'], rol: 'turista' }],
+    ['sub sin prefijo usr-', { sub: 'lug-004', rol: 'turista' }],
+    ['sub de un usuario que no existe', { sub: 'usr-noexiste1234', rol: 'turista' }],
+    ['sub con inyección', { sub: "usr-x' OR '1'='1", rol: 'turista' }],
+  ])('%s → 401 en GET /yo, PATCH /yo y POST /dispositivos', async (_c, carga) => {
+    const token = await firmar(carga);
+    esperarError(await ctx.http().get('/yo').set(conSesion(token)), 401, 'NO_AUTENTICADO');
+    esperarError(
+      await ctx.http().patch('/yo').set(conSesion(token)).send({ nombre: 'X' }),
+      401,
+      'NO_AUTENTICADO',
+    );
+    esperarError(
+      await ctx
+        .http()
+        .post('/dispositivos')
+        .set(conSesion(token))
+        .send({ tokenExpo: 'ExponentPushToken[subinvalidosubinvalido]', plataforma: 'ios' }),
+      401,
+      'NO_AUTENTICADO',
+    );
+  });
+
+  it('sub inexistente en POST /archivos → 401 (no se guarda un archivo huérfano)', async () => {
+    const token = await firmar({ sub: 'usr-noexiste1234', rol: 'turista' });
+    esperarError(
+      await ctx.http().post('/archivos').set(conSesion(token)).attach('archivo', MUESTRAS.png(), 'a.png'),
+      401,
+      'NO_AUTENTICADO',
+    );
+  });
+
+  it('usuario borrado de la base: su token deja de servir', async () => {
+    const { token, usuario } = await registrarTurista(ctx, { email: emailUnico() });
+    await ctx.dataSource.getRepository('UsuarioEntidad').delete({ id: usuario.id });
+    esperarError(await ctx.http().get('/yo').set(conSesion(token)), 401, 'NO_AUTENTICADO');
   });
 });

@@ -18,10 +18,10 @@ export class RegistroDto {
   @IsEmail({}, { message: 'El email no es válido.' })
   email: string;
 
-  @ApiProperty({ example: 'una-clave-segura', minLength: 8 })
+  @ApiProperty({ example: 'una-clave-segura', minLength: 8, maxLength: 200 })
   @IsString({ message: 'Falta la contraseña.' })
   @MinLength(8, { message: 'La contraseña tiene que tener al menos 8 caracteres.' })
-  @MaxLength(200, { message: 'La contraseña es demasiado larga.' })
+  @MaxLength(200, { message: 'La contraseña puede tener hasta 200 caracteres.' })
   contrasena: string;
 }
 
