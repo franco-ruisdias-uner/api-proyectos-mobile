@@ -775,3 +775,143 @@ describe('AGENTS §11.5 — Swagger documenta los endpoints de M1', () => {
     expect(JSON.stringify(doc.paths['/lugares/qr/{codigo}'].get)).toContain('QR_NO_RECONOCIDO');
   });
 });
+
+// ───────────────────────────────────────────────────────────────────────────────────────────
+describe('M1-1 (re-verificación) — Bordes de las correcciones: tope de página, polos y filtros raros', () => {
+  let ctx: AppDePrueba;
+  let molino: string;
+  beforeAll(async () => {
+    ctx = await crearApp();
+    molino = await crearLugar(ctx, {
+      id: 'lug-004',
+      nombre: 'Molino Forclaz',
+      categoriaId: (await crearCategoria(ctx, { id: 'cat-museos' })).id,
+    });
+  });
+  afterAll(() => ctx.cerrar());
+
+  it.each(['/lugares', '/categorias'])(
+    '%s: pagina=1000000 es el tope (lista vacía con el total)',
+    async (ruta) => {
+      const res = await ctx.http().get(`${ruta}?pagina=1000000&porPagina=100`).expect(200);
+      esperarContrato(res.body, ruta === '/lugares' ? 'Lugar' : 'Categoria');
+      expect(res.body).toEqual({ datos: [], meta: { total: 1, pagina: 1000000, porPagina: 100 } });
+    },
+  );
+
+  it.each(['/lugares', '/categorias'])('%s: pagina=1000001 → 400 VALIDACION_FALLIDA', async (ruta) => {
+    esperarError(await ctx.http().get(`${ruta}?pagina=1000001`), 400, 'VALIDACION_FALLIDA');
+  });
+
+  it('/lugares con porPagina=500 y la página tope no rompe', async () => {
+    const res = await ctx.http().get('/lugares?pagina=1000000&porPagina=500');
+    esperarSinRomper(res);
+    expect(res.status).toBe(200);
+  });
+
+  it.each([
+    ['pagina=1e6', 'notación exponencial'],
+    ['pagina=%201', 'con espacio'],
+    ['pagina=0x10', 'hexadecimal'],
+  ])('GET /lugares?%s (%s): 200 o 400, nunca 500', async (consulta) => {
+    esperarSinRomper(await ctx.http().get(`/lugares?${consulta}`));
+  });
+
+  it('cerca del polo sur: un lugar del otro lado del polo, a ~2 km, entra en un radio de 5 km', async () => {
+    const cat = (await crearCategoria(ctx)).id;
+    const otroLado = await crearLugar(ctx, {
+      categoriaId: cat,
+      coordenadas: { latitud: -89.99, longitud: 180 },
+    });
+    await crearLugar(ctx, { categoriaId: cat, coordenadas: { latitud: -89.5, longitud: 0 } });
+    const res = await ctx
+      .http()
+      .get('/lugares')
+      .query({ latitud: -89.99, longitud: 0, radioMetros: 5000, categoriaId: cat, orden: 'distancia' })
+      .expect(200);
+    expect(ids(res.body)).toEqual([otroLado]);
+  });
+
+  it('antimeridiano con orden=distancia: el más cercano primero, del otro lado', async () => {
+    const cat = (await crearCategoria(ctx)).id;
+    const cruzando = await crearLugar(ctx, {
+      categoriaId: cat,
+      nombre: 'A',
+      coordenadas: { latitud: 0, longitud: -179.995 },
+    });
+    const mismoLado = await crearLugar(ctx, {
+      categoriaId: cat,
+      nombre: 'B',
+      coordenadas: { latitud: 0, longitud: 179.97 },
+    });
+    const res = await ctx
+      .http()
+      .get('/lugares')
+      .query({ latitud: 0, longitud: 179.99, radioMetros: 10000, categoriaId: cat, orden: 'distancia' })
+      .expect(200);
+    expect(ids(res.body)).toEqual([cruzando, mismoLado]);
+  });
+
+  it('el prefiltro por latitud no mete lugares fuera del radio (antimeridiano, 5 km)', async () => {
+    const cat = (await crearCategoria(ctx)).id;
+    await crearLugar(ctx, { categoriaId: cat, coordenadas: { latitud: 0, longitud: 0 } });
+    await crearLugar(ctx, { categoriaId: cat, coordenadas: { latitud: 0, longitud: -179.9 } }); // ~11 km
+    const res = await ctx
+      .http()
+      .get('/lugares')
+      .query({ latitud: 0, longitud: 179.99, radioMetros: 5000, categoriaId: cat })
+      .expect(200);
+    expect(res.body).toEqual({ datos: [], meta: { total: 0, pagina: 1, porPagina: 20 } });
+  });
+
+  it.each([
+    ['con byte nulo al final', 'cat-museos%00'],
+    ['con byte nulo al principio', '%00cat-museos'],
+    ['con un carácter de control', 'cat-muse%01os'],
+    ['con salto de línea', encodeURIComponent('cat-museos\n')],
+    ['larguísimo', 'x'.repeat(3000)],
+    ['con un espacio de ancho cero', encodeURIComponent('cat-museos​')],
+    ['con tilde', encodeURIComponent('cat-muséos')],
+    ['con emoji', encodeURIComponent('cat-museos☕')],
+  ])('categoriaId %s → lista vacía, no 500', async (_caso, valor) => {
+    const res = await ctx.http().get(`/lugares?categoriaId=${valor}`);
+    expect(res.status, JSON.stringify(res.body)).toBe(200);
+    esperarContrato(res.body, 'Lugar');
+    expect(res.body.datos).toEqual([]);
+  });
+
+  it('un categoriaId válido sigue filtrando', async () => {
+    const res = await ctx.http().get('/lugares?categoriaId=cat-museos').expect(200);
+    expect(ids(res.body)).toEqual([molino]);
+  });
+
+  it.each([
+    ['%00', 'sólo un byte nulo: no filtra'],
+    ['molino%00', 'byte nulo al final'],
+    ['molino%09forclaz', 'tab entre palabras'],
+    ['molino%0Aforclaz', 'salto de línea entre palabras'],
+    ['%00molino%00%00forclaz%00', 'bytes nulos por todos lados'],
+    ['molino%7Fforclaz', 'DEL entre palabras'],
+  ])('q=%s (%s) encuentra el molino, no 500', async (q) => {
+    const res = await ctx.http().get(`/lugares?q=${q}`);
+    expect(res.status, JSON.stringify(res.body)).toBe(200);
+    esperarContrato(res.body, 'Lugar');
+    expect(ids(res.body)).toContain(molino);
+  });
+
+  it.each(['%0B', '%1F', '%C2%80', '%EF%BF%BF', '%F0%9F%92%A9'])('q=%s no rompe', async (q) => {
+    esperarSinRomper(await ctx.http().get(`/lugares?q=${q}`));
+  });
+
+  it('un byte nulo en actualizadoDesde → 400, no 500', async () => {
+    esperarError(
+      await ctx.http().get('/lugares?actualizadoDesde=2026-11-10T09:00:00-03:00%00'),
+      400,
+      'VALIDACION_FALLIDA',
+    );
+  });
+
+  it('un byte nulo en orden → 400, no 500', async () => {
+    esperarError(await ctx.http().get('/lugares?orden=nombre%00'), 400, 'VALIDACION_FALLIDA');
+  });
+});

@@ -173,10 +173,11 @@ Decisión:
 - `radioMetros`: entero de 1 a 200.000 (200 km alcanza para el Palmar y el Palacio San José).
 - `actualizadoDesde` es **estrictamente** posterior; acepta cualquier instante ISO con offset o
   `Z` (con o sin milisegundos). Sin hora o sin zona es `VALIDACION_FALLIDA`.
-- `q` busca sólo en el nombre; vacío no filtra. `%`, `_` y `\` se buscan como texto, no como
+- `q` busca sólo en el nombre, hasta 100 caracteres (más es `VALIDACION_FALLIDA`); vacío no
+  filtra. `%`, `_` y `\` se buscan como texto, no como
   comodines.
 - `categoriaId` con un id que no existe (o mal escrito, o en otras mayúsculas, o con un byte
-  nulo) da lista vacía.
+  nulo, o larguísimo) da lista vacía: no tiene tope de largo.
 - En `q`, los caracteres de control (un byte nulo, un tabulador) cuentan como espacios.
 - El radio se prefiltra con una caja de latitud y longitud; si la caja cruza el antimeridiano o
   contiene un polo, se prefiltra sólo por latitud (si no, quedarían afuera lugares que están

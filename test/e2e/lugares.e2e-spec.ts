@@ -495,6 +495,24 @@ describe('AGENTS §4.6 — Un byte nulo en los filtros no rompe (PostgreSQL no l
     },
   );
 
+  it('un categoriaId larguísimo también es un id que no existe → lista vacía', async () => {
+    const res = await ctx
+      .http()
+      .get('/lugares')
+      .query({ categoriaId: 'cat-' + 'x'.repeat(3000) })
+      .expect(200);
+    expect(res.body.datos).toEqual([]);
+  });
+
+  it('q de más de 100 letras → 400 VALIDACION_FALLIDA', async () => {
+    const res = await ctx
+      .http()
+      .get('/lugares')
+      .query({ q: 'x'.repeat(101) });
+    esperarError(res, 400, 'VALIDACION_FALLIDA');
+    expect(res.body.error.mensaje).toBe('La búsqueda puede tener hasta 100 letras.');
+  });
+
   it('en q, un caracter de control cuenta como un espacio', async () => {
     const res = await ctx.http().get('/lugares?q=molino%00').expect(200);
     expect(res.body.datos.map((l: LugarRespuesta) => l.nombre)).toEqual(['Molino Forclaz']);

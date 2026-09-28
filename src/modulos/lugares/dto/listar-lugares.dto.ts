@@ -31,7 +31,6 @@ export class ListarLugaresDto extends PaginacionHasta(POR_PAGINA_MAXIMO_LUGARES)
   })
   @Opcional()
   @IsString({ message: 'La categoría tiene que ser un texto.' })
-  @MaxLength(100, { message: 'La categoría no es válida.' })
   categoriaId?: string;
 
   @ApiPropertyOptional({
