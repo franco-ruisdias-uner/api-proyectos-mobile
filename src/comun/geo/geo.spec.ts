@@ -1,4 +1,4 @@
-import { cajaAlrededor, distanciaMetros, puntoEnPoligono } from './geo.js';
+import { cajaAlrededor, cruzaElAntimeridianoOUnPolo, distanciaMetros, puntoEnPoligono } from './geo.js';
 
 describe('AGENTS §5.5 — Distancia con haversine', () => {
   it('mismo punto = 0', () => {
@@ -48,5 +48,16 @@ describe('AGENTS §5.5 — Punto dentro de polígono', () => {
     [0.99, 0.01, true],
   ])('(%d, %d) → %s', (lat, lng, dentro) => {
     expect(puntoEnPoligono({ latitud: lat, longitud: lng }, cuadrado)).toBe(dentro);
+  });
+});
+
+describe('AGENTS §5.5 — Prefiltro por caja cerca del antimeridiano y de los polos', () => {
+  it.each([
+    [{ latitud: -32.2236, longitud: -58.1427 }, 5000, false],
+    [{ latitud: 0, longitud: 179.99 }, 5000, true],
+    [{ latitud: 0, longitud: -179.99 }, 5000, true],
+    [{ latitud: 89.9, longitud: 0 }, 30000, true],
+  ])('%j con %i m → cruza: %s', (centro, radio, cruza) => {
+    expect(cruzaElAntimeridianoOUnPolo(cajaAlrededor(centro, radio))).toBe(cruza);
   });
 });

@@ -101,8 +101,16 @@ describe('PRD §1 — GET /categorias', () => {
     });
   });
 
+  it('AGENTS §4.2 — una página alta fuera de rango da la lista vacía con el total', async () => {
+    const res = await ctx.http().get('/categorias?pagina=1000000').expect(200);
+    esperarContrato(res.body, 'Categoria');
+    expect(res.body.datos).toEqual([]);
+  });
+
   it.each([
     ['pagina=0', 'La página tiene que ser 1 o más.'],
+    ['pagina=1000001', 'La página no puede pasar de 1000000.'],
+    ['pagina=99999999999999999999', 'La página no puede pasar de 1000000.'],
     ['porPagina=101', 'La cantidad por página no puede pasar de 100.'],
     ['porPagina=abc', 'La cantidad por página tiene que ser un número entero.'],
   ])('VALIDACION_FALLIDA con %s', async (consulta, mensaje) => {

@@ -175,7 +175,14 @@ Decisión:
   `Z` (con o sin milisegundos). Sin hora o sin zona es `VALIDACION_FALLIDA`.
 - `q` busca sólo en el nombre; vacío no filtra. `%`, `_` y `\` se buscan como texto, no como
   comodines.
-- `categoriaId` con un id que no existe (o mal escrito, o en otras mayúsculas) da lista vacía.
+- `categoriaId` con un id que no existe (o mal escrito, o en otras mayúsculas, o con un byte
+  nulo) da lista vacía.
+- En `q`, los caracteres de control (un byte nulo, un tabulador) cuentan como espacios.
+- El radio se prefiltra con una caja de latitud y longitud; si la caja cruza el antimeridiano o
+  contiene un polo, se prefiltra sólo por latitud (si no, quedarían afuera lugares que están
+  dentro del radio).
+- `pagina` llega hasta 1.000.000 en todas las listas (más allá es `VALIDACION_FALLIDA`); una
+  página fuera de rango por debajo de ese tope da la lista vacía con el total.
 - Un número vacío (`latitud=`) es `VALIDACION_FALLIDA`, no 0.
 - Orden por nombre sin distinguir mayúsculas ni tildes; por distancia, desempate por nombre y
   por id. El orden se calcula en TypeScript para que dé igual en los cuatro motores.

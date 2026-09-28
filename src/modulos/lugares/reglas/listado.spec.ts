@@ -40,7 +40,9 @@ describe('AGENTS §5.5 — Búsqueda por nombre portable', () => {
     ['  TERMAS   de ', 'termas de'],
     ['', ''],
     ['   ', ''],
-  ])('término «%s» → «%s»', (q, termino) => {
+    ['molino\u0000', 'molino'],
+    ['a\u0000b\tc', 'a b c'],
+  ])('término «%j» → «%s»', (q, termino) => {
     expect(terminoDeBusqueda(q)).toBe(termino);
   });
 

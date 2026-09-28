@@ -5,7 +5,7 @@ import type { Meta } from '../../../contrato/api.js';
 import type { Lugar } from '../../../contrato/tipos.js';
 import { ErrorApi } from '../../comun/errores/error-api.js';
 import { leerInstante } from '../../comun/fechas/fechas.js';
-import { cajaAlrededor } from '../../comun/geo/geo.js';
+import { cajaAlrededor, cruzaElAntimeridianoOUnPolo } from '../../comun/geo/geo.js';
 import { esIdConPrefijo, nuevoId } from '../../comun/ids/ids.js';
 import { Reloj } from '../../comun/reloj/reloj.js';
 import { calcularPaginacion } from '../../comun/respuesta/paginacion.js';
@@ -38,6 +38,11 @@ export class LugaresServicio {
     if (problema) throw new ErrorApi('VALIDACION_FALLIDA', problema);
     const ahora = this.reloj.ahora();
     const { pagina, porPagina, saltar } = calcularPaginacion(filtros);
+    // Una categoría con un id que no puede existir da la lista vacía, sin ir a la base (que
+    // además, en PostgreSQL, rechaza un byte nulo en un texto).
+    if (filtros.categoriaId !== undefined && !esIdConPrefijo(filtros.categoriaId, 'cat')) {
+      return { datos: [], meta: { total: 0, pagina, porPagina } };
+    }
     const punto =
       filtros.latitud !== undefined && filtros.longitud !== undefined
         ? { latitud: filtros.latitud, longitud: filtros.longitud }
@@ -52,7 +57,7 @@ export class LugaresServicio {
     if (punto && filtros.radioMetros !== undefined) {
       const caja = cajaAlrededor(punto, filtros.radioMetros);
       base.latitud = Between(caja.latitudMin, caja.latitudMax);
-      base.longitud = Between(caja.longitudMin, caja.longitudMax);
+      if (!cruzaElAntimeridianoOUnPolo(caja)) base.longitud = Between(caja.longitudMin, caja.longitudMax);
     }
     const where = this.condicionesDeVigencia(base, filtros.actualizadoDesde, ahora);
     const filas = await this.repo.find({

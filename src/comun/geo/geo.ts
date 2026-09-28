@@ -33,6 +33,15 @@ export function cajaAlrededor(centro: Coordenadas, radioMetros: number): Caja {
   };
 }
 
+/**
+ * ¿La caja se pasa de ±180 de longitud (cruza el antimeridiano) o de ±90 de latitud (el círculo
+ * contiene un polo, y con él todas las longitudes)? En ese caso un `Between` sobre la longitud
+ * dejaría afuera lugares que están dentro del radio.
+ */
+export function cruzaElAntimeridianoOUnPolo(caja: Caja): boolean {
+  return caja.longitudMin < -180 || caja.longitudMax > 180 || caja.latitudMin < -90 || caja.latitudMax > 90;
+}
+
 /** Punto dentro de polígono (ray casting). */
 export function puntoEnPoligono(punto: Coordenadas, poligono: Coordenadas[]): boolean {
   let dentro = false;

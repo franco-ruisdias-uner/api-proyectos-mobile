@@ -31,9 +31,13 @@ export function problemaDeFiltros(f: {
   return null;
 }
 
-/** El término de `q`, normalizado igual que la columna `nombreBusqueda`. Vacío: no filtra. */
+/**
+ * El término de `q`, normalizado igual que la columna `nombreBusqueda`. Vacío: no filtra.
+ * Los caracteres de control cuentan como espacios (un byte nulo, además, rompe en PostgreSQL).
+ */
 export function terminoDeBusqueda(q: string): string {
-  return normalizarBusqueda(q);
+  // eslint-disable-next-line no-control-regex
+  return normalizarBusqueda(q.replace(/[\u0000-\u001f\u007f]/g, ' '));
 }
 
 /**

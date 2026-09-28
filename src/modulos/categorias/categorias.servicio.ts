@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import type { Meta } from '../../../contrato/api.js';
 import type { Categoria } from '../../../contrato/tipos.js';
+import { esIdConPrefijo } from '../../comun/ids/ids.js';
 import { calcularPaginacion } from '../../comun/respuesta/paginacion.js';
 import { CategoriasExistentes } from '../usuarios/categorias-existentes.js';
 import { CategoriaEntidad } from './categoria.entidad.js';
@@ -41,6 +42,7 @@ export class CategoriasServicio extends CategoriasExistentes {
 
   /** Alta desde la semilla (no hay endpoint: las categorías las carga la cátedra). */
   async cargar(categoria: Categoria): Promise<void> {
+    if (!esIdConPrefijo(categoria.id, 'cat')) throw new Error(`Id de categoría inválido: ${categoria.id}`);
     await this.repo.insert({ ...categoria });
   }
 }

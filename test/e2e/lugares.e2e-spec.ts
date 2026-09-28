@@ -451,6 +451,58 @@ describe('PRD §1 y §2 — GET /lugares', () => {
   });
 });
 
+describe('PRD §2 — El radio mide metros de verdad en cualquier parte del mundo', () => {
+  let ctx: AppDePrueba;
+  beforeAll(async () => {
+    ctx = await crearApp();
+  });
+  afterAll(() => ctx.cerrar());
+
+  it('del otro lado del antimeridiano (a ~2 km) entra en un radio de 5 km', async () => {
+    const id = await crearLugar(ctx, { coordenadas: { latitud: 0, longitud: -179.99 } });
+    const res = await ctx
+      .http()
+      .get('/lugares')
+      .query({ latitud: 0, longitud: 179.99, radioMetros: 5000, orden: 'distancia' })
+      .expect(200);
+    expect(ids(res.body)).toEqual([id]);
+  });
+
+  it('cerca del polo, un radio grande abarca todas las longitudes', async () => {
+    const id = await crearLugar(ctx, { coordenadas: { latitud: 89.9, longitud: 0 } });
+    const res = await ctx
+      .http()
+      .get('/lugares')
+      .query({ latitud: 89.9, longitud: 180, radioMetros: 30000 })
+      .expect(200);
+    expect(ids(res.body)).toEqual([id]);
+  });
+});
+
+describe('AGENTS §4.6 — Un byte nulo en los filtros no rompe (PostgreSQL no lo acepta en un texto)', () => {
+  let ctx: AppDePrueba;
+  beforeAll(async () => {
+    ctx = await crearApp();
+    await crearLugar(ctx, { nombre: 'Molino Forclaz' });
+  });
+  afterAll(() => ctx.cerrar());
+
+  it.each(['categoriaId=%00', 'categoriaId=cat-museos%00'])(
+    '%s → lista vacía (un id que no existe)',
+    async (consulta) => {
+      const res = await ctx.http().get(`/lugares?${consulta}`).expect(200);
+      expect(res.body).toEqual({ datos: [], meta: { total: 0, pagina: 1, porPagina: 20 } });
+    },
+  );
+
+  it('en q, un caracter de control cuenta como un espacio', async () => {
+    const res = await ctx.http().get('/lugares?q=molino%00').expect(200);
+    expect(res.body.datos.map((l: LugarRespuesta) => l.nombre)).toEqual(['Molino Forclaz']);
+    const vacia = await ctx.http().get('/lugares?q=%00').expect(200);
+    expect(vacia.body.meta.total).toBe(1);
+  });
+});
+
 describe('AGENTS §4.2 — Orden determinístico de GET /lugares', () => {
   let ctx: AppDePrueba;
   beforeAll(async () => {
