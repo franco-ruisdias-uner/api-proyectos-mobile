@@ -37,6 +37,7 @@ export class Sembrador {
         avatarClave: null,
         creadoEn: new Date(ahora.getTime() - u.creadoHaceDias * DIA),
         preferencias: u.preferencias,
+        version: 0,
       });
     }
     this.log.log(`Datos de demo cargados: ${USUARIOS_SEMILLA.length} usuarios.`);

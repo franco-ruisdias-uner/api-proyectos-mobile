@@ -1,6 +1,7 @@
 import { Entity } from 'typeorm';
 import type { Preferencias } from '../../../contrato/tipos.js';
 import {
+  ColumnaEntero,
   ColumnaEnum,
   ColumnaId,
   ColumnaInstante,
@@ -37,4 +38,11 @@ export class UsuarioEntidad {
 
   @ColumnaJson()
   preferencias: Preferencias;
+
+  /**
+   * Interno. Sube en cada `PATCH /yo`: dos cambios simultáneos de preferencias no se pisan
+   * (control optimista, portable a los cuatro motores; ver `UsuariosServicio.actualizar`).
+   */
+  @ColumnaEntero()
+  version: number;
 }

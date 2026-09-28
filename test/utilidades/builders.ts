@@ -37,6 +37,7 @@ export async function crearAdmin(ctx: AppDePrueba): Promise<{ id: string; token:
     avatarClave: null,
     creadoEn: ctx.reloj.ahora(),
     preferencias: { categoriasFavoritas: [], avisarProximidad: true, radioAvisoMetros: 250, tema: 'sistema' },
+    version: 0,
   });
   const token = await ctx.app.get(JwtService).signAsync({ sub: id, rol: 'admin' });
   return { id, token };

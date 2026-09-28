@@ -22,6 +22,8 @@ import { aContrato } from './usuarios.mapeador.js';
 // Hash de una contraseña cualquiera: el ingreso con un email inexistente tarda lo mismo.
 const HASH_DE_RELLENO = hashearContrasena('relleno-para-igualar-tiempos');
 
+const MAX_INTENTOS_ACTUALIZAR = 10;
+
 export const normalizarEmail = (email: string) => email.trim().toLowerCase();
 
 @Injectable()
@@ -53,6 +55,7 @@ export class UsuariosServicio extends UsuariosActivos {
       avatarClave: null,
       creadoEn: this.reloj.ahora(),
       preferencias: preferenciasIniciales(),
+      version: 0,
     });
     try {
       await this.repo.insert(usuario);
@@ -79,21 +82,37 @@ export class UsuariosServicio extends UsuariosActivos {
   }
 
   async actualizar(usuarioId: string, dto: ActualizarYoDto): Promise<Usuario> {
-    const usuario = await this.buscar(usuarioId);
-    if (dto.nombre !== undefined) usuario.nombre = dto.nombre;
-    if (dto.avatarUrl !== undefined) {
-      usuario.avatarClave =
-        dto.avatarUrl === null ? null : await this.archivos.claveSubida(dto.avatarUrl, 'imagen');
+    const avatarClave =
+      dto.avatarUrl === undefined || dto.avatarUrl === null
+        ? dto.avatarUrl
+        : await this.archivos.claveSubida(dto.avatarUrl, 'imagen');
+    const categorias = dto.preferencias?.categoriasFavoritas;
+    if (categorias && !(await this.categorias.existenTodas([...new Set(categorias)]))) {
+      throw new ErrorApi('CATEGORIA_NO_ENCONTRADA');
     }
-    if (dto.preferencias) {
-      const categorias = dto.preferencias.categoriasFavoritas;
-      if (categorias && !(await this.categorias.existenTodas([...new Set(categorias)]))) {
-        throw new ErrorApi('CATEGORIA_NO_ENCONTRADA');
+    // Las preferencias se mezclan sobre lo que hay en la base (R18). Si otro pedido la cambió
+    // entre la lectura y la escritura, la versión ya no coincide y se vuelve a mezclar.
+    for (let intento = 1; ; intento++) {
+      const usuario = await this.buscar(usuarioId);
+      const leida = usuario.version;
+      if (dto.nombre !== undefined) usuario.nombre = dto.nombre;
+      if (avatarClave !== undefined) usuario.avatarClave = avatarClave;
+      if (dto.preferencias) {
+        usuario.preferencias = mezclarPreferencias(usuario.preferencias, dto.preferencias);
       }
-      usuario.preferencias = mezclarPreferencias(usuario.preferencias, dto.preferencias);
+      usuario.version = leida + 1;
+      const { affected } = await this.repo.update(
+        { id: usuarioId, version: leida },
+        {
+          nombre: usuario.nombre,
+          avatarClave: usuario.avatarClave,
+          preferencias: usuario.preferencias,
+          version: usuario.version,
+        },
+      );
+      if (affected === 1) return aContrato(usuario);
+      if (intento >= MAX_INTENTOS_ACTUALIZAR) throw new Error('PATCH /yo: demasiados choques de versión');
     }
-    await this.repo.save(usuario);
-    return aContrato(usuario);
   }
 
   private async buscar(usuarioId: string): Promise<UsuarioEntidad> {

@@ -101,3 +101,28 @@ Estado: PROVISORIA (autónomo)
 Decisión: `usr-nuevo` (nuevo@demo.ar) y `usr-turismo` (turismo@colon.demo.ar), legibles como
 las categorías. Los que crea el registro siguen el formato `usr-` + 12 caracteres.
 
+
+### M0-5 — Qué URL de archivo se acepta en un recurso
+Estado: PROVISORIA (autónomo)
+Hueco: AGENTS §8 dice que una URL "que no es de esta API" se rechaza, pero la API no conoce
+todas sus direcciones (la IP de la compu, `localhost`, la de Docker, la del proxy).
+Opciones: A) aceptar cualquier origen si la ruta es `/archivos/<clave>` y la clave existe en el
+almacén; B) exigir el origen del pedido actual; C) exigir `URL_PUBLICA`.
+Decisión: A. Lo que se guarda es la clave, y la clave la generó el servidor y existe: una URL
+ajena no puede apuntar a una clave nuestra que exista. B rompería al teléfono que subió la foto
+por wifi y manda el recurso por datos (otra dirección). Se ignora el `?query` de la URL. Un
+`file://` o una ruta que no es `/archivos/…` da `ARCHIVO_NO_SUBIDO`. No se exige que el archivo
+lo haya subido la misma persona (el PRD no lo pide y las claves no se pueden adivinar).
+Consecuencia en el contrato: ninguna.
+
+### M0-6 — Detalles de cuentas y dispositivos
+Estado: PROVISORIA (autónomo)
+Decisión:
+- La contraseña va de 8 a 200 caracteres (el máximo evita pedidos gigantes a `scrypt`). Está
+  en el mensaje de error y en Swagger.
+- `DELETE /dispositivos/:tokenExpo` con un token que no es del usuario responde 204 y no borra
+  nada: es idempotente ("dejar de recibir en este teléfono") y no revela de quién es el token.
+- `PATCH /yo` con cambios simultáneos: se mezclan todos (control optimista con una columna
+  interna `version`, reintentando). El PRD no lo pide explícito, pero R18 dice que las
+  preferencias se mezclan campo a campo.
+- Un token firmado con el secreto pero sin un `sub` válido da `NO_AUTENTICADO`.
