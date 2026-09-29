@@ -1416,3 +1416,16 @@ describe('AGENTS §7.3 — Cabecera Authorization mal armada', () => {
     mensajeParaPersonas(res);
   });
 });
+
+describe('AGENTS §7.1 — El esquema Bearer no distingue mayúsculas (RFC 7235)', () => {
+  it.each([['bearer'], ['BEARER']])('acepta «%s <token>»', async (esquema) => {
+    const v = await crearVecino(ctx);
+    const token = v.auth[1].replace(/^Bearer /, '');
+    const res = await ctx
+      .http()
+      .get('/yo')
+      .set('Authorization', `${esquema} ${token}`);
+    expect(res.status).toBe(200);
+    esperarContrato(res.body, 'Usuario');
+  });
+});
