@@ -9,10 +9,10 @@ devuelve **exactamente** los tipos del PRD que ya tienen en `src/tipos/`: cuando
 por `fetch`, no tienen que tocar los tipos. Lo único nuevo es el "sobre" de cada respuesta y
 algunos tipos que agrega la API (`contrato/api.ts`: `Sesion`, `ArchivoSubido`, `Salud`…).
 
-> **Estado:** está hecha la base (cuentas, `/yo`, archivos, notificaciones, `/salud`) y el
-> catálogo (categorías, lugares, búsqueda, cercanía, QR y audioguías), la agenda, los favoritos, Mi recorrido (visitas) y los eventos guardados con sus avisos.
-> El recorrido llega en las próximas versiones: miren el `CHANGELOG.md`.
-
+> **Estado:** la API está completa: cuentas y `/yo`, archivos, notificaciones, `/salud`, catálogo
+> (categorías, lugares, búsqueda, cercanía, QR y audioguías), agenda, favoritos, Mi recorrido
+> (visitas), eventos guardados con sus avisos, publicación en la nube y datos de demo. Los cambios
+> están en el `CHANGELOG.md`.
 ---
 
 ## 1. Arrancar con Docker (un solo comando)

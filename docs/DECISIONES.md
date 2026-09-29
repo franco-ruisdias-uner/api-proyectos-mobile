@@ -351,3 +351,13 @@ del admin de demo también se validan contra el contrato. No se agregaron datos:
 todo lo que pide §8.
 Descartado: generar la sección de casos feos del README desde los datos (los ids cambian poco y la prosa
 explica para qué sirve cada caso).
+
+### M7-2 — Ejemplos del PRD en las semillas: evt-017 y vis-311 tal cual
+Estado: PROVISORIA (autónomo)
+Hueco: la especificación (§8) pide los ids exactos del PRD, pero sólo dice "tal cual" para `lug-004`.
+Decisión: `evt-017` y `vis-311` también llevan los valores del ejemplo del PRD: `evt-017` con `fin` a las
+02:00 del día siguiente (cruza la medianoche, como pide R8), `precio: 0` y su descripción;
+`vis-311` con su nota. Las fechas de `usr-201`, `fav-088` y `vis-311` quedan **relativas** al momento de
+sembrar (§8: "todo lo temporal se calcula relativo"), no las absolutas del PRD.
+Descartado: fechas absolutas del PRD (la peña dejaría de ser "de hoy" y el recorrido quedaría viejo).
+Pregunta para la cátedra: si quiere esas tres fechas literales, es un cambio de una línea en el sembrador.

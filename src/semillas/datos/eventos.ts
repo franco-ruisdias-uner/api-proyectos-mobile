@@ -30,15 +30,14 @@ export const EVENTOS_SEMILLA: EventoSemilla[] = [
     // El ejemplo del PRD: una peña en el anfiteatro. Hoy a la noche.
     id: 'evt-017',
     titulo: 'Peña en el anfiteatro',
-    descripcion:
-      'Noche de folklore con músicos de la región en el Anfiteatro Municipal. Llevá tu silla o tu manta: las gradas son libres.',
+    descripcion: 'Noche de folclore con artistas de la región.',
     lugarId: 'lug-009',
     direccionLibre: null,
     coordenadas: null,
     inicio: { dia: 0, hora: '21:00' },
-    fin: { dia: 0, hora: '23:30' },
+    fin: { dia: 1, hora: '02:00' },
     imagen: 'museos-1.png',
-    precio: 3500,
+    precio: 0,
     estado: 'programado',
   },
   {

@@ -154,7 +154,7 @@ export class Sembrador {
       fechaHora: hace(14, 2),
       origen: 'qr',
       fotoClave: await medios.subir('museos-1.png'),
-      nota: 'Lindo atardecer en el molino.',
+      nota: 'Hacía 38 grados pero valió la pena',
     });
     await this.visitas.cargar({
       ...base,
