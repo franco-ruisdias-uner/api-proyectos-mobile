@@ -1,4 +1,5 @@
 import { Column, PrimaryColumn, type ValueTransformer } from 'typeorm';
+import { motorEfectivo } from './proveedores.js';
 
 /**
  * Tipos de columna portables entre SQLite, PostgreSQL, MySQL y MariaDB (AGENTS §5.3).
@@ -12,8 +13,8 @@ interface Opciones {
 
 const comunes = (o: Opciones = {}) => ({ nullable: o.nulo ?? false, unique: o.unico ?? false });
 
-/** Motor elegido al importar las entidades (se lee de `DB_MOTOR`, cargado antes desde `.env`). */
-const motor = () => process.env.DB_MOTOR ?? 'better-sqlite3';
+/** Motor elegido al importar las entidades (se lee de `DB_MOTOR` o `DB_PROVEEDOR`, cargado antes desde `.env`). */
+const motor = () => motorEfectivo(process.env);
 
 export const ColumnaId = () => PrimaryColumn({ type: 'varchar', length: 40 });
 

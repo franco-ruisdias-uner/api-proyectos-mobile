@@ -30,6 +30,13 @@ export abstract class AlmacenArchivos {
   abstract describir(clave: string): Promise<{ bytesTotales: number; tipoMime: string }>;
   abstract existe(clave: string): Promise<boolean>;
   abstract borrar(clave: string): Promise<void>;
+  /**
+   * URL firmada que vence en `segundos`, para `ARCHIVOS_REDIRIGIR`. Sólo los proveedores en la
+   * nube la tienen; el de disco devuelve `null`.
+   */
+  urlFirmada(_clave: string, _segundos?: number): Promise<string | null> {
+    return Promise.resolve(null);
+  }
 }
 
 export class ArchivoNoEncontrado extends Error {

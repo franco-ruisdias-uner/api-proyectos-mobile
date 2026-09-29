@@ -4,16 +4,23 @@ import { existsSync } from 'node:fs';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
+import { AlmacenNoDisponible } from './comun/archivos/almacen-archivos.js';
 import { AppModule } from './app.module.js';
 import { configurarApp } from './configurar-app.js';
 import { ENTORNO } from './config/entorno.modulo.js';
 import type { Entorno } from './config/entorno.js';
+import { traducirErrorDeConexion } from './comun/db/proveedores.js';
 
 function direccionesDeRed(): string[] {
   return Object.values(networkInterfaces())
     .flat()
     .filter((i) => i && i.family === 'IPv4' && !i.internal)
     .map((i) => i!.address);
+}
+
+function sslDeEntorno(): 'no' | 'si' | 'si-sin-verificar' {
+  const valor = process.env.DB_SSL?.trim();
+  return valor === 'si' || valor === 'si-sin-verificar' ? valor : 'no';
 }
 
 async function arrancar(): Promise<void> {
@@ -38,6 +45,9 @@ async function arrancar(): Promise<void> {
 }
 
 arrancar().catch((error: unknown) => {
-  console.error(error instanceof Error ? error.message : error);
+  const mensaje = error instanceof Error ? error.message : String(error);
+  const explicacion =
+    error instanceof AlmacenNoDisponible ? null : traducirErrorDeConexion(error, sslDeEntorno());
+  console.error(explicacion ? `No se pudo conectar con la base de datos. ${explicacion}\n(${mensaje})` : mensaje);
   process.exit(1);
 });

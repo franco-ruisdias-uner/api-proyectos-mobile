@@ -1,4 +1,14 @@
-import { Controller, Get, Headers, Param, Post, Res, UploadedFile, UseInterceptors } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Headers,
+  Inject,
+  Param,
+  Post,
+  Res,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { createHash } from 'node:crypto';
@@ -18,6 +28,8 @@ import { ErrorApi } from '../../comun/errores/error-api.js';
 import { respuestaUno } from '../../comun/respuesta/respuesta.js';
 import { Reloj } from '../../comun/reloj/reloj.js';
 import { ejemploError } from '../../comun/swagger/ejemplos.js';
+import { ENTORNO } from '../../config/entorno.modulo.js';
+import type { Entorno } from '../../config/entorno.js';
 
 @ApiTags('Archivos')
 @Controller('archivos')
@@ -25,6 +37,7 @@ export class ArchivosControlador {
   constructor(
     private readonly almacen: AlmacenArchivos,
     private readonly reloj: Reloj,
+    @Inject(ENTORNO) private readonly entorno: Entorno,
   ) {}
 
   @Post()
@@ -106,6 +119,10 @@ export class ArchivosControlador {
   @ApiResponse({ status: 200, description: 'El archivo entero.' })
   @ApiResponse({ status: 206, description: 'La parte pedida con `Range`.' })
   @ApiResponse({
+    status: 302,
+    description: 'Con `ARCHIVOS_REDIRIGIR=true` (sólo servicios en la nube): a una URL firmada de 15 minutos.',
+  })
+  @ApiResponse({
     status: 404,
     description: 'ARCHIVO_NO_ENCONTRADO',
     schema: ejemploError('ARCHIVO_NO_ENCONTRADO'),
@@ -125,6 +142,15 @@ export class ArchivosControlador {
     if (!esClaveValida(clave)) throw new ErrorApi('ARCHIVO_NO_ENCONTRADO');
     try {
       const { bytesTotales, tipoMime } = await this.almacen.describir(clave);
+      if (this.entorno.ALMACEN_S3?.redirigir) {
+        // Una URL firmada de 15 minutos: no se cachea, porque vence.
+        const firmada = await this.almacen.urlFirmada(clave);
+        if (firmada) {
+          res.setHeader('Cache-Control', 'no-store');
+          res.redirect(302, firmada);
+          return;
+        }
+      }
       const etiqueta = `"${createHash('sha1').update(`${clave}:${bytesTotales}`).digest('hex')}"`;
       res.setHeader('Accept-Ranges', 'bytes');
       res.setHeader('ETag', etiqueta);

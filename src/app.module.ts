@@ -3,7 +3,7 @@ import { APP_FILTER, APP_GUARD, APP_PIPE } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GuardAutenticacion } from './comun/auth/guard-autenticacion.js';
-import { opcionesTypeOrm } from './comun/db/opciones.js';
+import { crearDataSource, opcionesTypeOrm } from './comun/db/opciones.js';
 import { FiltroExcepciones } from './comun/errores/filtro-excepciones.js';
 import { errorDeValidacion } from './comun/errores/validacion.js';
 import { RelojModulo } from './comun/reloj/reloj.modulo.js';
@@ -30,7 +30,14 @@ export class AppModule {
       imports: [
         EntornoModulo.registrar(sobrescribir),
         RelojModulo,
-        TypeOrmModule.forRootAsync({ inject: [ENTORNO], useFactory: opcionesTypeOrm }),
+        TypeOrmModule.forRootAsync({
+          inject: [ENTORNO],
+          useFactory: opcionesTypeOrm,
+          dataSourceFactory: async (opciones) => {
+            if (!opciones) throw new Error('Faltan las opciones de la base de datos.');
+            return crearDataSource(opciones);
+          },
+        }),
         JwtModule.registerAsync({
           global: true,
           inject: [ENTORNO],

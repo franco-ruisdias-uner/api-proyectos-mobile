@@ -61,7 +61,95 @@ describe('AGENTS §11.3 — Configuración validada al arrancar', () => {
     expect(() => validarEntorno({ ...base, NOTIFICACIONES: 'sms' })).toThrow(/NOTIFICACIONES/);
   });
 
-  it('en M0 sólo hay almacenamiento local', () => {
+  it('ARCHIVOS_PROVEEDOR desconocido', () => {
     expect(() => validarEntorno({ ...base, ARCHIVOS_PROVEEDOR: 'ftp' })).toThrow(/ARCHIVOS_PROVEEDOR/);
+  });
+
+  it('un proveedor en la nube sin sus variables no arranca y dice cuáles faltan', () => {
+    expect(() => validarEntorno({ ...base, ARCHIVOS_PROVEEDOR: 'supabase' })).toThrow(
+      /SUPABASE_PROYECTO[\s\S]*S3_BUCKET[\s\S]*S3_REGION[\s\S]*S3_ACCESS_KEY_ID/,
+    );
+  });
+
+  it('s3proxy no pide nada', () => {
+    const e = validarEntorno({ ...base, ARCHIVOS_PROVEEDOR: 's3proxy' });
+    expect(e.ALMACEN_S3?.endpoint).toBe('http://s3:8080');
+    expect(validarEntorno(base).ALMACEN_S3).toBeNull();
+  });
+
+  it('DB_PROVEEDOR=supabase completa motor, cifrado y esquema', () => {
+    const e = validarEntorno({
+      ...base,
+      DB_PROVEEDOR: 'supabase',
+      DB_URL: 'postgres://postgres.abc:x@aws-1-sa-east-1.pooler.supabase.com:5432/postgres',
+    });
+    expect(e).toMatchObject({ DB_MOTOR: 'postgres', DB_SSL: 'si-sin-verificar', DB_ESQUEMA: 'api' });
+  });
+
+  it('DB_PROVEEDOR=supabase con la conexión directa no arranca', () => {
+    expect(() =>
+      validarEntorno({ ...base, DB_PROVEEDOR: 'supabase', DB_URL: 'postgres://postgres:x@db.abc.supabase.co:5432/postgres' }),
+    ).toThrow(/IPv6/);
+  });
+});
+
+describe('AGENTS §18.2 — ENTORNO=publicado no arranca con una configuración de desarrollo', () => {
+  const nube = {
+    ENTORNO: 'publicado',
+    JWT_SECRETO: 'un-secreto-largo-y-propio-de-mas-de-32-caracteres',
+    DB_PROVEEDOR: 'supabase',
+    DB_URL: 'postgres://postgres.abc:x@aws-1-sa-east-1.pooler.supabase.com:5432/postgres',
+    ARCHIVOS_PROVEEDOR: 'supabase',
+    SUPABASE_PROYECTO: 'abcdefghij',
+    S3_BUCKET: 'archivos',
+    S3_REGION: 'sa-east-1',
+    S3_ACCESS_KEY_ID: 'clave',
+    S3_SECRET_ACCESS_KEY: 'secreto',
+  };
+
+  it('la configuración completa de Render arranca', () => {
+    const e = validarEntorno({ ...nube, CONFIAR_PROXY: 'true' });
+    expect(e.ENTORNO).toBe('publicado');
+    expect(e.SIMULACION_HABILITADA).toBe(false);
+  });
+
+  it('con SQLite, no', () => {
+    expect(() => validarEntorno({ ...nube, DB_PROVEEDOR: '', DB_URL: '', DB_MOTOR: 'better-sqlite3' })).toThrow(
+      /ENTORNO=publicado no se puede usar SQLite/,
+    );
+  });
+
+  it('con los archivos en disco, no', () => {
+    expect(() => validarEntorno({ ...nube, ARCHIVOS_PROVEEDOR: 'local' })).toThrow(/no se pueden guardar los archivos en disco/);
+  });
+
+  it('con el JWT_SECRETO de desarrollo, no', () => {
+    expect(() =>
+      validarEntorno({ ...nube, JWT_SECRETO: 'solo-para-desarrollo-no-usar-en-produccion' }),
+    ).toThrow(/JWT_SECRETO tiene que ser propio/);
+  });
+
+  it('con un JWT_SECRETO de menos de 32 caracteres, no', () => {
+    expect(() => validarEntorno({ ...nube, JWT_SECRETO: 'corto' })).toThrow(/al menos 32 caracteres/);
+  });
+
+  it('con SIMULACION_HABILITADA=true, no', () => {
+    expect(() => validarEntorno({ ...nube, SIMULACION_HABILITADA: 'true' })).toThrow(/SIMULACION_HABILITADA tiene que ser false/);
+  });
+
+  it('cuenta todos los problemas juntos', () => {
+    let mensaje = '';
+    try {
+      validarEntorno({ ENTORNO: 'publicado', JWT_SECRETO: 'corto', SIMULACION_HABILITADA: 'true' });
+    } catch (error) {
+      mensaje = (error as Error).message;
+    }
+    for (const parte of ['SQLite', 'archivos en disco', 'JWT_SECRETO', 'SIMULACION_HABILITADA']) {
+      expect(mensaje).toContain(parte);
+    }
+  });
+
+  it('en desarrollo nada de esto molesta', () => {
+    expect(() => validarEntorno({ JWT_SECRETO: 'solo-para-desarrollo' })).not.toThrow();
   });
 });

@@ -1,11 +1,20 @@
+import {
+  PROVEEDORES_ARCHIVOS,
+  type ConfiguracionS3,
+  type ProveedorArchivosElegido,
+  configuracionS3,
+} from '../comun/archivos/proveedores.js';
+import {
+  type ModoSsl,
+  type Motor,
+  type ProveedorBase,
+  configuracionBase,
+} from '../comun/db/proveedores.js';
 import { leerInstante } from '../comun/fechas/fechas.js';
 
-export const MOTORES = ['better-sqlite3', 'postgres', 'mysql', 'mariadb'] as const;
-export type Motor = (typeof MOTORES)[number];
-
-/** En M0 sólo está el adaptador de disco; los proveedores S3 llegan en el módulo «Nube». */
-export const PROVEEDORES_ARCHIVOS = ['local'] as const;
-export type ProveedorArchivosDisponible = (typeof PROVEEDORES_ARCHIVOS)[number];
+export { MOTORES, type Motor } from '../comun/db/proveedores.js';
+export { PROVEEDORES_ARCHIVOS };
+export type ProveedorArchivosDisponible = ProveedorArchivosElegido;
 
 export const ENTORNOS = ['desarrollo', 'test', 'publicado'] as const;
 
@@ -18,8 +27,16 @@ export interface Entorno {
   DB_URL: string | null;
   DB_ARCHIVO: string;
   DB_SINCRONIZAR: boolean;
+  /** Preset de base administrada (Supabase, Neon, Aiven), o `null`. */
+  DB_PROVEEDOR: ProveedorBase | null;
+  DB_SSL: ModoSsl;
+  DB_SSL_CA: string | null;
+  /** Esquema de PostgreSQL donde van las tablas, o `null` para el de siempre. */
+  DB_ESQUEMA: string | null;
   JWT_SECRETO: string;
   ARCHIVOS_PROVEEDOR: ProveedorArchivosDisponible;
+  /** Configuración del cliente S3 del proveedor elegido; `null` con `local`. */
+  ALMACEN_S3: ConfiguracionS3 | null;
   DIRECTORIO_ARCHIVOS: string;
   NOTIFICACIONES: 'expo' | 'registro';
   RELOJ_FIJO: Date | null;
@@ -82,17 +99,10 @@ export function validarEntorno(e: Crudo): Entorno {
   };
 
   const ENTORNO = intentar(() => opcion(e, 'ENTORNO', ENTORNOS, 'desarrollo'), 'desarrollo');
-  const DB_MOTOR = intentar(() => opcion(e, 'DB_MOTOR', MOTORES, 'better-sqlite3'), 'better-sqlite3');
-  const DB_URL = texto(e, 'DB_URL') ?? null;
-  if (DB_MOTOR !== 'better-sqlite3' && !DB_URL) {
-    errores.push(
-      `Con DB_MOTOR=${DB_MOTOR} hace falta DB_URL (por ejemplo ${
-        DB_MOTOR === 'postgres'
-          ? 'postgres://api:api@localhost:5432/api'
-          : 'mysql://api:api@localhost:3306/api'
-      }).`,
-    );
-  }
+  const base = configuracionBase(e);
+  if ('error' in base) errores.push(base.error);
+  const DB_MOTOR: Motor = 'error' in base ? 'better-sqlite3' : base.motor;
+  const DB_URL = 'error' in base ? null : base.url;
   const JWT_SECRETO = texto(e, 'JWT_SECRETO');
   if (!JWT_SECRETO) {
     errores.push('Falta JWT_SECRETO: copiá .env.example a .env, que ya trae uno para desarrollo.');
@@ -125,6 +135,17 @@ export function validarEntorno(e: Crudo): Entorno {
     return instante;
   }, null);
 
+  const ARCHIVOS_PROVEEDOR = intentar(
+    () => opcion(e, 'ARCHIVOS_PROVEEDOR', PROVEEDORES_ARCHIVOS, 'local'),
+    'local',
+  );
+  let ALMACEN_S3: ConfiguracionS3 | null = null;
+  if (ARCHIVOS_PROVEEDOR !== 'local') {
+    const s3 = configuracionS3(ARCHIVOS_PROVEEDOR, e);
+    if ('error' in s3) errores.push(s3.error);
+    else ALMACEN_S3 = s3;
+  }
+
   const entorno: Entorno = {
     ENTORNO,
     PUERTO: intentar(() => puerto(e), 3000),
@@ -132,13 +153,15 @@ export function validarEntorno(e: Crudo): Entorno {
     URL_PUBLICA,
     DB_MOTOR,
     DB_URL,
+    DB_PROVEEDOR: 'error' in base ? null : base.proveedor,
+    DB_SSL: 'error' in base ? 'no' : base.ssl,
+    DB_SSL_CA: 'error' in base ? null : base.sslCa,
+    DB_ESQUEMA: 'error' in base ? null : base.esquema,
     DB_ARCHIVO: texto(e, 'DB_ARCHIVO') ?? 'datos/api.sqlite',
     DB_SINCRONIZAR: intentar(() => booleano(e, 'DB_SINCRONIZAR', true), true),
     JWT_SECRETO: JWT_SECRETO ?? '',
-    ARCHIVOS_PROVEEDOR: intentar(
-      () => opcion(e, 'ARCHIVOS_PROVEEDOR', PROVEEDORES_ARCHIVOS, 'local'),
-      'local',
-    ),
+    ARCHIVOS_PROVEEDOR,
+    ALMACEN_S3,
     DIRECTORIO_ARCHIVOS: texto(e, 'DIRECTORIO_ARCHIVOS') ?? 'archivos',
     NOTIFICACIONES: intentar(
       () => opcion(e, 'NOTIFICACIONES', ['expo', 'registro'] as const, 'expo'),
@@ -152,6 +175,8 @@ export function validarEntorno(e: Crudo): Entorno {
     SEMBRAR_SI_VACIA: intentar(() => booleano(e, 'SEMBRAR_SI_VACIA', false), false),
   };
 
+  if (ENTORNO === 'publicado') errores.push(...problemasDePublicacion(entorno));
+
   if (errores.length > 0) {
     throw new Error(
       `La API no puede arrancar porque la configuración tiene problemas:\n  - ${errores.join('\n  - ')}\n` +
@@ -159,4 +184,34 @@ export function validarEntorno(e: Crudo): Entorno {
     );
   }
   return entorno;
+}
+
+/**
+ * `ENTORNO=publicado` no arranca con una configuración que sólo sirve en la computadora del
+ * grupo: en un host, el disco se borra en cada reinicio (AGENTS §18.2).
+ */
+function problemasDePublicacion(entorno: Entorno): string[] {
+  const problemas: string[] = [];
+  if (entorno.DB_MOTOR === 'better-sqlite3') {
+    problemas.push(
+      'Con ENTORNO=publicado no se puede usar SQLite: el disco del servidor se borra en cada reinicio. ' +
+        'Usá una base en la nube (DB_PROVEEDOR=supabase y DB_URL).',
+    );
+  }
+  if (entorno.ARCHIVOS_PROVEEDOR === 'local') {
+    problemas.push(
+      'Con ENTORNO=publicado no se pueden guardar los archivos en disco (se pierden en cada reinicio). ' +
+        'Elegí un servicio: ARCHIVOS_PROVEEDOR=supabase (o aws, r2, b2).',
+    );
+  }
+  if (entorno.JWT_SECRETO.length < 32 || /desarrollo/i.test(entorno.JWT_SECRETO)) {
+    problemas.push(
+      'Con ENTORNO=publicado, JWT_SECRETO tiene que ser propio, de al menos 32 caracteres, y no el de ' +
+        'desarrollo. Generá uno con: node -e "console.log(require(\'node:crypto\').randomBytes(48).toString(\'base64url\'))"',
+    );
+  }
+  if (entorno.SIMULACION_HABILITADA) {
+    problemas.push('Con ENTORNO=publicado, SIMULACION_HABILITADA tiene que ser false.');
+  }
+  return problemas;
 }
