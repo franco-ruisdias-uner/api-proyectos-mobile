@@ -10,8 +10,8 @@ por `fetch`, no tienen que tocar los tipos. Lo único nuevo es el "sobre" de cad
 algunos tipos que agrega la API (`contrato/api.ts`: `Sesion`, `ArchivoSubido`, `Salud`…).
 
 > **Estado:** está hecha la base (cuentas, `/yo`, archivos, notificaciones, `/salud`) y el
-> catálogo (categorías, lugares, búsqueda, cercanía, QR y audioguías). Agenda, favoritos y
-> recorrido llegan en las próximas versiones: miren el `CHANGELOG.md`.
+> catálogo (categorías, lugares, búsqueda, cercanía, QR y audioguías), la agenda y los favoritos.
+> El recorrido llega en las próximas versiones: miren el `CHANGELOG.md`.
 
 ---
 
@@ -112,7 +112,7 @@ configurar nada más.
 
 | Email | Contraseña | Para qué |
 |---|---|---|
-| `lucia@mail.com` | `lucia1234` | La usuaria del PRD (`usr-201`), con `cat-museos` y `cat-playas` como categorías favoritas. En las próximas versiones trae favoritos, visitas y un evento guardado. |
+| `lucia@mail.com` | `lucia1234` | La usuaria del PRD (`usr-201`), con `cat-museos` y `cat-playas` como categorías favoritas. Trae tres favoritos (`fav-088` es el del PRD); en las próximas versiones, visitas y un evento guardado. |
 | `nuevo@demo.ar` | `nuevo1234` | No tiene nada: para ver cómo quedan las listas vacías. |
 | `turismo@colon.demo.ar` | `turismo1234` | Cuenta de la Dirección de Turismo: puede suspender y cancelar eventos. |
 
@@ -228,6 +228,9 @@ Para **mirar** lugares, mapa y agenda no hace falta cuenta. La cuenta es para gu
 | `GET` | `/eventos` | 🌐 | Agenda de eventos |
 | `GET` | `/eventos/:id` | 🌐 | Detalle de un evento |
 | `PATCH` | `/eventos/:id/estado` | 🔒 | Suspender, cancelar o reprogramar un evento |
+| `GET` | `/yo/favoritos` | 🔒 | Mis lugares favoritos |
+| `PUT` | `/yo/favoritos/:lugarId` | 🔒 | Marcar un lugar como favorito |
+| `DELETE` | `/yo/favoritos/:lugarId` | 🔒 | Sacar un lugar de favoritos |
 | `GET` | `/salud` | 🌐 | ¿Anda la API? |
 <!-- /tabla:endpoints -->
 

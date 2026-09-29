@@ -16,6 +16,7 @@ const DEVUELTAS = [
   'Lugar',
   'Categoria',
   'Evento',
+  'Favorito',
 ];
 /** Partes de otras entidades: se validan dentro de ellas. */
 const ANIDADAS = [
@@ -30,7 +31,6 @@ const ANIDADAS = [
 ];
 /** Entidades de módulos que todavía no están. */
 const PENDIENTES: Record<string, string> = {
-  Favorito: 'M3',
   Visita: 'M4',
 };
 

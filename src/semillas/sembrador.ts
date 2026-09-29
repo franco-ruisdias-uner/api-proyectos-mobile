@@ -6,6 +6,7 @@ import { Reloj } from '../comun/reloj/reloj.js';
 import { CategoriasServicio } from '../modulos/categorias/categorias.servicio.js';
 import { EventosServicio } from '../modulos/eventos/eventos.servicio.js';
 import { comienzoDelDia } from '../modulos/eventos/reglas/agenda.js';
+import { FavoritosServicio } from '../modulos/favoritos/favoritos.servicio.js';
 import { LugaresServicio } from '../modulos/lugares/lugares.servicio.js';
 import { UsuarioEntidad } from '../modulos/usuarios/usuario.entidad.js';
 import { diaLocal } from '../comun/fechas/fechas.js';
@@ -31,6 +32,7 @@ export class Sembrador {
     private readonly categorias: CategoriasServicio,
     private readonly lugares: LugaresServicio,
     private readonly eventos: EventosServicio,
+    private readonly favoritos: FavoritosServicio,
   ) {}
 
   async estaVacia(): Promise<boolean> {
@@ -55,6 +57,7 @@ export class Sembrador {
     }
     await this.sembrarCatalogo(ahora);
     await this.sembrarAgenda(ahora);
+    await this.sembrarFavoritos(ahora);
     this.log.log(
       `Datos de demo cargados: ${USUARIOS_SEMILLA.length} usuarios, ${CATEGORIAS_SEMILLA.length} categorías ` +
         `${LUGARES_SEMILLA.length} lugares y ${EVENTOS_SEMILLA.length} eventos.`,
@@ -105,5 +108,13 @@ export class Sembrador {
         imagenClave: imagen ? await medios.subir(imagen) : null,
       });
     }
+  }
+
+  /** M3: los favoritos de Lucía (`fav-088` es el del PRD). El usuario nuevo no tiene ninguno. */
+  private async sembrarFavoritos(ahora: Date): Promise<void> {
+    const hace = (dias: number) => new Date(ahora.getTime() - dias * DIA);
+    await this.favoritos.cargar({ id: 'fav-088', usuarioId: 'usr-201', lugarId: 'lug-004', creadoEn: hace(19) });
+    await this.favoritos.cargar({ id: 'fav-089', usuarioId: 'usr-201', lugarId: 'lug-009', creadoEn: hace(12) });
+    await this.favoritos.cargar({ id: 'fav-090', usuarioId: 'usr-201', lugarId: 'lug-001', creadoEn: hace(3) });
   }
 }

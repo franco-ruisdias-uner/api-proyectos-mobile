@@ -3,11 +3,12 @@ import { ENTORNO } from '../config/entorno.modulo.js';
 import type { Entorno } from '../config/entorno.js';
 import { CategoriasModulo } from '../modulos/categorias/categorias.modulo.js';
 import { EventosModulo } from '../modulos/eventos/eventos.modulo.js';
+import { FavoritosModulo } from '../modulos/favoritos/favoritos.modulo.js';
 import { LugaresModulo } from '../modulos/lugares/lugares.modulo.js';
 import { Sembrador } from './sembrador.js';
 
 @Module({
-  imports: [CategoriasModulo, LugaresModulo, EventosModulo],
+  imports: [CategoriasModulo, LugaresModulo, EventosModulo, FavoritosModulo],
   providers: [Sembrador],
   exports: [Sembrador],
 })

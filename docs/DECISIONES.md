@@ -242,3 +242,17 @@ Estado: PROVISORIA (autónomo)
 `PATCH /eventos/:id/estado` cambia el estado y responde. El push a quienes guardaron el evento
 (especificación §7) es de M5, que agrega los eventos guardados; por eso M2 no notifica.
 
+
+### M3-1 — Favoritos: bordes
+Estado: PROVISORIA (autónomo)
+Hueco: la especificación define los tres endpoints pero no estos casos.
+Decisión:
+- Un lugar dado de baja (`activo: false`) se puede marcar: su detalle existe (D6).
+- `PUT` de un id mal formado o inexistente: `404 LUGAR_NO_ENCONTRADO`.
+- `DELETE` siempre `204`, incluso con un id mal formado o de un lugar que no existe (es "un toque").
+- El id (`fav-` + 12 caracteres) lo genera el servidor; no se acepta uno del cliente (no hay
+  `sincronizado` en `Favorito`). Al sacar y volver a marcar, es un favorito nuevo con otro id.
+- `GET /yo/favoritos` admite hasta 100 por página (el tope común); si empatan en el segundo,
+  se desempata por `id`.
+Descartado: rechazar el favorito de un lugar dado de baja (deja al teléfono sin poder sincronizar
+una marca hecha antes de la baja).

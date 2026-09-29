@@ -3,6 +3,15 @@
 Lo que cambia en la API, escrito para quienes la usan desde la app. Desde la `v1.0.0` no se
 cambia la forma de ninguna respuesta: sólo se agregan cosas.
 
+## 0.4.0 — Favoritos
+
+- `GET /yo/favoritos`: tus favoritos, el más nuevo primero.
+- `PUT /yo/favoritos/:lugarId`: marca un lugar. `201` si es nuevo; `200` con el favorito que ya
+  había si lo repetís (no se duplica).
+- `DELETE /yo/favoritos/:lugarId`: lo saca. `204` siempre, también si no estaba.
+- Un lugar que no existe da `404 LUGAR_NO_ENCONTRADO`.
+- Datos de demo: Lucía tiene tres favoritos (`fav-088` en `lug-004`); `nuevo@demo.ar`, ninguno.
+
 ## 0.3.0 — Agenda
 
 - `GET /eventos`: la agenda por `inicio`, con filtros por día (`fecha`, o `desde` y `hasta`),
