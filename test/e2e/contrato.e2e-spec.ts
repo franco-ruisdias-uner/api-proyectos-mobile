@@ -18,10 +18,7 @@ const AUXILIARES = new Set([
  * Tipos que la API todavía no devuelve, con el módulo que los trae.
  * Cuando un módulo empieza a devolver uno, se saca de acá (el test avisa).
  */
-const TODAVIA_NO: Record<string, string> = {
-  Reporte: 'M2',
-  CambioDeEstado: 'M2',
-};
+const TODAVIA_NO: Record<string, string> = {};
 
 function archivos(dir: string): string[] {
   return readdirSync(dir).flatMap((nombre) => {

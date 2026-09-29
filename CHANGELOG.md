@@ -5,6 +5,25 @@ forma de las respuestas no cambia: sólo se agregan endpoints y códigos de erro
 
 ## Sin publicar
 
+### M2 — Crear y seguir
+
+- `POST /reportes` (con sesión): crea un reporte. Primero se suben las fotos (y el audio) con
+  `POST /archivos`; después se manda el reporte con esas URLs. Una o dos fotos del problema son
+  obligatorias (`FOTO_REQUERIDA`). El servidor completa `codigo` (`GCHU-2026-00412`), `zonaId`,
+  `estado: "recibido"`, `autorId`, `adhesiones: 0`, `momento: "problema"` en cada foto y crea el
+  primer cambio de estado.
+- **Sin señal:** el teléfono puede mandar su propio `id` (`rep-…`). Repetir el pedido con el
+  mismo `id` devuelve `200` con el mismo reporte, sin duplicarlo. Si el `id` es de otra
+  persona: `409 ID_EN_USO`. `creadoEn` es cuándo lo hizo el vecino y no puede estar en el futuro
+  (`FECHA_EN_EL_FUTURO`).
+- `GET /yo/reportes` (con sesión): los propios, del más nuevo al más viejo.
+- `GET /reportes/:id`, `GET /reportes/codigo/:codigo` (lo que lee el QR) y
+  `GET /reportes/:id/cambios` («Qué fue pasando»): públicos.
+- Códigos de error nuevos: `REPORTE_NO_ENCONTRADO`, `FOTO_REQUERIDA`, `TIPO_NO_ENCONTRADO`,
+  `FUERA_DE_LA_CIUDAD`, `FECHA_EN_EL_FUTURO`, `ARCHIVO_NO_SUBIDO` e `ID_EN_USO`.
+- Datos de demo: reportes en las cuatro zonas y los cinco estados, con los casos feos del PRD, y
+  cuatro vecinos más (`lucia@`, `tomas@`, `carolina@`, `martin@demo.ar`).
+
 ### M1 — Catálogos
 
 - `GET /tipos-de-reporte` (público): los ocho tipos, ordenados por nombre. `icono` es un nombre

@@ -30,6 +30,7 @@ export const CATALOGO = {
     estado: 409,
     mensaje: 'Ya hay una cuenta con ese email.',
   },
+  ID_EN_USO: { estado: 409, mensaje: 'Ese identificador ya está en uso.' },
   ARCHIVO_DEMASIADO_GRANDE: {
     estado: 413,
     mensaje: 'El archivo es demasiado grande.',
@@ -42,6 +43,31 @@ export const CATALOGO = {
   RANGO_NO_SATISFACIBLE: {
     estado: 416,
     mensaje: 'Esa parte del archivo no existe.',
+  },
+  // Reporte Ciudadano
+  REPORTE_NO_ENCONTRADO: {
+    estado: 404,
+    mensaje: 'No encontramos ese reporte.',
+  },
+  FOTO_REQUERIDA: {
+    estado: 422,
+    mensaje: 'El reporte necesita al menos una foto.',
+  },
+  TIPO_NO_ENCONTRADO: {
+    estado: 422,
+    mensaje: 'Elegí qué tipo de problema es.',
+  },
+  FUERA_DE_LA_CIUDAD: {
+    estado: 422,
+    mensaje: 'Ese punto queda fuera de Gualeguaychú. Corregilo en el mapa.',
+  },
+  FECHA_EN_EL_FUTURO: {
+    estado: 422,
+    mensaje: 'La fecha del reporte no puede ser posterior a este momento.',
+  },
+  ARCHIVO_NO_SUBIDO: {
+    estado: 422,
+    mensaje: 'Primero hay que subir la foto o el audio.',
   },
   ERROR_INTERNO: {
     estado: 500,

@@ -20,6 +20,15 @@ const ETIQUETAS: Record<string, string> = {
   activa: 'el filtro de cuadrillas activas',
   latitud: 'la latitud',
   longitud: 'la longitud',
+  tipoId: 'el tipo de problema',
+  descripcion: 'la descripción',
+  audioUrl: 'el audio',
+  fotos: 'las fotos',
+  url: 'la dirección de la foto',
+  coordenadas: 'la ubicación',
+  direccion: 'la dirección',
+  creadoEn: 'la fecha del reporte',
+  id: 'el identificador',
 };
 
 const etiqueta = (campo: string): string => ETIQUETAS[campo] ?? `«${campo}»`;

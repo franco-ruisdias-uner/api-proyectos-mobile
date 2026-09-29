@@ -26,6 +26,7 @@ import type { Entorno } from './config/entorno.js';
 import { AuthModulo } from './modulos/auth/auth.modulo.js';
 import { CatalogosModulo } from './modulos/catalogos/catalogos.modulo.js';
 import { DispositivosModulo } from './modulos/dispositivos/dispositivos.modulo.js';
+import { ReportesModulo } from './modulos/reportes/reportes.modulo.js';
 import { ControladorSalud } from './modulos/salud/salud.controlador.js';
 import { UsuariosModulo } from './modulos/usuarios/usuarios.modulo.js';
 import { baseVacia, sembrar } from './semillas/sembrar.js';
@@ -59,6 +60,7 @@ export class AppModule implements NestModule, OnApplicationBootstrap {
         UsuariosModulo,
         DispositivosModulo,
         CatalogosModulo,
+        ReportesModulo,
       ],
       controllers: [ControladorSalud],
       providers: [

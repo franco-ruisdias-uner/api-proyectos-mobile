@@ -92,3 +92,69 @@ export class CuadrillaDoc {
   @ApiProperty({ example: 'Bacheo y calzadas' }) especialidad: string;
   @ApiProperty({ example: true }) activa: boolean;
 }
+
+class FotoDoc {
+  @ApiProperty({ example: 'fot-901' }) id: string;
+  @ApiProperty({
+    example:
+      'http://192.168.0.10:3000/archivos/imagenes/2026/09/k3x9a8b7c6d5e4f3g2h1i0jz.jpg',
+  })
+  url: string;
+  @ApiProperty({ enum: ['problema', 'arreglo'] }) momento: string;
+}
+
+export class ReporteDoc {
+  @ApiProperty({ example: 'rep-00412' }) id: string;
+  @ApiProperty({
+    example: 'GCHU-2026-00412',
+    description: 'Número de seguimiento.',
+  })
+  codigo: string;
+  @ApiProperty({ example: 'tip-bache' }) tipoId: string;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: 'Pozo grande frente al 1240.',
+  })
+  descripcion: string | null;
+  @ApiProperty({ type: String, nullable: true, example: null }) audioUrl:
+    string | null;
+  @ApiProperty({ type: [FotoDoc] }) fotos: FotoDoc[];
+  @ApiProperty({ type: CoordenadasDoc }) coordenadas: CoordenadasDoc;
+  @ApiProperty({ example: 'Rocamora 1240' }) direccion: string;
+  @ApiProperty({ example: 'zon-norte' }) zonaId: string;
+  @ApiProperty({
+    enum: ['recibido', 'en_revision', 'asignado', 'resuelto', 'rechazado'],
+  })
+  estado: string;
+  @ApiProperty({ example: 'usr-084' }) autorId: string;
+  @ApiProperty({ type: String, nullable: true, example: 'cua-02' })
+  cuadrillaId: string | null;
+  @ApiProperty({ type: String, nullable: true, example: null }) duplicadoDe:
+    string | null;
+  @ApiProperty({ example: 3 }) adhesiones: number;
+  @ApiProperty({ example: '2026-09-14T10:22:00-03:00' }) creadoEn: string;
+  @ApiProperty({
+    example: true,
+    description: 'Siempre `true`: si está en el servidor, está sincronizado.',
+  })
+  sincronizado: boolean;
+}
+
+export class CambioDeEstadoDoc {
+  @ApiProperty({ example: 'cam-1177' }) id: string;
+  @ApiProperty({ example: 'rep-00412' }) reporteId: string;
+  @ApiProperty({
+    enum: ['recibido', 'en_revision', 'asignado', 'resuelto', 'rechazado'],
+  })
+  estado: string;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: 'Pasamos el reclamo a la Cuadrilla 2.',
+  })
+  comentario: string | null;
+  @ApiProperty({ type: String, nullable: true, example: 'usr-003' })
+  operadorId: string | null;
+  @ApiProperty({ example: '2026-09-15T08:30:00-03:00' }) fechaHora: string;
+}

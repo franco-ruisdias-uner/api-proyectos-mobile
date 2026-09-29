@@ -101,6 +101,7 @@ Todos tienen la contraseña **`demo1234`**.
 | `nuevo@demo.ar` | vecino | Una cuenta sin nada, para ver las listas vacías. |
 | `operador.norte@demo.ar` | operador | Zona norte. |
 | `operador.sur@demo.ar` | operador | Zona sur, con los avisos apagados. |
+| `lucia@demo.ar`, `tomas@demo.ar`, `carolina@demo.ar`, `martin@demo.ar` | vecino | Otros vecinos con reportes (por ejemplo, los baches repetidos de Rocamora y Bolívar). |
 
 Una cuenta nueva creada desde la app (`POST /auth/registro`) siempre es `vecino`. Los
 operadores no se crean desde la app.
@@ -137,6 +138,11 @@ operadores no se crean desde la app.
 | `GET` | `/tipos-de-reporte` | público | Los ocho tipos de problema, con ícono y color. |
 | `GET` | `/zonas` | público | Las cuatro zonas de la ciudad, con su `limite` (polígono). |
 | `GET` | `/cuadrillas` | operador | Cuadrillas municipales. Filtros `zonaId` y `activa`. |
+| `POST` | `/reportes` | con sesión | Crea un reporte (con foto obligatoria). Se puede repetir con el mismo `id`: no duplica. |
+| `GET` | `/yo/reportes` | con sesión | Tus reportes, del más nuevo al más viejo. |
+| `GET` | `/reportes/:id` | público | El detalle de un reporte. |
+| `GET` | `/reportes/codigo/:codigo` | público | Lo mismo, por número de seguimiento (`GCHU-2026-00412`), que es lo que trae el QR. |
+| `GET` | `/reportes/:id/cambios` | público | «Qué fue pasando»: los cambios de estado, del más viejo al más nuevo. |
 <!-- endpoints:fin -->
 
 ### Códigos de error
@@ -151,9 +157,16 @@ operadores no se crean desde la app.
 | `RUTA_NO_ENCONTRADA` | 404 | Esa dirección no existe en la API. |
 | `ARCHIVO_NO_ENCONTRADO` | 404 | No encontramos ese archivo. |
 | `EMAIL_YA_REGISTRADO` | 409 | Ya hay una cuenta con ese email. |
+| `ID_EN_USO` | 409 | Ese identificador ya está en uso. |
 | `ARCHIVO_DEMASIADO_GRANDE` | 413 | El archivo es demasiado grande. |
 | `TIPO_DE_ARCHIVO_NO_PERMITIDO` | 415 | Ese tipo de archivo no se puede subir. Mandá una foto, un audio o un video. |
 | `RANGO_NO_SATISFACIBLE` | 416 | Esa parte del archivo no existe. |
+| `REPORTE_NO_ENCONTRADO` | 404 | No encontramos ese reporte. |
+| `FOTO_REQUERIDA` | 422 | El reporte necesita al menos una foto. |
+| `TIPO_NO_ENCONTRADO` | 422 | Elegí qué tipo de problema es. |
+| `FUERA_DE_LA_CIUDAD` | 422 | Ese punto queda fuera de Gualeguaychú. Corregilo en el mapa. |
+| `FECHA_EN_EL_FUTURO` | 422 | La fecha del reporte no puede ser posterior a este momento. |
+| `ARCHIVO_NO_SUBIDO` | 422 | Primero hay que subir la foto o el audio. |
 | `ERROR_INTERNO` | 500 | Algo salió mal de nuestro lado. Probá de nuevo en un rato. |
 | `ALMACEN_NO_DISPONIBLE` | 503 | No pudimos acceder a los archivos. Probá de nuevo en un rato. |
 <!-- errores:fin -->

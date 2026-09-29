@@ -17,4 +17,8 @@ export class ServicioTipos {
       ...saltoYTamano(pagina),
     });
   }
+
+  async existe(id: string): Promise<boolean> {
+    return this.tipos.existsBy({ id });
+  }
 }

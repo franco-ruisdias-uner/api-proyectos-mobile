@@ -106,3 +106,74 @@ Estado: PROVISORIA (autónomo)
 Hueco: qué devuelve `GET /cuadrillas?zonaId=` con una zona que no existe.
 Decisión: lista vacía con 200 si el id tiene la forma correcta (`zon-…`); 400 si no la tiene.
 Consecuencia en el contrato: no hay código `ZONA_NO_ENCONTRADA` en este endpoint.
+
+### D1 — `autorId` en los endpoints públicos
+Estado: PENDIENTE (de la especificación; sin resolver)
+Hueco: el PRD dice que el mapa público no muestra quién hizo el reporte, pero `autorId` es
+`string` y no admite `null`.
+Opciones: A) devolver el id real. B) devolver `"anonimo"` en los endpoints públicos.
+Decisión: en M2 se implementa el default de la especificación (A) para no bloquear el módulo, sin
+darlo por cerrado; los endpoints públicos (`/reportes/:id`, `/reportes/codigo/:codigo`) devuelven
+el `autorId` real y nunca nombre, email ni teléfono. Cambiar a B es tocar un mapeador.
+Consecuencia en el contrato: `autorId` = `usr-…` en todo `Reporte`.
+
+### D2, D3, D4, D5, D6, D7, D8 (M2)
+Estado: PROVISORIA
+Se implementan como dice la sección 10 de `ESPECIFICACION.md`. En M2 aplican D2 (el QR trae el
+`codigo`, se resuelve con `/reportes/codigo/:codigo`), D7 (texto y audio opcionales) y D8 (punto
+fuera de las cuatro zonas → `FUERA_DE_LA_CIUDAD`). D3 a D6 se usan en M4.
+
+### P6 — Un id mal formado en la ruta
+Estado: PROVISORIA (autónomo)
+Hueco: `GET /reportes/123` (no tiene la forma `rep-…`): ¿400 o 404?
+Opciones: A) 400 `VALIDACION_FALLIDA` (AGENTS §7.3: los ids se validan antes de ir a la base).
+B) 404 `REPORTE_NO_ENCONTRADO`.
+Decisión: A para los ids. Para el **código** de seguimiento (`/reportes/codigo/:codigo`) es B:
+lo escribe una persona o lo lee un QR, y «no encontramos ese reporte» es la respuesta útil.
+Se acepta en minúsculas y con espacios.
+Consecuencia en el contrato: 400 con un id que no empieza con `rep-`; 404 con un código que no
+existe o no tiene la forma `GCHU-AAAA-NNNNN`.
+
+### P7 — Qué campos exige `POST /reportes`
+Estado: PROVISORIA (autónomo)
+Hueco: la especificación marca `id` como opcional y `descripcion`/`audioUrl` como «o null»; no
+dice si `creadoEn` o `direccion` pueden faltar.
+Opciones: A) son obligatorios. B) `creadoEn` opcional, por defecto el momento del pedido.
+Decisión: A para `tipoId`, `coordenadas`, `direccion` y `creadoEn` (la app siempre los tiene: la
+fecha del hecho la manda el teléfono, AGENTS §10.5). `descripcion` y `audioUrl` pueden faltar o
+ser `null`; `""` se guarda `null`. `fotos` ausente, `null` o vacío → `FOTO_REQUERIDA`.
+`direccion` hasta 200 caracteres y `descripcion` hasta 1000.
+Consecuencia en el contrato: 400 `VALIDACION_FALLIDA` si falta alguno de esos cuatro.
+
+### P8 — Qué archivo vale como foto o como audio
+Estado: PROVISORIA (autónomo)
+Hueco: R2 pide que las URLs vengan de `POST /archivos`, pero no dice si una foto puede ser un
+audio o un video subido.
+Decisión: una foto tiene que ser una imagen subida (carpeta `imagenes/`) y `audioUrl` un audio
+(`audios/`); si no, `ARCHIVO_NO_SUBIDO`. Un video no se admite en ninguno de los dos.
+Consecuencia en el contrato: mismo código de error, sin código nuevo.
+
+### P9 — Orden y cantidad de los cambios de estado
+Estado: PROVISORIA (autónomo)
+Hueco: `GET /reportes/:id/cambios` pide `fechaHora` ascendente; dos cambios en el mismo segundo
+quedarían sin orden definido.
+Decisión: se desempata por un contador interno por reporte (no sale en la respuesta) y luego por
+id. Es paginado como toda lista (máximo 100).
+Consecuencia en el contrato: ninguna; sólo hace estable el orden.
+
+### P10 — Correlativo del código al pasar de 99999
+Estado: PROVISORIA (autónomo)
+Hueco: R4 fija 5 dígitos; qué pasa después de 99999 reportes en un año.
+Decisión: no se contempla (es una ciudad de ~120 000 habitantes): el correlativo 100000 saldría
+con 6 dígitos y rompería el orden alfabético que se usa para buscar el último. Si hiciera falta,
+se cambia la búsqueda del máximo.
+Consecuencia en el contrato: ninguna hoy.
+
+### P11 — Vecinos de demo adicionales
+Estado: PROVISORIA (autónomo)
+Hueco: la especificación (§8) sólo lista cuatro usuarios, pero pide reportes de varias personas
+(por ejemplo los cinco baches repetidos) y que `nuevo@demo.ar` no tenga ninguno.
+Decisión: se suman cuatro vecinos de demo (`lucia@`, `tomas@`, `carolina@`, `martin@demo.ar`,
+ids `usr-101` a `usr-104`), con la misma contraseña que el resto.
+Consecuencia en el contrato: ninguna (sólo datos de demo).
+
