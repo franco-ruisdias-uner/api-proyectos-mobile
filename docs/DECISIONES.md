@@ -58,3 +58,25 @@ servidor (un cambio de estado, algo nuevo publicado, algo cancelado por otro).
 ## Decisiones de este proyecto
 
 <!-- Copiar acá las entradas "D…" de ESPECIFICACION.md a medida que se implementan. -->
+
+### P1 — `PATCH /yo` con un campo en `null`
+Estado: PROVISORIA (autónomo)
+Hueco: la especificación (§4 M5) dice `{ nombre?, telefono?, avisosActivos? }` pero no qué
+pasa si llega `null`. En el tipo `Usuario`, `telefono` admite `null`; `nombre` y
+`avisosActivos`, no.
+Opciones: A) `null` en un campo que no lo admite → `VALIDACION_FALLIDA`. B) Tratar `null` como
+"no lo cambies". C) Guardarlo igual (rompe el contrato).
+Decisión: A. Es lo más conservador: no inventa semántica y no deja pasar un valor que el tipo
+no admite. `telefono: null` (o `""`) borra el teléfono.
+Consecuencia en el contrato: `PATCH /yo` con `{ "nombre": null }` o
+`{ "avisosActivos": null }` → 400 `VALIDACION_FALLIDA`.
+
+### P2 — Un rango de bytes que no existe
+Estado: PROVISORIA (autónomo)
+Hueco: AGENTS §8 y §17 piden soporte de `Range` en `GET /archivos/<clave>`, pero la tabla de
+errores no dice qué hacer con un rango fuera del archivo.
+Opciones: A) 416 `RANGO_NO_SATISFACIBLE` con `Content-Range: bytes */<total>` (lo que dice
+HTTP). B) Ignorar el rango y mandar el archivo entero con 200.
+Decisión: A. Es lo que esperan `expo-audio` y `expo-video`; se agrega un código al catálogo
+(agregar códigos está permitido).
+Consecuencia en el contrato: 416 `RANGO_NO_SATISFACIBLE` en `GET /archivos/<clave>`.
