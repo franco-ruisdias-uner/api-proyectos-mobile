@@ -5,6 +5,7 @@ import {
   IsArray,
   IsDefined,
   IsNotEmpty,
+  IsObject,
   IsNumber,
   IsString,
   Matches,
@@ -122,6 +123,7 @@ export class CrearReporteDto {
     MAX_FOTOS_DEL_PROBLEMA,
     conMensaje('Se pueden mandar hasta dos fotos del problema.'),
   )
+  @IsObject({ each: true })
   @ValidateNested({ each: true })
   @Type(() => FotoEntranteDto)
   fotos?: FotoEntranteDto[] | null;
