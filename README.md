@@ -140,6 +140,9 @@ operadores no se crean desde la app.
 | `GET` | `/cuadrillas` | operador | Cuadrillas municipales. Filtros `zonaId` y `activa`. |
 | `POST` | `/reportes` | con sesión | Crea un reporte (con foto obligatoria). Se puede repetir con el mismo `id`: no duplica. |
 | `GET` | `/yo/reportes` | con sesión | Tus reportes, del más nuevo al más viejo. |
+| `GET` | `/reportes` | público | El mapa de la ciudad. Filtros `tipoId`, `zonaId`, `estado` (uno o varios separados por coma), `latitud`+`longitud`+`radioMetros` o `norte`+`sur`+`este`+`oeste`. Sin `estado` no trae los rechazados. `porPagina` hasta 500. |
+| `GET` | `/reportes/cercanos` | público | Reportes abiertos a 50 m o menos de `latitud`/`longitud` (hasta 200 con `radioMetros`), del más cercano al más lejano. Filtro `tipoId`. |
+| `POST` | `/reportes/:id/adhesiones` | con sesión | Sumarte a un reporte que no es tuyo. 201 la primera vez, 200 si ya estabas. |
 | `GET` | `/reportes/:id` | público | El detalle de un reporte. |
 | `GET` | `/reportes/codigo/:codigo` | público | Lo mismo, por número de seguimiento (`GCHU-2026-00412`), que es lo que trae el QR. |
 | `GET` | `/reportes/:id/cambios` | público | «Qué fue pasando»: los cambios de estado, del más viejo al más nuevo. |
@@ -167,6 +170,8 @@ operadores no se crean desde la app.
 | `FUERA_DE_LA_CIUDAD` | 422 | Ese punto queda fuera de Gualeguaychú. Corregilo en el mapa. |
 | `FECHA_EN_EL_FUTURO` | 422 | La fecha del reporte no puede ser posterior a este momento. |
 | `ARCHIVO_NO_SUBIDO` | 422 | Primero hay que subir la foto o el audio. |
+| `REPORTE_CERRADO` | 422 | Ese reporte ya está cerrado. |
+| `ADHESION_A_REPORTE_PROPIO` | 422 | Ya sos el autor de este reporte. |
 | `ERROR_INTERNO` | 500 | Algo salió mal de nuestro lado. Probá de nuevo en un rato. |
 | `ALMACEN_NO_DISPONIBLE` | 503 | No pudimos acceder a los archivos. Probá de nuevo en un rato. |
 <!-- errores:fin -->

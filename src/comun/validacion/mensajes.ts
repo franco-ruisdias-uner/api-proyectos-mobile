@@ -29,6 +29,12 @@ const ETIQUETAS: Record<string, string> = {
   direccion: 'la dirección',
   creadoEn: 'la fecha del reporte',
   id: 'el identificador',
+  estado: 'el estado',
+  radioMetros: 'el radio en metros',
+  norte: 'el límite norte del mapa',
+  sur: 'el límite sur del mapa',
+  este: 'el límite este del mapa',
+  oeste: 'el límite oeste del mapa',
 };
 
 const etiqueta = (campo: string): string => ETIQUETAS[campo] ?? `«${campo}»`;

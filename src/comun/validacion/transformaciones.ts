@@ -34,3 +34,14 @@ export const BooleanoDeTexto = () =>
   Transform(({ value }: { value: unknown }) =>
     value === 'true' ? true : value === 'false' ? false : value,
   );
+
+/**
+ * Número de un parámetro de la URL. Un texto vacío o que no es un número queda como texto
+ * (no como 0 ni NaN) y lo rechaza `@IsNumber()`.
+ */
+export const NumeroDeTexto = () =>
+  Transform(({ value }: { value: unknown }) => {
+    if (typeof value !== 'string' || value.trim() === '') return value;
+    const numero = Number(value);
+    return Number.isFinite(numero) ? numero : value;
+  });

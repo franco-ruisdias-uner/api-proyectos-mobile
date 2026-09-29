@@ -69,6 +69,14 @@ export const CATALOGO = {
     estado: 422,
     mensaje: 'Primero hay que subir la foto o el audio.',
   },
+  REPORTE_CERRADO: {
+    estado: 422,
+    mensaje: 'Ese reporte ya está cerrado.',
+  },
+  ADHESION_A_REPORTE_PROPIO: {
+    estado: 422,
+    mensaje: 'Ya sos el autor de este reporte.',
+  },
   ERROR_INTERNO: {
     estado: 500,
     mensaje: 'Algo salió mal de nuestro lado. Probá de nuevo en un rato.',

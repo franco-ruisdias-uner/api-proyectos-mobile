@@ -21,6 +21,8 @@ import {
 import { CambioDeEstadoDoc, ReporteDoc } from '../../comun/swagger/modelos.js';
 import type { Usuario } from '../usuarios/usuario.entidad.js';
 import { CrearReporteDto } from './dto/crear-reporte.dto.js';
+import { ServicioAdhesiones } from './adhesiones.servicio.js';
+import { FiltroCercanosDto, FiltroMapaDto } from './dto/filtro-mapa.dto.js';
 import { ParametroIdReporteDto } from './dto/parametros.dto.js';
 import { aCambioDeEstado, aReporte } from './reportes.mapeador.js';
 import { ServicioReportes } from './reportes.servicio.js';
@@ -28,7 +30,83 @@ import { ServicioReportes } from './reportes.servicio.js';
 @ApiTags('Reportes')
 @Controller('reportes')
 export class ControladorReportes {
-  constructor(private readonly reportes: ServicioReportes) {}
+  constructor(
+    private readonly reportes: ServicioReportes,
+    private readonly adhesiones: ServicioAdhesiones,
+  ) {}
+
+  @Get()
+  @Publico()
+  @ApiOperation({
+    summary: 'El mapa de la ciudad',
+    description:
+      'Público. Devuelve reportes con la forma completa del PRD, del más nuevo al más viejo. ' +
+      'Sin `estado` no incluye los rechazados. Se puede filtrar por `tipoId`, `zonaId`, `estado` (uno o varios separados por coma), ' +
+      'por cercanía (`latitud` + `longitud` + `radioMetros`, del más cercano al más lejano) o por la zona visible del mapa ' +
+      '(`norte`, `sur`, `este`, `oeste`). `porPagina` admite hasta 500.',
+  })
+  @DocRespuestaLista(ReporteDoc, 'Los reportes del mapa.')
+  @DocErrores('VALIDACION_FALLIDA')
+  async mapa(
+    @Query() q: FiltroMapaDto,
+  ): Promise<RespuestaLista<ReporteContrato>> {
+    const [filas, total] = await this.reportes.listarMapa(q);
+    return respuestaLista(
+      filas.map(({ reporte, fotos }) => aReporte(reporte, fotos)),
+      { total, pagina: q.pagina, porPagina: q.porPagina },
+    );
+  }
+
+  @Get('cercanos')
+  @Publico()
+  @ApiOperation({
+    summary: 'Reportes abiertos cerca de un punto',
+    description:
+      'Para avisarle al vecino que ya hay un reporte parecido antes de mandar el suyo. ' +
+      'Sólo `recibido`, `en_revision` y `asignado`, sin los duplicados, a 50 metros o menos (`radioMetros` hasta 200), ' +
+      'del más cercano al más lejano. `tipoId` limita a un tipo.',
+  })
+  @DocRespuestaLista(ReporteDoc, 'Los reportes cercanos.')
+  @DocErrores('VALIDACION_FALLIDA')
+  async cercanos(
+    @Query() q: FiltroCercanosDto,
+  ): Promise<RespuestaLista<ReporteContrato>> {
+    const [filas, total] = await this.reportes.listarCercanos(q);
+    return respuestaLista(
+      filas.map(({ reporte, fotos }) => aReporte(reporte, fotos)),
+      { total, pagina: q.pagina, porPagina: q.porPagina },
+    );
+  }
+
+  @Post(':id/adhesiones')
+  @DocConSesion()
+  @ApiOperation({
+    summary: 'Sumarse a un reporte',
+    description:
+      'El vecino que ve un reporte igual al suyo se suma en vez de duplicarlo. Una vez por persona: repetir el pedido devuelve `200` con el mismo reporte. ' +
+      'No se puede a un reporte propio ni a uno resuelto o rechazado.',
+  })
+  @DocRespuestaUno(
+    201,
+    ReporteDoc,
+    'Te sumaste: el reporte con `adhesiones` actualizado.',
+  )
+  @DocRespuestaUno(200, ReporteDoc, 'Ya estabas sumado: el reporte tal cual.')
+  @DocErrores(
+    'VALIDACION_FALLIDA',
+    'REPORTE_NO_ENCONTRADO',
+    'ADHESION_A_REPORTE_PROPIO',
+    'REPORTE_CERRADO',
+  )
+  async sumarse(
+    @UsuarioActual() usuario: Usuario,
+    @Param() { id }: ParametroIdReporteDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<RespuestaUno<ReporteContrato>> {
+    const { reporte, fotos, creada } = await this.adhesiones.sumar(id, usuario);
+    res.status(creada ? 201 : 200);
+    return respuestaUno(aReporte(reporte, fotos));
+  }
 
   @Post()
   @DocConSesion()

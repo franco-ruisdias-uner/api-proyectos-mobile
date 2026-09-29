@@ -5,6 +5,22 @@ forma de las respuestas no cambia: sólo se agregan endpoints y códigos de erro
 
 ## Sin publicar
 
+### M3 — Mapa y duplicados
+
+- `GET /reportes` (público): el mapa de la ciudad, con los `Reporte` completos, del más nuevo al
+  más viejo. Filtros `tipoId`, `zonaId`, `estado` (uno o varios separados por coma; sin él no
+  vienen los `rechazado`), `latitud` + `longitud` + `radioMetros` (del más cercano al más lejano)
+  o la zona visible con `norte`, `sur`, `este`, `oeste`. `porPagina` llega hasta 500.
+- `GET /reportes/cercanos` (público): `latitud` y `longitud` obligatorias, `tipoId` y
+  `radioMetros` (50 por defecto, hasta 200) opcionales. Reportes abiertos (`recibido`,
+  `en_revision`, `asignado`), sin los duplicados, del más cercano al más lejano. Sirve para
+  avisar «ya hay un reporte parecido» antes de mandar el propio.
+- `POST /reportes/:id/adhesiones` (con sesión): sumarse a un reporte. `201` con el `Reporte`
+  actualizado (`adhesiones` cuenta las personas que se sumaron); `200` si ya estabas sumado.
+  No se puede a uno propio ni a uno resuelto o rechazado.
+- Códigos de error nuevos: `ADHESION_A_REPORTE_PROPIO` y `REPORTE_CERRADO` (ambos 422).
+- Datos de demo: `rep-00412` con cinco adhesiones, y algunas más en otros reportes.
+
 ### M2 — Crear y seguir
 
 - `POST /reportes` (con sesión): crea un reporte. Primero se suben las fotos (y el audio) con

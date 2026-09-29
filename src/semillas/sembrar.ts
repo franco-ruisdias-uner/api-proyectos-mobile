@@ -11,6 +11,7 @@ import { Usuario } from '../modulos/usuarios/usuario.entidad.js';
 import { Cuadrilla } from '../modulos/catalogos/cuadrilla.entidad.js';
 import { TipoDeReporte } from '../modulos/catalogos/tipo-de-reporte.entidad.js';
 import { Zona } from '../modulos/catalogos/zona.entidad.js';
+import { Adhesion } from '../modulos/reportes/adhesion.entidad.js';
 import { CambioDeEstado } from '../modulos/reportes/cambio-de-estado.entidad.js';
 import { FotoDeReporte } from '../modulos/reportes/foto.entidad.js';
 import { formatearCodigo } from '../modulos/reportes/reglas/codigo.js';
@@ -128,12 +129,21 @@ async function sembrarReportes(
           autorId: d.autorId,
           cuadrillaId: d.cuadrillaId,
           duplicadoDe: d.duplicadoDe,
-          adhesiones: 0,
+          adhesiones: d.adhesionesDe?.length ?? 0,
           creadoEn,
         }),
       );
       await manager.insert(FotoDeReporte, fotos);
       await manager.insert(CambioDeEstado, cambios);
+      const adhesiones = (d.adhesionesDe ?? []).map((usuarioId, i) =>
+        Object.assign(new Adhesion(), {
+          id: nuevoId('adh'),
+          reporteId: d.id,
+          usuarioId,
+          creadoEn: minutos(creadoEn, 30 + i * 45),
+        }),
+      );
+      if (adhesiones.length > 0) await manager.insert(Adhesion, adhesiones);
     });
   }
 }

@@ -177,3 +177,42 @@ Decisión: se suman cuatro vecinos de demo (`lucia@`, `tomas@`, `carolina@`, `ma
 ids `usr-101` a `usr-104`), con la misma contraseña que el resto.
 Consecuencia en el contrato: ninguna (sólo datos de demo).
 
+
+### D9, D10 (M3)
+Estado: PROVISORIA
+Se implementan como dice la sección 10 de `ESPECIFICACION.md`: `/reportes/cercanos` busca de
+cualquier tipo (con `tipoId` se limita) y el mapa sin `estado` no trae los `rechazado`.
+
+### P12 — Orden del mapa y paginación de `GET /reportes`
+Estado: PROVISORIA (autónomo)
+Hueco: la especificación no dice cómo se ordena el mapa ni si `norte/sur/este/oeste` puede
+combinarse con el radio.
+Opciones: A) más nuevo primero (desempate por id); con radio, del más cercano al más lejano.
+B) sin orden definido.
+Decisión: A. Los filtros se combinan con «y»; la caja y el radio pueden ir juntos (se usa la
+intersección). Con radio se pagina en memoria sobre el resultado ya filtrado por distancia
+(`meta.total` es el total filtrado). `porPagina` máximo 500.
+Consecuencia en el contrato: ninguna en la forma; ordena el resultado.
+
+### P13 — Filtros geográficos incompletos o contradictorios
+Estado: PROVISORIA (autónomo)
+Hueco: qué pasa con `?latitud=…` sin `longitud` y `radioMetros`, o con `norte` menor que `sur`.
+Decisión: 400 `VALIDACION_FALLIDA` con un mensaje que explica qué falta. Los grupos van
+completos (centro + radio, o los cuatro lados). `radioMetros` de 1 a 50 000 en el mapa.
+Un `estado` que no existe, vacío o con una coma de más también da 400.
+
+### P14 — «A menos de 50 m» de `/reportes/cercanos`
+Estado: PROVISORIA (autónomo)
+Hueco: si un punto a exactamente 50 m entra.
+Decisión: entra (distancia ≤ radio, por haversine). `radioMetros` por defecto 50, máximo 200
+(R9); más de 200 es 400. El resultado es paginado como toda lista (máximo 100), del más cercano
+al más lejano, desempatando por id. Un parámetro que no se conoce (por ejemplo `estado`) es 400.
+
+### P15 — Orden de las reglas al sumarse a un reporte
+Estado: PROVISORIA (autónomo)
+Hueco: si alguien ya sumado repite el pedido cuando el reporte se cerró, ¿200 o `REPORTE_CERRADO`?
+Decisión: el orden es 404, `ADHESION_A_REPORTE_PROPIO`, «ya estaba sumado» (200, sin cambios) y
+por último `REPORTE_CERRADO`. Así el reintento de la cola offline nunca falla por algo que ya
+había pasado. La tabla `adhesiones` (id `adh-…`, índice único por reporte y vecino) no sale por
+la API; `adhesiones` se recalcula contando la tabla, tomando antes el lock de la fila del reporte.
+Consecuencia en el contrato: 201 la primera vez, 200 si ya estaba.

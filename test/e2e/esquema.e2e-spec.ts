@@ -11,6 +11,7 @@ import { Usuario } from '../../src/modulos/usuarios/usuario.entidad.js';
 import { aUsuario } from '../../src/modulos/usuarios/usuarios.mapeador.js';
 import { AlmacenArchivos } from '../../src/comun/archivos/almacen-archivos.js';
 import { Reloj } from '../../src/comun/reloj/reloj.js';
+import { Adhesion } from '../../src/modulos/reportes/adhesion.entidad.js';
 import { Reporte } from '../../src/modulos/reportes/reporte.entidad.js';
 import { ServicioZonas } from '../../src/modulos/catalogos/zonas.servicio.js';
 import { anioMesEnZona } from '../../src/comun/fechas/fechas.js';
@@ -247,6 +248,37 @@ describe('AGENTS §10.4 — Las semillas de demo cumplen el contrato', () => {
         .get(new URL(todos[0].fotos[0].url).pathname);
       expect(foto.status).toBe(200);
       expect(foto.headers['content-type']).toBe('image/png');
+    });
+
+    it('M3 — /reportes/cercanos en Rocamora y Bolívar trae los baches abiertos y no el duplicado', async () => {
+      const res = await ctx
+        .http()
+        .get('/reportes/cercanos?latitud=-33.0089&longitud=-58.5142');
+      esperarContrato(res, 'Reporte');
+      const ids = res.body.datos.map((r: R) => r.id);
+      expect(ids).toHaveLength(5);
+      expect(ids).toContain('rep-00412');
+      expect(ids).not.toContain('rep-00424');
+    });
+
+    it('M3 — el mapa sembrado no trae rechazados y hay uno con muchas adhesiones', async () => {
+      const res = await ctx.http().get('/reportes?porPagina=500');
+      esperarContrato(res, 'Reporte');
+      expect(
+        res.body.datos.some(
+          (r: { estado: string }) => r.estado === 'rechazado',
+        ),
+      ).toBe(false);
+      const max = Math.max(
+        ...res.body.datos.map((r: { adhesiones: number }) => r.adhesiones),
+      );
+      expect(max).toBeGreaterThanOrEqual(4);
+      const r412 = res.body.datos.find((r: R) => r.id === 'rep-00412');
+      expect(r412.adhesiones).toBe(
+        await ctx.dataSource
+          .getRepository(Adhesion)
+          .countBy({ reporteId: 'rep-00412' }),
+      );
     });
 
     it('cinco baches a menos de 50 m entre sí, uno marcado como duplicado', () => {

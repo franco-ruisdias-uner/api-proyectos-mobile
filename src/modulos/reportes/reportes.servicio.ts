@@ -1,6 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, In, Like, type Repository } from 'typeorm';
+import {
+  Between,
+  DataSource,
+  In,
+  IsNull,
+  Like,
+  type FindOptionsWhere,
+  type Repository,
+} from 'typeorm';
 import { ServicioArchivos } from '../../comun/archivos/archivos.servicio.js';
 import { esViolacionDeUnicidad } from '../../comun/db/unicidad.js';
 import { ErrorApi } from '../../comun/errores/catalogo.js';
@@ -9,6 +17,11 @@ import {
   parsearInstante,
   sinMilisegundos,
 } from '../../comun/fechas/fechas.js';
+import {
+  cajaAlrededorDe,
+  distanciaEnMetros,
+  type Caja,
+} from '../../comun/geo/distancia.js';
 import { nuevoId } from '../../comun/ids/ids.js';
 import { saltoYTamano, type Pagina } from '../../comun/respuesta/respuesta.js';
 import { Reloj } from '../../comun/reloj/reloj.js';
@@ -17,6 +30,11 @@ import { ServicioZonas } from '../catalogos/zonas.servicio.js';
 import type { Usuario } from '../usuarios/usuario.entidad.js';
 import { CambioDeEstado } from './cambio-de-estado.entidad.js';
 import type { CrearReporteDto } from './dto/crear-reporte.dto.js';
+import {
+  RADIO_CERCANOS_POR_DEFECTO,
+  type FiltroCercanosDto,
+  type FiltroMapaDto,
+} from './dto/filtro-mapa.dto.js';
 import { FotoDeReporte } from './foto.entidad.js';
 import { Reporte } from './reporte.entidad.js';
 import {
@@ -26,6 +44,11 @@ import {
   prefijoDelAnio,
 } from './reglas/codigo.js';
 import { esFechaFutura } from './reglas/fecha-hecho.js';
+import {
+  ESTADOS_ABIERTOS,
+  ESTADOS_DEL_MAPA_POR_DEFECTO,
+} from './reglas/estados.js';
+import { problemaDelFiltroGeografico } from './reglas/filtro-mapa.js';
 
 export interface ReporteCompleto {
   reporte: Reporte;
@@ -88,6 +111,93 @@ export class ServicioReportes {
       ...saltoYTamano(pagina),
     });
     return [await this.conFotos(filas), total];
+  }
+
+  /** El mapa de la ciudad (M3). Sin `estado`, no incluye los rechazados (D10). */
+  async listarMapa(f: FiltroMapaDto): Promise<[ReporteCompleto[], number]> {
+    const problema = problemaDelFiltroGeografico(f);
+    if (problema) throw new ErrorApi('VALIDACION_FALLIDA', problema);
+
+    const donde: FindOptionsWhere<Reporte> = {
+      estado: In(f.estado ?? ESTADOS_DEL_MAPA_POR_DEFECTO),
+    };
+    if (f.tipoId) donde.tipoId = f.tipoId;
+    if (f.zonaId) donde.zonaId = f.zonaId;
+
+    // Prefiltro por caja en la base: la de la zona visible y la que rodea al radio.
+    let caja = f.norte === undefined ? null : cajaVisible(f);
+    const centro =
+      f.latitud === undefined
+        ? null
+        : { latitud: f.latitud, longitud: f.longitud! };
+    if (centro) {
+      caja = interseccion(caja, cajaAlrededorDe(centro, f.radioMetros!));
+    }
+    if (caja) {
+      donde.latitud = Between(caja.sur, caja.norte);
+      donde.longitud = Between(caja.oeste, caja.este);
+    }
+
+    if (!centro) {
+      const [filas, total] = await this.reportes.findAndCount({
+        where: donde,
+        order: { creadoEn: 'DESC', id: 'DESC' },
+        ...saltoYTamano(f),
+      });
+      return [await this.conFotos(filas), total];
+    }
+    return this.pagina(
+      await this.masCercanos(donde, centro, f.radioMetros!),
+      f,
+    );
+  }
+
+  /** Reportes abiertos y no duplicados cerca de un punto (R9), del más cercano al más lejano. */
+  async listarCercanos(
+    f: FiltroCercanosDto,
+  ): Promise<[ReporteCompleto[], number]> {
+    const donde: FindOptionsWhere<Reporte> = {
+      estado: In(ESTADOS_ABIERTOS),
+      duplicadoDe: IsNull(),
+    };
+    if (f.tipoId) donde.tipoId = f.tipoId;
+    const radio = f.radioMetros ?? RADIO_CERCANOS_POR_DEFECTO;
+    const centro = { latitud: f.latitud, longitud: f.longitud };
+    const caja = cajaAlrededorDe(centro, radio);
+    donde.latitud = Between(caja.sur, caja.norte);
+    donde.longitud = Between(caja.oeste, caja.este);
+    return this.pagina(await this.masCercanos(donde, centro, radio), f);
+  }
+
+  /** Los que la caja dejó pasar y están de verdad dentro del radio, ordenados por distancia. */
+  private async masCercanos(
+    donde: FindOptionsWhere<Reporte>,
+    centro: { latitud: number; longitud: number },
+    radioMetros: number,
+  ): Promise<Reporte[]> {
+    const candidatos = await this.reportes.find({ where: donde });
+    return candidatos
+      .map((reporte) => ({
+        reporte,
+        metros: distanciaEnMetros(centro, reporte),
+      }))
+      .filter(({ metros }) => metros <= radioMetros)
+      .sort(
+        (a, b) =>
+          a.metros - b.metros || a.reporte.id.localeCompare(b.reporte.id),
+      )
+      .map(({ reporte }) => reporte);
+  }
+
+  private async pagina(
+    ordenados: Reporte[],
+    p: Pagina,
+  ): Promise<[ReporteCompleto[], number]> {
+    const { skip, take } = saltoYTamano(p);
+    return [
+      await this.conFotos(ordenados.slice(skip, skip + take)),
+      ordenados.length,
+    ];
   }
 
   async listarCambios(
@@ -251,4 +361,22 @@ export class ServicioReportes {
     }
     return clave;
   }
+}
+
+const cajaVisible = (f: FiltroMapaDto): Caja => ({
+  norte: f.norte!,
+  sur: f.sur!,
+  este: f.este!,
+  oeste: f.oeste!,
+});
+
+/** La parte común de dos cajas (o la segunda si la primera no hay). Puede quedar «vacía» (norte < sur). */
+function interseccion(a: Caja | null, b: Caja): Caja {
+  if (!a) return b;
+  return {
+    norte: Math.min(a.norte, b.norte),
+    sur: Math.max(a.sur, b.sur),
+    este: Math.min(a.este, b.este),
+    oeste: Math.max(a.oeste, b.oeste),
+  };
 }
