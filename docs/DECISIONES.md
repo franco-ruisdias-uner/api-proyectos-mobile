@@ -228,8 +228,8 @@ Hueco: la especificación define `fecha`, `desde` y `hasta` pero no todos los bo
 Decisión:
 - Un día es de las 00:00 a las 24:00 de Buenos Aires, **medio abierto**: un evento que termina
   justo a las 00:00 no aparece en el día siguiente; uno que empieza a las 00:00 sí.
-- `desde` vale hoy si no viene, también cuando sólo viene `hasta` (un `hasta` en el pasado da
-  lista vacía). `hasta` anterior a `desde` es `VALIDACION_FALLIDA`.
+- `desde` vale hoy si no viene, también cuando sólo viene `hasta`; por eso un `hasta` anterior a
+  hoy (o a `desde`) es `VALIDACION_FALLIDA`, no una lista vacía.
 - `fecha` junto con `desde` o `hasta` es `VALIDACION_FALLIDA`.
 - Los días van de 1900 a 2999 y deben existir (no hay 30 de febrero).
 - `estado=programado` no incluye los ya terminados (salen como `finalizado`).
