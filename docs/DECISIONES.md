@@ -80,3 +80,29 @@ HTTP). B) Ignorar el rango y mandar el archivo entero con 200.
 Decisión: A. Es lo que esperan `expo-audio` y `expo-video`; se agrega un código al catálogo
 (agregar códigos está permitido).
 Consecuencia en el contrato: 416 `RANGO_NO_SATISFACIBLE` en `GET /archivos/<clave>`.
+
+### P3 — Forma de las zonas sembradas
+Estado: PROVISORIA (autónomo)
+Hueco: la especificación (§8) pide cuatro zonas que cubran la planta urbana real sin
+superponerse ni dejar huecos, pero no dice cómo se reparten ni sus nombres.
+Opciones: A) Un rectángulo sobre la ciudad repartido en cuatro triángulos (Norte, Este, Sur,
+Oeste) que comparten el centro. B) Polígonos irregulares calcados de los barrios. C) Cuadrantes.
+Decisión: A. Garantiza por construcción que no hay superposición ni huecos (lo verifica un
+test con una grilla de puntos) y el ejemplo del PRD (Rocamora 1240) cae en la zona norte. Es
+una aproximación de la ciudad, no un plano oficial.
+Consecuencia en el contrato: `GET /zonas` devuelve polígonos de tres puntos.
+
+### P4 — Orden y paginación de los catálogos
+Estado: PROVISORIA (autónomo)
+Hueco: la especificación no dice cómo se ordenan los catálogos ni si tienen otro máximo de
+`porPagina`.
+Decisión: tipos y zonas por `nombre` y luego `id`; cuadrillas por `id`. Paginación común
+(máximo 100): con ocho tipos y cuatro zonas alcanza.
+Consecuencia en el contrato: un vecino que quiera "Otro problema" al final lo ordena en el
+teléfono.
+
+### P5 — Filtro de cuadrillas sin coincidencias
+Estado: PROVISORIA (autónomo)
+Hueco: qué devuelve `GET /cuadrillas?zonaId=` con una zona que no existe.
+Decisión: lista vacía con 200 si el id tiene la forma correcta (`zon-…`); 400 si no la tiene.
+Consecuencia en el contrato: no hay código `ZONA_NO_ENCONTRADA` en este endpoint.

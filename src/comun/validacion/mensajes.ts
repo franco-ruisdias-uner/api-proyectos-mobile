@@ -16,6 +16,8 @@ const ETIQUETAS: Record<string, string> = {
   archivo: 'el archivo',
   pagina: 'el número de página',
   porPagina: 'la cantidad por página',
+  zonaId: 'la zona',
+  activa: 'el filtro de cuadrillas activas',
   latitud: 'la latitud',
   longitud: 'la longitud',
 };

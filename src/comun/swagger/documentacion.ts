@@ -70,3 +70,30 @@ export function DocRespuestaUno(
     }),
   );
 }
+
+/** Respuesta { datos: [<modelo>], meta: { total, pagina, porPagina } }. */
+export function DocRespuestaLista(modelo: Type<unknown>, descripcion: string) {
+  return applyDecorators(
+    ApiExtraModels(modelo),
+    ApiResponse({
+      status: 200,
+      description: descripcion,
+      schema: {
+        type: 'object',
+        properties: {
+          datos: { type: 'array', items: { $ref: getSchemaPath(modelo) } },
+          meta: {
+            type: 'object',
+            properties: {
+              total: { type: 'integer', example: 42 },
+              pagina: { type: 'integer', example: 1 },
+              porPagina: { type: 'integer', example: 20 },
+            },
+            required: ['total', 'pagina', 'porPagina'],
+          },
+        },
+        required: ['datos', 'meta'],
+      },
+    }),
+  );
+}

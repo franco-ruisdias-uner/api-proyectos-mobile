@@ -19,9 +19,6 @@ const AUXILIARES = new Set([
  * Cuando un módulo empieza a devolver uno, se saca de acá (el test avisa).
  */
 const TODAVIA_NO: Record<string, string> = {
-  TipoDeReporte: 'M1',
-  Zona: 'M1',
-  Cuadrilla: 'M1',
   Reporte: 'M2',
   CambioDeEstado: 'M2',
 };

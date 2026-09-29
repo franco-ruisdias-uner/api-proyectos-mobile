@@ -134,6 +134,9 @@ operadores no se crean desde la app.
 | `POST` | `/dispositivos` | con sesión | `{ tokenExpo, plataforma }`: registra el teléfono para recibir push. |
 | `DELETE` | `/dispositivos/:tokenExpo` | con sesión | Lo da de baja. |
 | `POST` | `/dispositivos/prueba` | con sesión | Manda una push de prueba a tus teléfonos. |
+| `GET` | `/tipos-de-reporte` | público | Los ocho tipos de problema, con ícono y color. |
+| `GET` | `/zonas` | público | Las cuatro zonas de la ciudad, con su `limite` (polígono). |
+| `GET` | `/cuadrillas` | operador | Cuadrillas municipales. Filtros `zonaId` y `activa`. |
 <!-- endpoints:fin -->
 
 ### Códigos de error

@@ -28,3 +28,9 @@ export const NormalizarEmail = () =>
  */
 export const Opcional = () =>
   ValidateIf((_objeto: object, valor: unknown) => valor !== undefined);
+
+/** "true"/"false" de un parámetro de la URL a booleano; cualquier otra cosa la rechaza el validador. */
+export const BooleanoDeTexto = () =>
+  Transform(({ value }: { value: unknown }) =>
+    value === 'true' ? true : value === 'false' ? false : value,
+  );

@@ -24,6 +24,7 @@ import { crearPipeValidacion } from './comun/validacion/pipe.js';
 import { ENTORNO, EntornoModulo } from './config/entorno.modulo.js';
 import type { Entorno } from './config/entorno.js';
 import { AuthModulo } from './modulos/auth/auth.modulo.js';
+import { CatalogosModulo } from './modulos/catalogos/catalogos.modulo.js';
 import { DispositivosModulo } from './modulos/dispositivos/dispositivos.modulo.js';
 import { ControladorSalud } from './modulos/salud/salud.controlador.js';
 import { UsuariosModulo } from './modulos/usuarios/usuarios.modulo.js';
@@ -57,6 +58,7 @@ export class AppModule implements NestModule, OnApplicationBootstrap {
         AuthModulo,
         UsuariosModulo,
         DispositivosModulo,
+        CatalogosModulo,
       ],
       controllers: [ControladorSalud],
       providers: [

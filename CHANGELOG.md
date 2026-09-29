@@ -5,6 +5,16 @@ forma de las respuestas no cambia: sólo se agregan endpoints y códigos de erro
 
 ## Sin publicar
 
+### M1 — Catálogos
+
+- `GET /tipos-de-reporte` (público): los ocho tipos, ordenados por nombre. `icono` es un nombre
+  de Ionicons y `color` un hexadecimal.
+- `GET /zonas` (público): las cuatro zonas con su `limite`. Las zonas no se superponen ni dejan
+  huecos: es el rectángulo de la planta urbana repartido en Norte, Este, Sur y Oeste.
+- `GET /cuadrillas` (sólo operador): filtros `zonaId` y `activa=true|false`. Un vecino recibe
+  `403 SIN_PERMISO`.
+- Las tres listas aceptan `?pagina` y `?porPagina`.
+
 ### M0 — Base
 
 - `GET /salud`: para probar desde el teléfono que la API responde.

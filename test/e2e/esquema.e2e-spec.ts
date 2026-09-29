@@ -1,5 +1,7 @@
 import { crearApp, type AppDePrueba } from '../utilidades/crear-app.js';
 import { esperarContrato, esperarForma } from '../utilidades/contrato.js';
+import { Cuadrilla } from '../../src/modulos/catalogos/cuadrilla.entidad.js';
+import { Zona } from '../../src/modulos/catalogos/zona.entidad.js';
 import { sembrar } from '../../src/semillas/sembrar.js';
 import {
   USUARIOS_DEMO,
@@ -80,6 +82,28 @@ describe('AGENTS §10.4 — Las semillas de demo cumplen el contrato', () => {
     }
   });
 
+  it('ESPECIFICACION §8 — los catálogos sembrados cumplen el contrato y salen por la API', async () => {
+    const op = await ctx
+      .http()
+      .post('/auth/ingreso')
+      .send({ email: 'operador.norte@demo.ar', contrasena: CONTRASENA_DEMO });
+    const auth = ['Authorization', `Bearer ${op.body.datos.token}`] as const;
+    const tipos = await ctx.http().get('/tipos-de-reporte');
+    esperarContrato(tipos, 'TipoDeReporte');
+    expect(tipos.body.meta.total).toBe(8);
+    const zonas = await ctx.http().get('/zonas');
+    esperarContrato(zonas, 'Zona');
+    expect(zonas.body.meta.total).toBe(4);
+    const cuadrillas = await ctx
+      .http()
+      .get('/cuadrillas')
+      .set(...auth);
+    esperarContrato(cuadrillas, 'Cuadrilla');
+    expect(
+      cuadrillas.body.datos.find((c: { id: string }) => c.id === 'cua-02'),
+    ).toMatchObject({ nombre: 'Cuadrilla 2 — Bacheo', zonaId: 'zon-norte' });
+  });
+
   it('sembrar dos veces no duplica ni falla', async () => {
     const antes = await ctx.dataSource.getRepository(Usuario).count();
     await sembrar(
@@ -88,5 +112,7 @@ describe('AGENTS §10.4 — Las semillas de demo cumplen el contrato', () => {
       ctx.app.get(Reloj),
     );
     expect(await ctx.dataSource.getRepository(Usuario).count()).toBe(antes);
+    expect(await ctx.dataSource.getRepository(Zona).count()).toBe(4);
+    expect(await ctx.dataSource.getRepository(Cuadrilla).count()).toBe(9);
   });
 });

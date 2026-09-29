@@ -60,3 +60,35 @@ export class PruebaDePushDoc {
   @ApiProperty({ example: 1, description: 'A cuántos dispositivos se mandó.' })
   enviadas: number;
 }
+
+export class TipoDeReporteDoc {
+  @ApiProperty({ example: 'tip-bache' }) id: string;
+  @ApiProperty({ example: 'Bache' }) nombre: string;
+  @ApiProperty({
+    example: 'construct',
+    description: 'Nombre de un ícono de Ionicons.',
+  })
+  icono: string;
+  @ApiProperty({ example: '#E67E22' }) color: string;
+  @ApiProperty({ example: 'Obras Públicas' }) areaResponsable: string;
+}
+
+class CoordenadasDoc {
+  @ApiProperty({ example: -33.0089 }) latitud: number;
+  @ApiProperty({ example: -58.5142 }) longitud: number;
+}
+
+export class ZonaDoc {
+  @ApiProperty({ example: 'zon-norte' }) id: string;
+  @ApiProperty({ example: 'Zona Norte' }) nombre: string;
+  @ApiProperty({ type: [CoordenadasDoc] }) limite: CoordenadasDoc[];
+  @ApiProperty({ example: 'Marcela Ibarra' }) referente: string;
+}
+
+export class CuadrillaDoc {
+  @ApiProperty({ example: 'cua-02' }) id: string;
+  @ApiProperty({ example: 'Cuadrilla 2 — Bacheo' }) nombre: string;
+  @ApiProperty({ example: 'zon-norte' }) zonaId: string;
+  @ApiProperty({ example: 'Bacheo y calzadas' }) especialidad: string;
+  @ApiProperty({ example: true }) activa: boolean;
+}
