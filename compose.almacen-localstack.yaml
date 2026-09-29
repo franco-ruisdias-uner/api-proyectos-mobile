@@ -17,7 +17,6 @@ services:
     environment:
       SERVICES: s3
       LOCALSTACK_AUTH_TOKEN: "${LOCALSTACK_AUTH_TOKEN:?Falta LOCALSTACK_AUTH_TOKEN. Creá una cuenta gratis en https://app.localstack.cloud, copiá el token y volvé a correr el comando con LOCALSTACK_AUTH_TOKEN=<tu token>. Si no querés cuenta, usá compose.almacen-s3.yaml.}"
-    ports: ["${PUERTO_S3:-4566}:4566"]
     volumes: [almacen-localstack:/var/lib/localstack]
     healthcheck:
       test: ["CMD-SHELL", "curl -fs http://127.0.0.1:4566/_localstack/health"]
