@@ -216,3 +216,10 @@ por último `REPORTE_CERRADO`. Así el reintento de la cola offline nunca falla 
 había pasado. La tabla `adhesiones` (id `adh-…`, índice único por reporte y vecino) no sale por
 la API; `adhesiones` se recalcula contando la tabla, tomando antes el lock de la fila del reporte.
 Consecuencia en el contrato: 201 la primera vez, 200 si ya estaba.
+
+### P16 — Detalles menores de M3
+Estado: PROVISORIA (autónomo)
+- Un operador puede sumarse a un reporte ajeno (R10 no lo prohíbe).
+- `POST /reportes/:id/adhesiones` no tiene cuerpo: lo que se mande se ignora.
+- `radioMetros` acepta decimales.
+- Un token inválido en un endpoint público lo rechaza el guard con 401 (comportamiento de M0).
