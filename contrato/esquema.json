@@ -1,0 +1,387 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ArchivoSubido": {
+      "additionalProperties": false,
+      "description": "Respuesta de POST /archivos.",
+      "properties": {
+        "bytes": {
+          "type": "number"
+        },
+        "tipo": {
+          "enum": ["imagen", "audio", "video"],
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "required": ["url", "tipo", "bytes"],
+      "type": "object"
+    },
+    "CambioDeEstado": {
+      "additionalProperties": false,
+      "properties": {
+        "comentario": {
+          "type": ["string", "null"]
+        },
+        "estado": {
+          "$ref": "#/definitions/EstadoReporte"
+        },
+        "fechaHora": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "operadorId": {
+          "type": ["string", "null"]
+        },
+        "reporteId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "reporteId",
+        "estado",
+        "comentario",
+        "operadorId",
+        "fechaHora"
+      ],
+      "type": "object"
+    },
+    "Coordenadas": {
+      "additionalProperties": false,
+      "properties": {
+        "latitud": {
+          "type": "number"
+        },
+        "longitud": {
+          "type": "number"
+        }
+      },
+      "required": ["latitud", "longitud"],
+      "type": "object"
+    },
+    "Cuadrilla": {
+      "additionalProperties": false,
+      "properties": {
+        "activa": {
+          "type": "boolean"
+        },
+        "especialidad": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "nombre": {
+          "type": "string"
+        },
+        "zonaId": {
+          "type": "string"
+        }
+      },
+      "required": ["id", "nombre", "zonaId", "especialidad", "activa"],
+      "type": "object"
+    },
+    "Dispositivo": {
+      "additionalProperties": false,
+      "description": "Respuesta de POST /dispositivos.",
+      "properties": {
+        "plataforma": {
+          "$ref": "#/definitions/Plataforma"
+        },
+        "tokenExpo": {
+          "type": "string"
+        }
+      },
+      "required": ["tokenExpo", "plataforma"],
+      "type": "object"
+    },
+    "EstadoReporte": {
+      "enum": ["recibido", "en_revision", "asignado", "resuelto", "rechazado"],
+      "type": "string"
+    },
+    "Foto": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "momento": {
+          "enum": ["problema", "arreglo"],
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "required": ["id", "url", "momento"],
+      "type": "object"
+    },
+    "Meta": {
+      "additionalProperties": false,
+      "description": "Paginación de toda respuesta de lista.",
+      "properties": {
+        "pagina": {
+          "type": "number"
+        },
+        "porPagina": {
+          "type": "number"
+        },
+        "total": {
+          "type": "number"
+        }
+      },
+      "required": ["total", "pagina", "porPagina"],
+      "type": "object"
+    },
+    "Plataforma": {
+      "description": "Plataforma del teléfono que registra su token de push.",
+      "enum": ["ios", "android"],
+      "type": "string"
+    },
+    "PruebaDePush": {
+      "additionalProperties": false,
+      "description": "Respuesta de POST /dispositivos/prueba: a cuántos dispositivos se mandó la push.",
+      "properties": {
+        "enviadas": {
+          "type": "number"
+        }
+      },
+      "required": ["enviadas"],
+      "type": "object"
+    },
+    "Reporte": {
+      "additionalProperties": false,
+      "properties": {
+        "adhesiones": {
+          "type": "number"
+        },
+        "audioUrl": {
+          "type": ["string", "null"]
+        },
+        "autorId": {
+          "type": "string"
+        },
+        "codigo": {
+          "type": "string"
+        },
+        "coordenadas": {
+          "$ref": "#/definitions/Coordenadas"
+        },
+        "creadoEn": {
+          "type": "string"
+        },
+        "cuadrillaId": {
+          "type": ["string", "null"]
+        },
+        "descripcion": {
+          "type": ["string", "null"]
+        },
+        "direccion": {
+          "type": "string"
+        },
+        "duplicadoDe": {
+          "type": ["string", "null"]
+        },
+        "estado": {
+          "$ref": "#/definitions/EstadoReporte"
+        },
+        "fotos": {
+          "items": {
+            "$ref": "#/definitions/Foto"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "sincronizado": {
+          "type": "boolean"
+        },
+        "tipoId": {
+          "type": "string"
+        },
+        "zonaId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "codigo",
+        "tipoId",
+        "descripcion",
+        "audioUrl",
+        "fotos",
+        "coordenadas",
+        "direccion",
+        "zonaId",
+        "estado",
+        "autorId",
+        "cuadrillaId",
+        "duplicadoDe",
+        "adhesiones",
+        "creadoEn",
+        "sincronizado"
+      ],
+      "type": "object"
+    },
+    "RespuestaError": {
+      "additionalProperties": false,
+      "description": "Error: { error: { codigo, mensaje } } — sin otros campos.",
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "codigo": {
+              "type": "string"
+            },
+            "mensaje": {
+              "type": "string"
+            }
+          },
+          "required": ["codigo", "mensaje"],
+          "type": "object"
+        }
+      },
+      "required": ["error"],
+      "type": "object"
+    },
+    "Rol": {
+      "enum": ["vecino", "operador"],
+      "type": "string"
+    },
+    "Salud": {
+      "additionalProperties": false,
+      "description": "Respuesta de GET /salud.",
+      "properties": {
+        "almacen": {
+          "enum": [
+            "local",
+            "aws",
+            "supabase",
+            "r2",
+            "b2",
+            "s3proxy",
+            "localstack"
+          ],
+          "type": "string"
+        },
+        "estado": {
+          "const": "ok",
+          "type": "string"
+        },
+        "motor": {
+          "enum": ["better-sqlite3", "postgres", "mysql", "mariadb"],
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": ["estado", "motor", "almacen", "version"],
+      "type": "object"
+    },
+    "Sesion": {
+      "additionalProperties": false,
+      "description": "Respuesta de POST /auth/registro y POST /auth/ingreso.",
+      "properties": {
+        "token": {
+          "type": "string"
+        },
+        "usuario": {
+          "$ref": "#/definitions/Usuario"
+        }
+      },
+      "required": ["token", "usuario"],
+      "type": "object"
+    },
+    "TipoDeReporte": {
+      "additionalProperties": false,
+      "properties": {
+        "areaResponsable": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string"
+        },
+        "icono": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "nombre": {
+          "type": "string"
+        }
+      },
+      "required": ["id", "nombre", "icono", "color", "areaResponsable"],
+      "type": "object"
+    },
+    "Usuario": {
+      "additionalProperties": false,
+      "properties": {
+        "avisosActivos": {
+          "type": "boolean"
+        },
+        "creadoEn": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "nombre": {
+          "type": "string"
+        },
+        "rol": {
+          "$ref": "#/definitions/Rol"
+        },
+        "telefono": {
+          "type": ["string", "null"]
+        },
+        "zonaId": {
+          "type": ["string", "null"]
+        }
+      },
+      "required": [
+        "id",
+        "nombre",
+        "email",
+        "telefono",
+        "rol",
+        "zonaId",
+        "avisosActivos",
+        "creadoEn"
+      ],
+      "type": "object"
+    },
+    "Zona": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "limite": {
+          "items": {
+            "$ref": "#/definitions/Coordenadas"
+          },
+          "type": "array"
+        },
+        "nombre": {
+          "type": "string"
+        },
+        "referente": {
+          "type": "string"
+        }
+      },
+      "required": ["id", "nombre", "limite", "referente"],
+      "type": "object"
+    }
+  }
+}

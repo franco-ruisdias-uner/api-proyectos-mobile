@@ -50,3 +50,17 @@ export interface Salud {
   almacen: "local" | "aws" | "supabase" | "r2" | "b2" | "s3proxy" | "localstack";
   version: string;
 }
+
+/** Plataforma del teléfono que registra su token de push. */
+export type Plataforma = "ios" | "android";
+
+/** Respuesta de POST /dispositivos. */
+export interface Dispositivo {
+  tokenExpo: string;
+  plataforma: Plataforma;
+}
+
+/** Respuesta de POST /dispositivos/prueba: a cuántos dispositivos se mandó la push. */
+export interface PruebaDePush {
+  enviadas: number;
+}
