@@ -1,7 +1,7 @@
 import { Entity, Index } from 'typeorm';
 import {
   ColumnaEnum,
-  ColumnaId,
+  ColumnaIdDeCliente,
   ColumnaInstante,
   ColumnaTexto,
   ColumnaTextoLargo,
@@ -11,7 +11,7 @@ import type { OrigenVisita } from '../../../contrato/tipos.js';
 @Entity('visitas')
 @Index(['usuarioId', 'fechaHora', 'id'])
 export class VisitaEntidad {
-  @ColumnaId()
+  @ColumnaIdDeCliente()
   id: string;
 
   @ColumnaTexto(40)

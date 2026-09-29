@@ -288,3 +288,13 @@ Decisión:
 Descartado: `403` con un `id` ajeno en el alta (filtraría que el id existe; `409` no dice de quién es);
 `404` en vez de `403` para el PATCH ajeno (AGENTS pide `SIN_PERMISO` para el dueño).
 
+
+### M4-2 — Ids de cliente sensibles a mayúsculas en MySQL y MariaDB
+Estado: PROVISORIA (autónomo)
+Hueco: AGENTS §10.5 admite mayúsculas en el id del cliente (`vis-AbC` y `vis-abc` son distintos), pero
+MySQL y MariaDB comparan texto sin distinguirlas. Lo encontró el verificador.
+Decisión: la columna `visitas.id` usa collation binaria (`utf8mb4_bin`) sólo en esos dos motores
+(`ColumnaIdDeCliente` en `src/comun/db/columnas.ts`). Los cuatro motores se comportan igual.
+Puntos que el verificador dejó abiertos (se aceptó el comportamiento actual): la nota se mide después
+de recortar y en caracteres UTF-16; una `fotoUri` con la ruta `/archivos/…` de esta API se acepta con
+cualquier host si la clave existe; un query param desconocido en `GET /yo/visitas` es `400`.

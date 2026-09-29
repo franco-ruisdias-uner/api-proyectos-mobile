@@ -17,6 +17,17 @@ const motor = () => process.env.DB_MOTOR ?? 'better-sqlite3';
 
 export const ColumnaId = () => PrimaryColumn({ type: 'varchar', length: 40 });
 
+/**
+ * Id que puede generar el teléfono (con mayúsculas): MySQL y MariaDB comparan texto sin
+ * distinguirlas por defecto, así que `vis-AbC` y `vis-abc` chocarían. Collation binaria ahí.
+ */
+export const ColumnaIdDeCliente = () =>
+  PrimaryColumn({
+    type: 'varchar',
+    length: 40,
+    ...(motor() === 'mysql' || motor() === 'mariadb' ? { collation: 'utf8mb4_bin' } : {}),
+  });
+
 /** Texto corto con largo explícito (MySQL lo exige para `varchar` y para índices). */
 export const ColumnaTexto = (largo: number, o?: Opciones) =>
   Column({ type: 'varchar', length: largo, ...comunes(o) });
