@@ -10,11 +10,13 @@ const { AppModule } = await import('../app.module.js');
 const { AlmacenArchivos } =
   await import('../comun/archivos/almacen-archivos.js');
 const { Reloj } = await import('../comun/reloj/reloj.js');
-const { ErrorDeConfiguracion } = await import('../config/entorno.js');
+const { ErrorDeConfiguracion, validarEntorno } =
+  await import('../config/entorno.js');
 const { sembrar } = await import('./sembrar.js');
 type DataSource = import('typeorm').DataSource;
 
 try {
+  validarEntorno(process.env);
   // Sin sincronizar al arrancar ni sembrar solo: acá se hace a mano, en orden.
   const app = await NestFactory.createApplicationContext(
     AppModule.registrar({ DB_SINCRONIZAR: 'false', SEMBRAR_SI_VACIA: 'false' }),

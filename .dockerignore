@@ -1,0 +1,10 @@
+node_modules
+dist
+coverage
+datos
+archivos
+.git
+.env
+test
+*.tsbuildinfo
+docs/prd.pdf

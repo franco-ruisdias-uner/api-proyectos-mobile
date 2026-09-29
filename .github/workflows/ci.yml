@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verificar:
+    name: verificar (TZ=${{ matrix.tz }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tz: [UTC, America/Argentina/Buenos_Aires]
+    env:
+      TZ: ${{ matrix.tz }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm verificar
+
+  matriz:
+    name: e2e ${{ matrix.motor }} (TZ=${{ matrix.tz }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        motor: [postgres, mysql, mariadb]
+        tz: [UTC, America/Argentina/Buenos_Aires]
+        include:
+          - motor: postgres
+            url: postgres://api:api@127.0.0.1:5432/api
+          - motor: mysql
+            url: mysql://api:api@127.0.0.1:3306/api
+          - motor: mariadb
+            url: mysql://api:api@127.0.0.1:3306/api
+    services:
+      db:
+        image: ${{ matrix.motor == 'postgres' && 'postgres:17' || matrix.motor == 'mysql' && 'mysql:8.4' || 'mariadb:11' }}
+        env:
+          POSTGRES_USER: api
+          POSTGRES_PASSWORD: api
+          POSTGRES_DB: api
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: api
+          MYSQL_USER: api
+          MYSQL_PASSWORD: api
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: api
+          MARIADB_USER: api
+          MARIADB_PASSWORD: api
+        ports:
+          - ${{ matrix.motor == 'postgres' && '5432:5432' || '3306:3306' }}
+    env:
+      TZ: ${{ matrix.tz }}
+      DB_MOTOR: ${{ matrix.motor }}
+      DB_URL: ${{ matrix.url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Esperar la base
+        run: |
+          node -e '
+            const net = require("node:net");
+            const puerto = process.env.DB_MOTOR === "postgres" ? 5432 : 3306;
+            let n = 0;
+            const probar = () => {
+              const s = net.connect(puerto, "127.0.0.1", () => { s.end(); setTimeout(() => process.exit(0), 5000); });
+              s.on("error", () => (++n > 90 ? process.exit(1) : setTimeout(probar, 1000)));
+            };
+            probar();'
+      - run: pnpm test:e2e
+
+  docker:
+    name: docker compose
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: node scripts/probar-docker.mjs

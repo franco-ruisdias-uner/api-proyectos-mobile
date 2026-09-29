@@ -11,7 +11,8 @@ const { NestFactory } = await import('@nestjs/core');
 const { AppModule } = await import('./app.module.js');
 const { configurarAplicacion, OPCIONES_NEST } = await import('./aplicacion.js');
 const { ENTORNO } = await import('./config/entorno.modulo.js');
-const { ErrorDeConfiguracion } = await import('./config/entorno.js');
+const { ErrorDeConfiguracion, validarEntorno } =
+  await import('./config/entorno.js');
 type NestExpressApplication =
   import('@nestjs/platform-express').NestExpressApplication;
 type Entorno = import('./config/entorno.js').Entorno;
@@ -26,6 +27,8 @@ function direccionesDeRed(puerto: number): string[] {
 }
 
 async function arrancar(): Promise<void> {
+  // Antes de Nest, para que un .env incompleto se explique sin un stack trace de por medio.
+  validarEntorno(process.env);
   const app = await NestFactory.create<NestExpressApplication>(
     AppModule.registrar(),
     OPCIONES_NEST,
