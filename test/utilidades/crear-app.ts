@@ -6,6 +6,7 @@ import { Test } from '@nestjs/testing';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { getDataSourceToken } from '@nestjs/typeorm';
 import type { DataSource } from 'typeorm';
+import type { AddressInfo } from 'node:net';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module.js';
 import { configurarAplicacion, OPCIONES_NEST } from '../../src/aplicacion.js';
@@ -84,7 +85,11 @@ export async function crearApp(
     logger: ['error'],
   });
   configurarAplicacion(app);
-  await app.init();
+  // Un servidor fijo por archivo, en vez del efímero que supertest abre y cierra en cada
+  // pedido: con cientos de pedidos seguidos, reciclar puertos daba ECONNRESET intermitentes.
+  await app.listen(0, '127.0.0.1');
+  const direccion = app.getHttpServer().address() as AddressInfo;
+  const origen = `http://127.0.0.1:${direccion.port}`;
 
   const dataSource = app.get<DataSource>(getDataSourceToken());
   // Base limpia por archivo de test, también en los motores de red de la matriz.
@@ -94,7 +99,7 @@ export async function crearApp(
   const avisos = app.get(ServicioAvisos);
   return {
     app,
-    http: () => request(app.getHttpServer()),
+    http: () => request(origen),
     reloj,
     notificador,
     dataSource,
