@@ -110,7 +110,8 @@ describe('R9 y D3 — bordes exactos de finalizado', () => {
   });
   afterAll(() => ctx.cerrar());
 
-  const estadoDe = async (id: string) => (await ctx.http().get(`/eventos/${id}`).expect(200)).body.datos.estado;
+  const estadoDe = async (id: string) =>
+    (await ctx.http().get(`/eventos/${id}`).expect(200)).body.datos.estado;
 
   it('con fin: a la hora exacta del fin sigue programado; un segundo después, finalizado', async () => {
     const id = await crearEvento(ctx, {
@@ -337,7 +338,9 @@ describe('Entrada — parámetros de la lista', () => {
 
   it('la lista es pública, también con token vencido o mal firmado', async () => {
     const { usuario } = await registrarTurista(ctx);
-    const vencido = await ctx.app.get(JwtService).signAsync({ sub: usuario.id, rol: 'turista' }, { expiresIn: -10 });
+    const vencido = await ctx.app
+      .get(JwtService)
+      .signAsync({ sub: usuario.id, rol: 'turista' }, { expiresIn: -10 });
     const conBasura = 'abc.def.ghi';
     for (const t of [vencido, conBasura]) {
       const res = await ctx.http().get('/eventos').set(conSesion(t));
@@ -366,7 +369,9 @@ describe('Filtros combinados y orden', () => {
     lugarB = await crearLugar(ctx);
     // 25 eventos con el mismo inicio: el orden tiene que ser estable (desempate por id).
     for (let i = 0; i < 25; i++) {
-      creados.push(await crearEvento(ctx, { inicio: en('2026-11-20T21:00:00-03:00'), lugarId: i % 2 ? lugarA : lugarB }));
+      creados.push(
+        await crearEvento(ctx, { inicio: en('2026-11-20T21:00:00-03:00'), lugarId: i % 2 ? lugarA : lugarB }),
+      );
     }
   });
   afterAll(() => ctx.cerrar());
@@ -392,13 +397,19 @@ describe('Filtros combinados y orden', () => {
       .expect(200);
     expect(res.body.meta.total).toBe(12);
     for (const e of res.body.datos) expect(e.lugarId).toBe(lugarA);
-    const nada = await ctx.http().get(`/eventos?fecha=2026-11-20&lugarId=${lugarA}&estado=cancelado`).expect(200);
+    const nada = await ctx
+      .http()
+      .get(`/eventos?fecha=2026-11-20&lugarId=${lugarA}&estado=cancelado`)
+      .expect(200);
     expect(nada.body.datos).toEqual([]);
     expect(nada.body.meta.total).toBe(0);
   });
 
   it('un evento sin lugar (dirección libre) no aparece al filtrar por lugarId', async () => {
-    const libre = await crearEvento(ctx, { inicio: en('2026-11-20T21:00:00-03:00'), direccionLibre: 'Plaza' });
+    const libre = await crearEvento(ctx, {
+      inicio: en('2026-11-20T21:00:00-03:00'),
+      direccionLibre: 'Plaza',
+    });
     const res = await ctx.http().get(`/eventos?lugarId=${lugarA}&porPagina=100`).expect(200);
     expect(ids(res.body)).not.toContain(libre);
   });
@@ -421,7 +432,9 @@ describe('PATCH /eventos/:id/estado — permisos, entrada y errores', () => {
 
   it('token vencido o mal firmado: 401 NO_AUTENTICADO', async () => {
     const id = await crearEvento(ctx);
-    const vencido = await ctx.app.get(JwtService).signAsync({ sub: admin.id, rol: 'admin' }, { expiresIn: -10 });
+    const vencido = await ctx.app
+      .get(JwtService)
+      .signAsync({ sub: admin.id, rol: 'admin' }, { expiresIn: -10 });
     esperarError(await patch(id, { estado: 'cancelado' }, vencido), 401, 'NO_AUTENTICADO');
     const otroSecreto = await new JwtService({ secret: 'otro-secreto-que-no-es' }).signAsync({
       sub: admin.id,
@@ -552,19 +565,26 @@ describe('GET /eventos/:id — ids raros', () => {
   });
   afterAll(() => ctx.cerrar());
 
-  it.each([['evt-'], ['EVT-ABC'], ['evt-%00'], ['evt-a b'], ['x'.repeat(4000)], ['..%2f..%2fetc'], ['evt-017%27']])(
-    '%s: 404 EVENTO_NO_ENCONTRADO (o RUTA_NO_ENCONTRADA), nunca 500',
-    async (id) => {
-      const res = await ctx.http().get(`/eventos/${id}`);
-      esperarSinRomper(res);
-      expect(res.status).toBe(404);
-    },
-  );
+  it.each([
+    ['evt-'],
+    ['EVT-ABC'],
+    ['evt-%00'],
+    ['evt-a b'],
+    ['x'.repeat(4000)],
+    ['..%2f..%2fetc'],
+    ['evt-017%27'],
+  ])('%s: 404 EVENTO_NO_ENCONTRADO (o RUTA_NO_ENCONTRADA), nunca 500', async (id) => {
+    const res = await ctx.http().get(`/eventos/${id}`);
+    esperarSinRomper(res);
+    expect(res.status).toBe(404);
+  });
 
   it('el detalle no exige cuenta, ni con token vencido', async () => {
     const id = await crearEvento(ctx);
     const { usuario } = await registrarTurista(ctx);
-    const vencido = await ctx.app.get(JwtService).signAsync({ sub: usuario.id, rol: 'turista' }, { expiresIn: -10 });
+    const vencido = await ctx.app
+      .get(JwtService)
+      .signAsync({ sub: usuario.id, rol: 'turista' }, { expiresIn: -10 });
     await ctx.http().get(`/eventos/${id}`).set(conSesion(vencido)).expect(200);
   });
 
@@ -613,9 +633,7 @@ describe('Semillas de la agenda — cada evento sembrado cumple el contrato (PRD
   it('hay uno gratis (precio 0) y uno con precio null, uno que cruza la medianoche', () => {
     expect(eventos.some((e) => e.precio === 0)).toBe(true);
     expect(eventos.some((e) => e.precio === null)).toBe(true);
-    expect(
-      eventos.some((e) => e.fin && e.inicio.slice(0, 10) !== e.fin.slice(0, 10)),
-    ).toBe(true);
+    expect(eventos.some((e) => e.fin && e.inicio.slice(0, 10) !== e.fin.slice(0, 10))).toBe(true);
   });
 
   it('todo evento con lugarId apunta a un lugar que existe', async () => {

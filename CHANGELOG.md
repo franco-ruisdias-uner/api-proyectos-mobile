@@ -3,6 +3,19 @@
 Lo que cambia en la API, escrito para quienes la usan desde la app. Desde la `v1.0.0` no se
 cambia la forma de ninguna respuesta: sólo se agregan cosas.
 
+## 0.5.0 — Mi recorrido
+
+- `GET /yo/visitas`: tu recorrido, en orden (la más vieja primero). Hasta 500 por página.
+- `POST /yo/visitas`: registra una visita. Podés mandar el `id` que generó el teléfono: si ya existe
+  y es tuyo, responde `200` con la visita que ya estaba (no se duplica), así que reintentar es seguro.
+  `201` si es nueva. `sincronizada` se ignora y siempre vuelve `true`.
+- `PATCH /yo/visitas/:id`: agrega o cambia la foto o la nota (la foto puede llegar después). `null`
+  las saca.
+- La foto (`fotoUri`) tiene que ser una URL que devolvió `POST /archivos`; un `file://` da
+  `ARCHIVO_NO_SUBIDO`. La nota, hasta 280 caracteres.
+- Errores nuevos: `VISITA_NO_ENCONTRADA`, `FECHA_EN_EL_FUTURO` (más de 5 minutos adelante) e `ID_EN_USO`.
+- Datos de demo: Lucía tiene cuatro visitas (`vis-311` con foto); `nuevo@demo.ar`, ninguna.
+
 ## 0.4.0 — Favoritos
 
 - `GET /yo/favoritos`: tus favoritos, el más nuevo primero.

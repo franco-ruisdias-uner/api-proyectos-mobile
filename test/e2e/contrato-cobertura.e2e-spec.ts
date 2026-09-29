@@ -17,6 +17,7 @@ const DEVUELTAS = [
   'Categoria',
   'Evento',
   'Favorito',
+  'Visita',
 ];
 /** Partes de otras entidades: se validan dentro de ellas. */
 const ANIDADAS = [
@@ -30,9 +31,7 @@ const ANIDADAS = [
   'RespuestaError',
 ];
 /** Entidades de módulos que todavía no están. */
-const PENDIENTES: Record<string, string> = {
-  Visita: 'M4',
-};
+const PENDIENTES: Record<string, string> = {};
 
 function archivosDeTest(carpeta: string): string[] {
   return readdirSync(carpeta, { withFileTypes: true }).flatMap((e) =>

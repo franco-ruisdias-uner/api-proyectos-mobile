@@ -16,6 +16,7 @@ import { EventosModulo } from './modulos/eventos/eventos.modulo.js';
 import { FavoritosModulo } from './modulos/favoritos/favoritos.modulo.js';
 import { LugaresModulo } from './modulos/lugares/lugares.modulo.js';
 import { SaludModulo } from './modulos/salud/salud.modulo.js';
+import { VisitasModulo } from './modulos/visitas/visitas.modulo.js';
 import { UsuariosModulo } from './modulos/usuarios/usuarios.modulo.js';
 import { SemillasModulo } from './semillas/semillas.modulo.js';
 
@@ -44,6 +45,7 @@ export class AppModule {
         LugaresModulo,
         EventosModulo,
         FavoritosModulo,
+        VisitasModulo,
         SaludModulo,
         SemillasModulo,
       ],

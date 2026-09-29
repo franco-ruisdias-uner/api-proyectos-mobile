@@ -10,7 +10,7 @@ por `fetch`, no tienen que tocar los tipos. Lo único nuevo es el "sobre" de cad
 algunos tipos que agrega la API (`contrato/api.ts`: `Sesion`, `ArchivoSubido`, `Salud`…).
 
 > **Estado:** está hecha la base (cuentas, `/yo`, archivos, notificaciones, `/salud`) y el
-> catálogo (categorías, lugares, búsqueda, cercanía, QR y audioguías), la agenda y los favoritos.
+> catálogo (categorías, lugares, búsqueda, cercanía, QR y audioguías), la agenda, los favoritos y Mi recorrido (visitas).
 > El recorrido llega en las próximas versiones: miren el `CHANGELOG.md`.
 
 ---
@@ -112,7 +112,7 @@ configurar nada más.
 
 | Email | Contraseña | Para qué |
 |---|---|---|
-| `lucia@mail.com` | `lucia1234` | La usuaria del PRD (`usr-201`), con `cat-museos` y `cat-playas` como categorías favoritas. Trae tres favoritos (`fav-088` es el del PRD); en las próximas versiones, visitas y un evento guardado. |
+| `lucia@mail.com` | `lucia1234` | La usuaria del PRD (`usr-201`), con `cat-museos` y `cat-playas` como categorías favoritas. Trae tres favoritos (`fav-088` es el del PRD) y cuatro visitas (`vis-311` con foto y nota); en las próximas versiones, un evento guardado. |
 | `nuevo@demo.ar` | `nuevo1234` | No tiene nada: para ver cómo quedan las listas vacías. |
 | `turismo@colon.demo.ar` | `turismo1234` | Cuenta de la Dirección de Turismo: puede suspender y cancelar eventos. |
 
@@ -231,6 +231,9 @@ Para **mirar** lugares, mapa y agenda no hace falta cuenta. La cuenta es para gu
 | `GET` | `/yo/favoritos` | 🔒 | Mis lugares favoritos |
 | `PUT` | `/yo/favoritos/:lugarId` | 🔒 | Marcar un lugar como favorito |
 | `DELETE` | `/yo/favoritos/:lugarId` | 🔒 | Sacar un lugar de favoritos |
+| `GET` | `/yo/visitas` | 🔒 | Mi recorrido |
+| `POST` | `/yo/visitas` | 🔒 | Registrar una visita |
+| `PATCH` | `/yo/visitas/:id` | 🔒 | Agregar la foto o la nota a una visita |
 | `GET` | `/salud` | 🌐 | ¿Anda la API? |
 <!-- /tabla:endpoints -->
 
@@ -251,12 +254,15 @@ según el `codigo`, que no cambia nunca.
 | 404 | `LUGAR_NO_ENCONTRADO` | No existe ese lugar. |
 | 404 | `QR_NO_RECONOCIDO` | Ese código no es de Mi Ciudad. Probá con el cartel de otro lugar. |
 | 404 | `EVENTO_NO_ENCONTRADO` | No existe ese evento. |
+| 404 | `VISITA_NO_ENCONTRADA` | No encontramos esa visita. |
 | 409 | `EMAIL_YA_REGISTRADO` | Ya hay una cuenta con ese email. |
+| 409 | `ID_EN_USO` | Ese identificador ya está en uso. |
 | 413 | `PEDIDO_DEMASIADO_GRANDE` | El pedido es demasiado grande. |
 | 413 | `ARCHIVO_DEMASIADO_GRANDE` | El archivo es demasiado grande. |
 | 415 | `TIPO_DE_ARCHIVO_NO_PERMITIDO` | Ese tipo de archivo no se puede subir. Probá con una foto, un audio o un video. |
 | 416 | `RANGO_NO_SATISFACIBLE` | No pudimos leer esa parte del archivo. |
 | 422 | `ARCHIVO_NO_SUBIDO` | Primero hay que subir la foto. |
+| 422 | `FECHA_EN_EL_FUTURO` | La fecha de la visita no puede ser posterior a este momento. |
 | 422 | `CATEGORIA_NO_ENCONTRADA` | Alguna de las categorías elegidas no existe. |
 | 500 | `ERROR_INTERNO` | Algo salió mal de nuestro lado. Probá de nuevo en un rato. |
 | 503 | `ALMACEN_NO_DISPONIBLE` | No pudimos acceder a los archivos. Probá de nuevo en un rato. |

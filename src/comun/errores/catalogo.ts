@@ -34,6 +34,13 @@ export const CATALOGO_ERRORES = {
   },
   // Agenda
   EVENTO_NO_ENCONTRADO: { estado: 404, mensaje: 'No existe ese evento.' },
+  // Mi recorrido
+  VISITA_NO_ENCONTRADA: { estado: 404, mensaje: 'No encontramos esa visita.' },
+  FECHA_EN_EL_FUTURO: {
+    estado: 422,
+    mensaje: 'La fecha de la visita no puede ser posterior a este momento.',
+  },
+  ID_EN_USO: { estado: 409, mensaje: 'Ese identificador ya está en uso.' },
   // Proyecto
   CATEGORIA_NO_ENCONTRADA: { estado: 422, mensaje: 'Alguna de las categorías elegidas no existe.' },
 } as const satisfies Record<string, { estado: number; mensaje: string }>;

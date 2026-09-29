@@ -9,7 +9,7 @@ const CLAVES = ['creadoEn', 'id', 'lugarId', 'usuarioId'];
 
 function sinRomper(res: { status: number; body: unknown }) {
   expect(res.status, JSON.stringify(res.body)).toBeLessThan(500);
-  if (res.status >= 400 && res.status !== 404 || (res.status === 404 && (res.body as object))) {
+  if ((res.status >= 400 && res.status !== 404) || (res.status === 404 && (res.body as object))) {
     const b = res.body as { error?: { codigo: string; mensaje: string } };
     if (b && b.error) {
       expect(Object.keys(b)).toEqual(['error']);
@@ -148,21 +148,33 @@ describe('Entrada — query de GET /yo/favoritos', () => {
   });
   afterAll(() => ctx.cerrar());
 
-  it.each(['pagina=-1', 'pagina=1.5', 'porPagina=0', 'porPagina=-5', 'porPagina=', 'pagina=', 'pagina=1e3', 'pagina=99999999999999999999', 'pagina[]=1', 'usuarioId=usr-1'])(
-    'GET ?%s: 400 con sobre exacto o 200, nunca 500',
-    async (q) => {
-      const res = await ctx.http().get(`/yo/favoritos?${q}`).set(conSesion(token));
-      expect(res.status, JSON.stringify(res.body)).toBeLessThan(500);
-      if (res.status === 400) {
-        esperarError(res, 400, 'VALIDACION_FALLIDA');
-        expect(res.body.error.mensaje).not.toMatch(/must be|should|property|isInt/i);
-      }
-    },
-  );
+  it.each([
+    'pagina=-1',
+    'pagina=1.5',
+    'porPagina=0',
+    'porPagina=-5',
+    'porPagina=',
+    'pagina=',
+    'pagina=1e3',
+    'pagina=99999999999999999999',
+    'pagina[]=1',
+    'usuarioId=usr-1',
+  ])('GET ?%s: 400 con sobre exacto o 200, nunca 500', async (q) => {
+    const res = await ctx.http().get(`/yo/favoritos?${q}`).set(conSesion(token));
+    expect(res.status, JSON.stringify(res.body)).toBeLessThan(500);
+    if (res.status === 400) {
+      esperarError(res, 400, 'VALIDACION_FALLIDA');
+      expect(res.body.error.mensaje).not.toMatch(/must be|should|property|isInt/i);
+    }
+  });
 
   it('porPagina=100 es aceptado; 101 no', async () => {
     await ctx.http().get('/yo/favoritos?porPagina=100').set(conSesion(token)).expect(200);
-    esperarError(await ctx.http().get('/yo/favoritos?porPagina=101').set(conSesion(token)), 400, 'VALIDACION_FALLIDA');
+    esperarError(
+      await ctx.http().get('/yo/favoritos?porPagina=101').set(conSesion(token)),
+      400,
+      'VALIDACION_FALLIDA',
+    );
   });
 });
 
@@ -182,7 +194,10 @@ describe('Permisos — sin token, token vencido o mal firmado', () => {
   it('token mal firmado, vencido, basura, esquema equivocado y usuario inexistente: 401 NO_AUTENTICADO', async () => {
     const { token } = await registrarTurista(ctx);
     const jwt = ctx.app.get(JwtService);
-    const otroSecreto = await jwt.signAsync({ sub: 'usr-201', rol: 'turista' }, { secret: 'otro-secreto-distinto-de-32-caracteres!!' });
+    const otroSecreto = await jwt.signAsync(
+      { sub: 'usr-201', rol: 'turista' },
+      { secret: 'otro-secreto-distinto-de-32-caracteres!!' },
+    );
     const vencido = await jwt.signAsync({ sub: 'usr-201', rol: 'turista' }, { expiresIn: '-1h' });
     const fantasma = await jwt.signAsync({ sub: 'usr-nadie', rol: 'turista' });
     const alterado = token.slice(0, -3) + (token.endsWith('aaa') ? 'bbb' : 'aaa');
@@ -251,7 +266,9 @@ describe('R11 — Aislamiento entre usuarios', () => {
   it('el mismo usuario con varios lugares: uno por lugar; el total y los ids son únicos', async () => {
     const a = await registrarTurista(ctx);
     const lugares = await Promise.all([crearLugar(ctx), crearLugar(ctx), crearLugar(ctx)]);
-    const rs = await Promise.all(lugares.map((l) => ctx.http().put(`/yo/favoritos/${l}`).set(conSesion(a.token))));
+    const rs = await Promise.all(
+      lugares.map((l) => ctx.http().put(`/yo/favoritos/${l}`).set(conSesion(a.token))),
+    );
     rs.forEach((r) => expect(r.status).toBe(201));
     expect(new Set(rs.map((r) => r.body.datos.id)).size).toBe(3);
     const l = await ctx.http().get('/yo/favoritos').set(conSesion(a.token)).expect(200);
@@ -326,7 +343,11 @@ describe('Paginación y orden — GET /yo/favoritos', () => {
     expect(otra.body.datos.map((f: { id: string }) => f.id)).toEqual(idsCompleta);
     const paginadas: string[] = [];
     for (let p = 1; p <= 4; p++) {
-      const r = await ctx.http().get(`/yo/favoritos?pagina=${p}&porPagina=2`).set(conSesion(token)).expect(200);
+      const r = await ctx
+        .http()
+        .get(`/yo/favoritos?pagina=${p}&porPagina=2`)
+        .set(conSesion(token))
+        .expect(200);
       esperarContrato(r.body, 'Favorito');
       expect(r.body.meta).toEqual({ total: 7, pagina: p, porPagina: 2 });
       paginadas.push(...r.body.datos.map((f: { id: string }) => f.id));
@@ -337,7 +358,11 @@ describe('Paginación y orden — GET /yo/favoritos', () => {
   it('más nuevo primero: creadoEn no creciente en toda la lista', async () => {
     const { token } = await registrarTurista(ctx);
     for (let i = 0; i < 4; i++) {
-      await ctx.http().put(`/yo/favoritos/${await crearLugar(ctx)}`).set(conSesion(token)).expect(201);
+      await ctx
+        .http()
+        .put(`/yo/favoritos/${await crearLugar(ctx)}`)
+        .set(conSesion(token))
+        .expect(201);
       ctx.reloj.avanzar(1000 * (i % 2 === 0 ? 1 : 3600));
     }
     const r = await ctx.http().get('/yo/favoritos').set(conSesion(token)).expect(200);
@@ -401,7 +426,8 @@ describe('Semillas — fav-088 de Lucía y el usuario sin favoritos', () => {
   afterAll(() => ctx.cerrar());
 
   const ingresar = async (email: string, contrasena: string) =>
-    (await ctx.http().post('/auth/ingreso').send({ email, contrasena }).expect(200)).body.datos.token as string;
+    (await ctx.http().post('/auth/ingreso').send({ email, contrasena }).expect(200)).body.datos
+      .token as string;
 
   it('Lucía trae fav-088 sobre lug-004, y todos sus favoritos cumplen el contrato', async () => {
     const token = await ingresar('lucia@mail.com', 'lucia1234');

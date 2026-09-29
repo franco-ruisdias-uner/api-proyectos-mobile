@@ -47,7 +47,11 @@ export class FavoritosControlador {
   @ApiResponse({ status: 200, schema: { example: { datos: EJEMPLO_FAVORITO, meta: null } } })
   @ApiResponse({ status: 201, schema: { example: { datos: EJEMPLO_FAVORITO, meta: null } } })
   @ApiResponse({ status: 401, description: 'NO_AUTENTICADO', schema: ejemploError('NO_AUTENTICADO') })
-  @ApiResponse({ status: 404, description: 'LUGAR_NO_ENCONTRADO', schema: ejemploError('LUGAR_NO_ENCONTRADO') })
+  @ApiResponse({
+    status: 404,
+    description: 'LUGAR_NO_ENCONTRADO',
+    schema: ejemploError('LUGAR_NO_ENCONTRADO'),
+  })
   async marcar(
     @UsuarioActual() usuario: UsuarioAutenticado,
     @Param('lugarId') lugarId: string,
@@ -67,7 +71,10 @@ export class FavoritosControlador {
   @ApiParam({ name: 'lugarId', example: 'lug-004' })
   @ApiResponse({ status: 204, description: 'Sin cuerpo.' })
   @ApiResponse({ status: 401, description: 'NO_AUTENTICADO', schema: ejemploError('NO_AUTENTICADO') })
-  async desmarcar(@UsuarioActual() usuario: UsuarioAutenticado, @Param('lugarId') lugarId: string): Promise<void> {
+  async desmarcar(
+    @UsuarioActual() usuario: UsuarioAutenticado,
+    @Param('lugarId') lugarId: string,
+  ): Promise<void> {
     await this.favoritos.desmarcar(usuario.id, lugarId);
   }
 }

@@ -256,3 +256,35 @@ Decisión:
   se desempata por `id`.
 Descartado: rechazar el favorito de un lugar dado de baja (deja al teléfono sin poder sincronizar
 una marca hecha antes de la baja).
+
+
+### M4-1 — Mi recorrido: bordes
+Estado: PROVISORIA (autónomo)
+Hueco: la especificación define los tres endpoints y R12 a R16, pero no estos casos.
+Decisión:
+- `POST /yo/visitas` con un `id` que ya existe **del mismo usuario**: `200` con la visita guardada,
+  sin mirar el resto del cuerpo (no la pisa: es un reintento de la cola offline). De otro usuario:
+  `409 ID_EN_USO`, sin revelar nada de la visita ajena. Sin `id`, lo genera el servidor (`vis-` + 12).
+  El `id` del cliente tiene que ser `vis-` + 3 a 36 caracteres `[A-Za-z0-9_-]`; si no, `400`.
+- Orden de las comprobaciones en el alta: validación del cuerpo (400) → id repetido → lugar
+  (`404 LUGAR_NO_ENCONTRADO`, también con un id mal formado) → fecha (`422 FECHA_EN_EL_FUTURO`) →
+  foto (`422 ARCHIVO_NO_SUBIDO`).
+- Un lugar dado de baja (`activo: false`) se puede visitar: es un registro histórico (como en M3-1).
+- `fotoUri` tiene que ser una **imagen** subida por `POST /archivos`; un audio o un video, o cualquier
+  otra cosa, es `ARCHIVO_NO_SUBIDO`. Se guarda la clave, no la URL.
+- `sincronizada` se acepta en la entrada (booleano) y se ignora; sale siempre `true`.
+- `nota`: se recortan los espacios de los costados; vacía, en blanco o `null` → `null`; más de 280
+  caracteres → `400 VALIDACION_FALLIDA`.
+- `PATCH /yo/visitas/:id`: sólo `fotoUri` y `nota` (cualquier otro campo, incluso `lugarId`,
+  `fechaHora` u `origen`, es `400`). `null` saca la foto o la nota; un cuerpo vacío es `200` sin
+  cambios. Un id que no existe o mal formado: `404 VISITA_NO_ENCONTRADA`; de otra persona:
+  `403 SIN_PERMISO` (AGENTS §7.3).
+- `GET /yo/visitas`: `fechaHora` ascendente, desempate por `id`; `porPagina` hasta 500.
+- No hay borrado (D8).
+- Semillas: `vis-311` (Lucía, `lug-004`, QR, con foto subida y nota; el ejemplo del PRD la muestra
+  con `file://` porque es el estado *antes* de subirla), una sin foto y un lugar visitado dos veces el
+  mismo día. Los valores exactos del ejemplo del PRD no se pudieron releer (`pdftotext` no está
+  instalado): fecha, nota y origen son razonables, no literales.
+Descartado: `403` con un `id` ajeno en el alta (filtraría que el id existe; `409` no dice de quién es);
+`404` en vez de `403` para el PATCH ajeno (AGENTS pide `SIN_PERMISO` para el dueño).
+

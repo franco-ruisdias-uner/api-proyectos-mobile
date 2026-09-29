@@ -7,6 +7,7 @@ import { CategoriasServicio } from '../modulos/categorias/categorias.servicio.js
 import { EventosServicio } from '../modulos/eventos/eventos.servicio.js';
 import { comienzoDelDia } from '../modulos/eventos/reglas/agenda.js';
 import { FavoritosServicio } from '../modulos/favoritos/favoritos.servicio.js';
+import { VisitasServicio } from '../modulos/visitas/visitas.servicio.js';
 import { LugaresServicio } from '../modulos/lugares/lugares.servicio.js';
 import { UsuarioEntidad } from '../modulos/usuarios/usuario.entidad.js';
 import { diaLocal } from '../comun/fechas/fechas.js';
@@ -33,6 +34,7 @@ export class Sembrador {
     private readonly lugares: LugaresServicio,
     private readonly eventos: EventosServicio,
     private readonly favoritos: FavoritosServicio,
+    private readonly visitas: VisitasServicio,
   ) {}
 
   async estaVacia(): Promise<boolean> {
@@ -58,6 +60,7 @@ export class Sembrador {
     await this.sembrarCatalogo(ahora);
     await this.sembrarAgenda(ahora);
     await this.sembrarFavoritos(ahora);
+    await this.sembrarVisitas(ahora);
     this.log.log(
       `Datos de demo cargados: ${USUARIOS_SEMILLA.length} usuarios, ${CATEGORIAS_SEMILLA.length} categorías ` +
         `${LUGARES_SEMILLA.length} lugares y ${EVENTOS_SEMILLA.length} eventos.`,
@@ -113,8 +116,66 @@ export class Sembrador {
   /** M3: los favoritos de Lucía (`fav-088` es el del PRD). El usuario nuevo no tiene ninguno. */
   private async sembrarFavoritos(ahora: Date): Promise<void> {
     const hace = (dias: number) => new Date(ahora.getTime() - dias * DIA);
-    await this.favoritos.cargar({ id: 'fav-088', usuarioId: 'usr-201', lugarId: 'lug-004', creadoEn: hace(19) });
-    await this.favoritos.cargar({ id: 'fav-089', usuarioId: 'usr-201', lugarId: 'lug-009', creadoEn: hace(12) });
-    await this.favoritos.cargar({ id: 'fav-090', usuarioId: 'usr-201', lugarId: 'lug-001', creadoEn: hace(3) });
+    await this.favoritos.cargar({
+      id: 'fav-088',
+      usuarioId: 'usr-201',
+      lugarId: 'lug-004',
+      creadoEn: hace(19),
+    });
+    await this.favoritos.cargar({
+      id: 'fav-089',
+      usuarioId: 'usr-201',
+      lugarId: 'lug-009',
+      creadoEn: hace(12),
+    });
+    await this.favoritos.cargar({
+      id: 'fav-090',
+      usuarioId: 'usr-201',
+      lugarId: 'lug-001',
+      creadoEn: hace(3),
+    });
+  }
+
+  /**
+   * M4: el recorrido de Lucía. `vis-311` es el del PRD, ya con la foto subida (el ejemplo del PRD
+   * la muestra con `file://` porque es el estado *antes* de subirla). El usuario nuevo no tiene.
+   */
+  private async sembrarVisitas(ahora: Date): Promise<void> {
+    const medios = new MediosSemilla(this.almacen, ahora);
+    const hace = (dias: number, horas = 0) => new Date(ahora.getTime() - dias * DIA - horas * 3600_000);
+    const base = { usuarioId: 'usr-201', nota: null, fotoClave: null };
+    await this.visitas.cargar({
+      ...base,
+      id: 'vis-311',
+      lugarId: 'lug-004',
+      fechaHora: hace(14, 2),
+      origen: 'qr',
+      fotoClave: await medios.subir('museos-1.png'),
+      nota: 'Lindo atardecer en el molino.',
+    });
+    await this.visitas.cargar({
+      ...base,
+      id: 'vis-312',
+      lugarId: 'lug-009',
+      fechaHora: hace(9),
+      origen: 'gps',
+    });
+    await this.visitas.cargar({
+      ...base,
+      id: 'vis-313',
+      lugarId: 'lug-001',
+      fechaHora: hace(3, 5),
+      origen: 'manual',
+      fotoClave: await medios.subir('termas-1.png'),
+    });
+    // El mismo lugar, otra vez el mismo día (R16).
+    await this.visitas.cargar({
+      ...base,
+      id: 'vis-314',
+      lugarId: 'lug-001',
+      fechaHora: hace(3, 1),
+      origen: 'gps',
+      nota: 'Volvimos a la tarde.',
+    });
   }
 }

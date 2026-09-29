@@ -78,7 +78,11 @@ describe('PRD §5 — Favoritos: GET/PUT/DELETE /yo/favoritos', () => {
   it('PUT de un lugar que no existe, o con un id mal formado, da 404 LUGAR_NO_ENCONTRADO', async () => {
     const { token } = await registrarTurista(ctx);
     for (const id of ['lug-noexiste', 'xyz', 'usr-201', 'lug-%00']) {
-      esperarError(await ctx.http().put(`/yo/favoritos/${id}`).set(conSesion(token)), 404, 'LUGAR_NO_ENCONTRADO');
+      esperarError(
+        await ctx.http().put(`/yo/favoritos/${id}`).set(conSesion(token)),
+        404,
+        'LUGAR_NO_ENCONTRADO',
+      );
     }
   });
 

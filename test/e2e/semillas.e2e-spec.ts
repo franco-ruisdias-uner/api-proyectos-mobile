@@ -4,7 +4,7 @@ import { conSesion } from '../utilidades/builders.js';
 import { duracionMp3Constante } from '../utilidades/audio.js';
 import { Sembrador } from '../../src/semillas/sembrador.js';
 import { USUARIOS_SEMILLA } from '../../src/semillas/datos/usuarios.js';
-import type { Categoria, Evento, Lugar } from '../../contrato/tipos.js';
+import type { Categoria, Evento, Lugar, Visita } from '../../contrato/tipos.js';
 
 describe('AGENTS §10.4 — Los datos de demo cumplen el contrato', () => {
   let ctx: AppDePrueba;
@@ -60,6 +60,47 @@ describe('AGENTS §10.4 — Los datos de demo cumplen el contrato', () => {
       .send({ preferencias: { categoriasFavoritas: ['cat-museos', 'cat-playas'] } })
       .expect(200);
     esperarContrato(res.body, 'Usuario');
+  });
+
+  it('especificación §8 — el recorrido de Lucía: vis-311 con foto subida, una sin foto, un lugar repetido', async () => {
+    const ingreso = await ctx
+      .http()
+      .post('/auth/ingreso')
+      .send({ email: 'lucia@mail.com', contrasena: 'lucia1234' });
+    const token = ingreso.body.datos.token;
+    const res = await ctx.http().get('/yo/visitas').set(conSesion(token)).expect(200);
+    esperarContrato(res.body, 'Visita');
+    const visitas = res.body.datos as Visita[];
+    expect(visitas.length).toBeGreaterThanOrEqual(3);
+    const fechas = visitas.map((v) => v.fechaHora);
+    expect(fechas).toEqual([...fechas].sort());
+    const v311 = visitas.find((v) => v.id === 'vis-311');
+    expect(v311).toMatchObject({
+      usuarioId: 'usr-201',
+      lugarId: 'lug-004',
+      origen: 'qr',
+      sincronizada: true,
+    });
+    expect(v311?.fotoUri).toMatch(/^http:\/\/.+\/archivos\/imagenes\//);
+    await ctx
+      .http()
+      .get(new URL(v311?.fotoUri as string).pathname)
+      .expect(200);
+    expect(visitas.some((v) => v.fotoUri === null)).toBe(true);
+    const porLugar = visitas.map((v) => v.lugarId);
+    expect(new Set(porLugar).size).toBeLessThan(porLugar.length);
+  });
+
+  it('especificación §8 — el usuario nuevo no tiene favoritos ni visitas (listas vacías)', async () => {
+    const ingreso = await ctx
+      .http()
+      .post('/auth/ingreso')
+      .send({ email: 'nuevo@demo.ar', contrasena: 'nuevo1234' });
+    const token = ingreso.body.datos.token;
+    for (const ruta of ['/yo/visitas', '/yo/favoritos']) {
+      const res = await ctx.http().get(ruta).set(conSesion(token)).expect(200);
+      expect(res.body.datos).toEqual([]);
+    }
   });
 
   it('sembrar sólo si está vacía: no duplica', async () => {
