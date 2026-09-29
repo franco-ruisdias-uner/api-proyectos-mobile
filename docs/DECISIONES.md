@@ -258,7 +258,7 @@ Decisiones:
 - `asignado → en_revision` conserva `cuadrillaId` (sigue siendo la última asignada hasta que se
   reasigne). Alternativa descartada: ponerla en `null`.
 - Reasignar a la misma cuadrilla se acepta y deja un cambio más.
-- `comentario`: se recorta, `""` pasa a `null`, máximo 1000 caracteres (la semilla usa más de
+- `comentario`: se recorta y los espacios y saltos de línea repetidos se colapsan a uno, `""` pasa a `null`, máximo 1000 caracteres (la semilla usa más de
   400). `cuadrillaId` admite ids cortos (`cua-02`), a diferencia del patrón de 3 caracteres.
 - El `fechaHora` del cambio es el instante del reloj, pero nunca anterior al cambio previo
   (el `creadoEn` del teléfono puede adelantarse hasta 5 minutos).
