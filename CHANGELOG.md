@@ -3,6 +3,15 @@
 Lo que cambia en la API, escrito para quienes la usan desde la app. Desde la `v1.0.0` no se
 cambia la forma de ninguna respuesta: sólo se agregan cosas.
 
+## 0.7.0 — La nube
+
+- Los archivos (fotos, audios) pueden guardarse en Supabase Storage, AWS S3, Cloudflare R2 o Backblaze B2
+  con `ARCHIVOS_PROVEEDOR`; las URLs que ve la app no cambian. `/salud` informa el proveedor en `almacen`.
+- La base puede ser una administrada (Supabase, Neon, Aiven) con `DB_PROVEEDOR`.
+- Se puede publicar en Render con `render.yaml` (`ENTORNO=publicado`, `CONFIAR_PROXY=true`).
+- Errores nuevos: `ALMACEN_NO_DISPONIBLE` (503) cuando el servicio de archivos no responde.
+- Comandos: `pnpm db:probar`, `pnpm archivos:probar`, `pnpm publicado:probar <url>`.
+
 ## 0.6.0 — Eventos guardados y avisos
 
 - `GET /yo/eventos-guardados`: tus eventos guardados, por `inicio`. Incluye los que ya terminaron o

@@ -304,7 +304,28 @@ según el `codigo`, que no cambia nunca.
 - Sin Docker: `pnpm db:reiniciar` (borra todo y vuelve a sembrar).
 - Con Docker: `docker compose down -v` y `docker compose up`.
 
-## 9. Problemas frecuentes
+## 9. Publicar en la nube (Render + Supabase)
+
+Con la API publicada tiene una URL `https://` que anda desde cualquier red (necesario para el build de
+producción con EAS: una app instalada no puede apuntar a la IP de una notebook).
+
+1. **Supabase**: creen un proyecto. En *Connect* copien la cadena del **pooler en modo sesión** (puerto
+   **5432**, usuario `postgres.<ref>`; no la de 6543 ni la directa, que es sólo IPv6). Esa es `DB_URL`.
+2. En *Storage* creen un bucket (por ejemplo `archivos`) y en *S3 Configuration* generen las claves
+   (`S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`) y anoten la región (`S3_REGION`).
+3. **Render**: *New > Blueprint* con este repo (usa `render.yaml`). Pega `DB_URL`, `SUPABASE_PROYECTO`
+   (el id del proyecto), `S3_REGION`, `S3_BUCKET` y las dos claves. `JWT_SECRETO` lo genera Render.
+4. Prueben: `pnpm publicado:probar https://su-api.onrender.com`.
+
+Antes de publicar, `pnpm db:probar` y `pnpm archivos:probar` (con las variables en `.env`) dicen en
+castellano si algo está mal.
+
+Ojo: el plan gratis de Render se **duerme a los 15 minutos** sin tráfico y la primera llamada puede
+tardar cerca de un minuto (la app tiene que mostrar que está cargando). El plan gratis de Supabase
+**pausa el proyecto tras una semana sin uso**: se reactiva desde el panel. Con `ENTORNO=publicado` la API
+no arranca si usa SQLite, archivos en disco, un `JWT_SECRETO` corto o la simulación de fallas.
+
+## 10. Problemas frecuentes
 
 | Qué pasa | Qué hacer |
 |---|---|

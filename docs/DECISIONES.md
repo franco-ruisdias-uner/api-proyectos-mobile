@@ -326,3 +326,17 @@ Decisión:
 Descartado: avisar también `cancelado` → `programado` (agrega un caso que la especificación no pide);
 `409` al repetir el `PUT` (rompe la idempotencia de la cola).
 
+
+
+### M6-1 — Nube: proveedores, publicación y bordes
+Estado: PROVISORIA (autónomo)
+Hueco: AGENTS §17 y §18 definen los presets, pero no varios detalles.
+Decisión:
+- Presets como tabla de datos (`src/comun/archivos/proveedores.ts`, `src/comun/db/proveedores.ts`) con
+  función pura y mensajes en castellano; `S3_ENDPOINT` y `S3_FORZAR_PATH_STYLE` pisan al preset.
+- Con proveedores que no son `aws`, el cliente S3 usa checksums `WHEN_REQUIRED`.
+- `ENTORNO=publicado` no arranca con SQLite, archivos `local`, `JWT_SECRETO` de desarrollo o de menos de
+  32 caracteres, ni con `SIMULACION_HABILITADA=true`.
+- `render.yaml` genera `JWT_SECRETO` con `generateValue` (Render lo crea; no hay que inventarlo).
+- `db:reiniciar` contra una base en la nube pide `--confirmar` y borra sólo `DB_ESQUEMA`.
+Descartado: un adaptador por proveedor (todos hablan S3); soportar Firebase Storage (exige facturación).

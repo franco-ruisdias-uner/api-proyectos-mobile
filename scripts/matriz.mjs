@@ -21,7 +21,7 @@ const conDocker = elegidos.some((m) => m.url);
 
 if (conDocker) {
   console.log('\n▶ Levantando las bases (docker compose -f compose.matriz.yaml up --wait)…');
-  if (correr('docker', [...COMPOSE, 'up', '-d', '--wait', 'postgres', 'mysql', 'mariadb']) !== 0) {
+  if (correr('docker', [...COMPOSE, 'up', '-d', '--wait', 'postgres', 'mysql', 'mariadb', 's3']) !== 0) {
     console.error('No se pudieron levantar las bases. ¿Está Docker corriendo?');
     process.exit(1);
   }
@@ -33,6 +33,7 @@ try {
     console.log(`\n▶ E2E con ${motor}`);
     const estado = correr('pnpm', ['exec', 'vitest', 'run', '--config', './vitest.config.e2e.ts'], {
       DB_MOTOR: motor,
+      ...(conDocker ? { S3_PRUEBA_ENDPOINT: 'http://127.0.0.1:58080' } : {}),
       ...(url ? { DB_URL: url } : {}),
     });
     resultados.push({ motor, ok: estado === 0 });
