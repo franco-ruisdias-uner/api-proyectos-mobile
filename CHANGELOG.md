@@ -3,6 +3,12 @@
 Lo que cambia en la API, escrito para quienes la usan desde la app. Desde la `v1.0.0` no se
 cambia la forma de ninguna respuesta: sólo se agregan cosas.
 
+## 0.8.0 — Datos de demo y README completos
+
+- Sin cambios en la forma de ninguna respuesta. Se revisaron los datos de demo contra la lista de casos
+  feos del PRD (README, sección 7) y quedaron cubiertos por tests: lista vacía, textos larguísimos,
+  lugar dado de baja, sin fotos, sin teléfono, horarios de verano e invierno.
+
 ## 0.7.0 — La nube
 
 - Los archivos (fotos, audios) pueden guardarse en Supabase Storage, AWS S3, Cloudflare R2 o Backblaze B2

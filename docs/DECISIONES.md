@@ -340,3 +340,14 @@ Decisión:
 - `render.yaml` genera `JWT_SECRETO` con `generateValue` (Render lo crea; no hay que inventarlo).
 - `db:reiniciar` contra una base en la nube pide `--confirmar` y borra sólo `DB_ESQUEMA`.
 Descartado: un adaptador por proveedor (todos hablan S3); soportar Firebase Storage (exige facturación).
+
+### M7-1 — Semillas completas: qué se revisó y qué queda fijado por tests
+Estado: PROVISORIA (autónomo)
+Hueco: la especificación (§8) lista los casos de demo, pero no dice cómo garantizar que el README
+(que los cita por id) siga diciendo la verdad.
+Decisión: un test e2e (`semillas.e2e-spec.ts`) comprueba que `lug-025`, `lug-003`, `lug-009`,
+`lug-026` y `cat-bodegas` son lo que el README dice. Los favoritos de Lucía (con `fav-088`) y el ingreso
+del admin de demo también se validan contra el contrato. No se agregaron datos: los de M1 a M5 ya cubrían
+todo lo que pide §8.
+Descartado: generar la sección de casos feos del README desde los datos (los ids cambian poco y la prosa
+explica para qué sirve cada caso).

@@ -4,7 +4,7 @@ import { conSesion } from '../utilidades/builders.js';
 import { duracionMp3Constante } from '../utilidades/audio.js';
 import { Sembrador } from '../../src/semillas/sembrador.js';
 import { USUARIOS_SEMILLA } from '../../src/semillas/datos/usuarios.js';
-import type { Categoria, Evento, Lugar, Visita } from '../../contrato/tipos.js';
+import type { Categoria, Evento, Favorito, Lugar, Visita } from '../../contrato/tipos.js';
 
 describe('AGENTS §10.4 — Los datos de demo cumplen el contrato', () => {
   let ctx: AppDePrueba;
@@ -89,6 +89,39 @@ describe('AGENTS §10.4 — Los datos de demo cumplen el contrato', () => {
     expect(visitas.some((v) => v.fotoUri === null)).toBe(true);
     const porLugar = visitas.map((v) => v.lugarId);
     expect(new Set(porLugar).size).toBeLessThan(porLugar.length);
+  });
+
+  it('especificación §8 — los favoritos de Lucía cumplen el contrato y traen fav-088', async () => {
+    const ingreso = await ctx
+      .http()
+      .post('/auth/ingreso')
+      .send({ email: 'lucia@mail.com', contrasena: 'lucia1234' });
+    const res = await ctx
+      .http()
+      .get('/yo/favoritos')
+      .set(conSesion(ingreso.body.datos.token))
+      .expect(200);
+    esperarContrato(res.body, 'Favorito');
+    const favoritos = res.body.datos as Favorito[];
+    expect(favoritos).toHaveLength(3);
+    expect(favoritos.find((f) => f.id === 'fav-088')).toMatchObject({
+      usuarioId: 'usr-201',
+      lugarId: 'lug-004',
+    });
+  });
+
+  it('especificación §8 — el admin de demo ingresa y puede cambiar el estado de un evento', async () => {
+    const ingreso = await ctx
+      .http()
+      .post('/auth/ingreso')
+      .send({ email: 'turismo@colon.demo.ar', contrasena: 'turismo1234' })
+      .expect(200);
+    await ctx
+      .http()
+      .patch('/eventos/evt-017/estado')
+      .set(conSesion(ingreso.body.datos.token))
+      .send({ estado: 'programado' })
+      .expect(200);
   });
 
   it('especificación §8 — Lucía tiene guardada la peña de hoy (evt-017)', async () => {
@@ -313,6 +346,16 @@ describe('Especificación §8 — Catálogo de demo', () => {
       expect(lugares.some((l) => l.precioEntrada === 0)).toBe(true);
       expect(lugares.some((l) => l.precioEntrada === null)).toBe(true);
       expect(lugares.some((l) => l.accesible)).toBe(true);
+    });
+
+    it('README §7 — los casos feos que cita el README son los que hay en los datos', () => {
+      expect(lugar('lug-025').nombre.length).toBeGreaterThan(60);
+      expect(lugar('lug-025').descripcion.length).toBeGreaterThan(3000);
+      expect(lugar('lug-003').imagenes).toEqual([]);
+      expect(lugar('lug-009').horarios).toEqual([]);
+      expect(lugar('lug-026').activo).toBe(false);
+      expect(categorias.some((c) => c.id === 'cat-bodegas')).toBe(true);
+      expect(lugares.some((l) => l.categoriaId === 'cat-bodegas')).toBe(false);
     });
 
     it('los QR sembrados resuelven a su lugar', async () => {
