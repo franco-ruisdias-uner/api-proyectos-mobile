@@ -34,6 +34,7 @@ export const CATALOGO_ERRORES = {
   },
   // Agenda
   EVENTO_NO_ENCONTRADO: { estado: 404, mensaje: 'No existe ese evento.' },
+  EVENTO_NO_VIGENTE: { estado: 422, mensaje: 'Ese evento ya terminó o fue cancelado.' },
   // Mi recorrido
   VISITA_NO_ENCONTRADA: { estado: 404, mensaje: 'No encontramos esa visita.' },
   FECHA_EN_EL_FUTURO: {

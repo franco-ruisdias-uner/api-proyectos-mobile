@@ -10,7 +10,7 @@ por `fetch`, no tienen que tocar los tipos. Lo único nuevo es el "sobre" de cad
 algunos tipos que agrega la API (`contrato/api.ts`: `Sesion`, `ArchivoSubido`, `Salud`…).
 
 > **Estado:** está hecha la base (cuentas, `/yo`, archivos, notificaciones, `/salud`) y el
-> catálogo (categorías, lugares, búsqueda, cercanía, QR y audioguías), la agenda, los favoritos y Mi recorrido (visitas).
+> catálogo (categorías, lugares, búsqueda, cercanía, QR y audioguías), la agenda, los favoritos, Mi recorrido (visitas) y los eventos guardados con sus avisos.
 > El recorrido llega en las próximas versiones: miren el `CHANGELOG.md`.
 
 ---
@@ -112,7 +112,7 @@ configurar nada más.
 
 | Email | Contraseña | Para qué |
 |---|---|---|
-| `lucia@mail.com` | `lucia1234` | La usuaria del PRD (`usr-201`), con `cat-museos` y `cat-playas` como categorías favoritas. Trae tres favoritos (`fav-088` es el del PRD) y cuatro visitas (`vis-311` con foto y nota); en las próximas versiones, un evento guardado. |
+| `lucia@mail.com` | `lucia1234` | La usuaria del PRD (`usr-201`), con `cat-museos` y `cat-playas` como categorías favoritas. Trae tres favoritos (`fav-088` es el del PRD), cuatro visitas (`vis-311` con foto y nota) y un evento guardado (`evt-017`, la peña de hoy). |
 | `nuevo@demo.ar` | `nuevo1234` | No tiene nada: para ver cómo quedan las listas vacías. |
 | `turismo@colon.demo.ar` | `turismo1234` | Cuenta de la Dirección de Turismo: puede suspender y cancelar eventos. |
 
@@ -203,7 +203,20 @@ Para **mirar** lugares, mapa y agenda no hace falta cuenta. La cuenta es para gu
 - Un evento tiene o `lugarId` o `direccionLibre` (con `coordenadas`, si las hay), nunca los dos.
 - Para probar los cambios de estado, ingresen con `turismo@colon.demo.ar` y manden
   `PATCH /eventos/evt-017/estado` con `{ "estado": "suspendido" }`. Un turista recibe `403`.
-  Las notificaciones a quienes guardaron el evento llegan con el módulo de eventos guardados.
+
+### Eventos guardados y avisos
+
+- `PUT /yo/eventos-guardados/:eventoId` guarda un evento y devuelve el `Evento` (`201` si es nuevo,
+  `200` si ya estaba). `GET /yo/eventos-guardados` los trae por `inicio`, incluso los que ya
+  terminaron o se cancelaron (con su estado de hoy). `DELETE` siempre da `204`.
+- Sólo se guardan eventos `programado` o `suspendido`: uno cancelado o ya terminado da
+  `422 EVENTO_NO_VIGENTE`.
+- **Push del servidor**: cuando el admin pasa un evento a `suspendido` o `cancelado`, o lo vuelve de
+  `suspendido` a `programado`, le llega una push a quienes lo guardaron (con `data`:
+  `{ tipo: "evento-estado", eventoId, estado }`). No hay interruptor de avisos: para dejar de
+  recibirlos, se desguarda el evento. Para probarlo, registren el teléfono con `POST /dispositivos`,
+  guarden `evt-017` con `lucia@mail.com` y suspéndanlo con `turismo@colon.demo.ar`.
+- Los recordatorios ("avisame antes del evento") son notificaciones locales del teléfono.
 
 ### Endpoints
 
@@ -228,6 +241,9 @@ Para **mirar** lugares, mapa y agenda no hace falta cuenta. La cuenta es para gu
 | `GET` | `/eventos` | 🌐 | Agenda de eventos |
 | `GET` | `/eventos/:id` | 🌐 | Detalle de un evento |
 | `PATCH` | `/eventos/:id/estado` | 🔒 | Suspender, cancelar o reprogramar un evento |
+| `GET` | `/yo/eventos-guardados` | 🔒 | Mis eventos guardados |
+| `PUT` | `/yo/eventos-guardados/:eventoId` | 🔒 | Guardar un evento |
+| `DELETE` | `/yo/eventos-guardados/:eventoId` | 🔒 | Dejar de guardar un evento |
 | `GET` | `/yo/favoritos` | 🔒 | Mis lugares favoritos |
 | `PUT` | `/yo/favoritos/:lugarId` | 🔒 | Marcar un lugar como favorito |
 | `DELETE` | `/yo/favoritos/:lugarId` | 🔒 | Sacar un lugar de favoritos |
@@ -262,6 +278,7 @@ según el `codigo`, que no cambia nunca.
 | 415 | `TIPO_DE_ARCHIVO_NO_PERMITIDO` | Ese tipo de archivo no se puede subir. Probá con una foto, un audio o un video. |
 | 416 | `RANGO_NO_SATISFACIBLE` | No pudimos leer esa parte del archivo. |
 | 422 | `ARCHIVO_NO_SUBIDO` | Primero hay que subir la foto. |
+| 422 | `EVENTO_NO_VIGENTE` | Ese evento ya terminó o fue cancelado. |
 | 422 | `FECHA_EN_EL_FUTURO` | La fecha de la visita no puede ser posterior a este momento. |
 | 422 | `CATEGORIA_NO_ENCONTRADA` | Alguna de las categorías elegidas no existe. |
 | 500 | `ERROR_INTERNO` | Algo salió mal de nuestro lado. Probá de nuevo en un rato. |

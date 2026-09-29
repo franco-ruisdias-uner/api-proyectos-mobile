@@ -16,6 +16,7 @@ import { diaLocal } from '../../comun/fechas/fechas.js';
 import { esIdConPrefijo, nuevoId } from '../../comun/ids/ids.js';
 import { Reloj } from '../../comun/reloj/reloj.js';
 import { calcularPaginacion } from '../../comun/respuesta/paginacion.js';
+import { EventosGuardadosServicio } from '../eventos-guardados/eventos-guardados.servicio.js';
 import { LugaresServicio } from '../lugares/lugares.servicio.js';
 import type { CambiarEstadoDto } from './dto/cambiar-estado.dto.js';
 import type { ListarEventosDto } from './dto/listar-eventos.dto.js';
@@ -31,6 +32,7 @@ export class EventosServicio {
   constructor(
     @InjectRepository(EventoEntidad) private readonly repo: Repository<EventoEntidad>,
     private readonly lugares: LugaresServicio,
+    private readonly guardados: EventosGuardadosServicio,
     private readonly reloj: Reloj,
   ) {}
 
@@ -82,8 +84,11 @@ export class EventosServicio {
     const evento = await this.buscar(id);
     if (!evento) throw new ErrorApi('EVENTO_NO_ENCONTRADO');
     if (evento.estado !== estado) {
+      const antes = evento.estado;
       await this.repo.update({ id }, { estado });
       evento.estado = estado;
+      // Después de guardar el cambio y sin frenar la respuesta (AGENTS §9, especificación §7).
+      await this.guardados.avisarCambioDeEstado(evento, antes);
     }
     return aContrato(evento, this.reloj.ahora());
   }

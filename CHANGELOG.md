@@ -3,6 +3,18 @@
 Lo que cambia en la API, escrito para quienes la usan desde la app. Desde la `v1.0.0` no se
 cambia la forma de ninguna respuesta: sólo se agregan cosas.
 
+## 0.6.0 — Eventos guardados y avisos
+
+- `GET /yo/eventos-guardados`: tus eventos guardados, por `inicio`. Incluye los que ya terminaron o
+  se cancelaron, con su estado de hoy.
+- `PUT /yo/eventos-guardados/:eventoId`: guarda un evento y devuelve el `Evento`. `201` si es
+  nuevo; `200` si ya estaba.
+- `DELETE /yo/eventos-guardados/:eventoId`: lo saca. `204` siempre, también si no estaba.
+- Error nuevo: `EVENTO_NO_VIGENTE` (422) al guardar un evento cancelado o que ya terminó.
+- Push: si el admin suspende o cancela un evento, o lo vuelve de suspendido a programado, les llega
+  un aviso a quienes lo guardaron.
+- Datos de demo: Lucía tiene guardada la peña de hoy (`evt-017`).
+
 ## 0.5.0 — Mi recorrido
 
 - `GET /yo/visitas`: tu recorrido, en orden (la más vieja primero). Hasta 500 por página.

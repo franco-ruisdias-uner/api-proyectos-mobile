@@ -6,6 +6,7 @@ import { Reloj } from '../comun/reloj/reloj.js';
 import { CategoriasServicio } from '../modulos/categorias/categorias.servicio.js';
 import { EventosServicio } from '../modulos/eventos/eventos.servicio.js';
 import { comienzoDelDia } from '../modulos/eventos/reglas/agenda.js';
+import { EventosGuardadosServicio } from '../modulos/eventos-guardados/eventos-guardados.servicio.js';
 import { FavoritosServicio } from '../modulos/favoritos/favoritos.servicio.js';
 import { VisitasServicio } from '../modulos/visitas/visitas.servicio.js';
 import { LugaresServicio } from '../modulos/lugares/lugares.servicio.js';
@@ -35,6 +36,7 @@ export class Sembrador {
     private readonly eventos: EventosServicio,
     private readonly favoritos: FavoritosServicio,
     private readonly visitas: VisitasServicio,
+    private readonly eventosGuardados: EventosGuardadosServicio,
   ) {}
 
   async estaVacia(): Promise<boolean> {
@@ -61,6 +63,7 @@ export class Sembrador {
     await this.sembrarAgenda(ahora);
     await this.sembrarFavoritos(ahora);
     await this.sembrarVisitas(ahora);
+    await this.sembrarEventosGuardados(ahora);
     this.log.log(
       `Datos de demo cargados: ${USUARIOS_SEMILLA.length} usuarios, ${CATEGORIAS_SEMILLA.length} categorías ` +
         `${LUGARES_SEMILLA.length} lugares y ${EVENTOS_SEMILLA.length} eventos.`,
@@ -176,6 +179,15 @@ export class Sembrador {
       fechaHora: hace(3, 1),
       origen: 'gps',
       nota: 'Volvimos a la tarde.',
+    });
+  }
+
+  /** M5: Lucía guardó la peña de hoy (`evt-017`). Ojo: si el admin la suspende, a ella le llega la push. */
+  private async sembrarEventosGuardados(ahora: Date): Promise<void> {
+    await this.eventosGuardados.cargar({
+      usuarioId: 'usr-201',
+      eventoId: 'evt-017',
+      creadoEn: new Date(ahora.getTime() - 2 * DIA),
     });
   }
 }

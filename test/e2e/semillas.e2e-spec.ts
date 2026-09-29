@@ -91,13 +91,27 @@ describe('AGENTS §10.4 — Los datos de demo cumplen el contrato', () => {
     expect(new Set(porLugar).size).toBeLessThan(porLugar.length);
   });
 
+  it('especificación §8 — Lucía tiene guardada la peña de hoy (evt-017)', async () => {
+    const ingreso = await ctx
+      .http()
+      .post('/auth/ingreso')
+      .send({ email: 'lucia@mail.com', contrasena: 'lucia1234' });
+    const res = await ctx
+      .http()
+      .get('/yo/eventos-guardados')
+      .set(conSesion(ingreso.body.datos.token))
+      .expect(200);
+    esperarContrato(res.body, 'Evento');
+    expect(res.body.datos.map((e: { id: string }) => e.id)).toEqual(['evt-017']);
+  });
+
   it('especificación §8 — el usuario nuevo no tiene favoritos ni visitas (listas vacías)', async () => {
     const ingreso = await ctx
       .http()
       .post('/auth/ingreso')
       .send({ email: 'nuevo@demo.ar', contrasena: 'nuevo1234' });
     const token = ingreso.body.datos.token;
-    for (const ruta of ['/yo/visitas', '/yo/favoritos']) {
+    for (const ruta of ['/yo/visitas', '/yo/favoritos', '/yo/eventos-guardados']) {
       const res = await ctx.http().get(ruta).set(conSesion(token)).expect(200);
       expect(res.body.datos).toEqual([]);
     }

@@ -298,3 +298,31 @@ Decisión: la columna `visitas.id` usa collation binaria (`utf8mb4_bin`) sólo e
 Puntos que el verificador dejó abiertos (se aceptó el comportamiento actual): la nota se mide después
 de recortar y en caracteres UTF-16; una `fotoUri` con la ruta `/archivos/…` de esta API se acepta con
 cualquier host si la clave existe; un query param desconocido en `GET /yo/visitas` es `400`.
+
+
+### M5-1 — Eventos guardados y avisos: bordes
+Estado: PROVISORIA (autónomo)
+Hueco: la especificación define los endpoints, R17, D4, D9 y la tabla de push (§7), pero no estos casos.
+Decisión:
+- `PUT` de un evento que no existe o con id mal formado: `404 EVENTO_NO_ENCONTRADO`. Un evento
+  cancelado o `finalizado` (calculado, R9): `422 EVENTO_NO_VIGENTE`.
+- `PUT` de un evento **ya guardado** devuelve `200` con el `Evento` sin mirar su estado: es un
+  reintento de la cola offline y no tiene que fallar porque el evento se canceló entre tanto.
+- `GET` devuelve también los guardados que después se cancelaron o terminaron, con su estado de hoy
+  (el teléfono necesita mostrar "cancelado"); orden `inicio` ascendente, desempate por el id interno.
+  `porPagina` hasta 100.
+- `DELETE` siempre `204` (id mal formado, inexistente o no guardado).
+- Push (§7): se avisa al pasar a `suspendido` o `cancelado` desde otro estado y al volver de
+  `suspendido` a `programado`. **No** se avisa `cancelado` → `programado` (la especificación sólo lista
+  la vuelta desde suspendido), ni el mismo estado (R10), ni cuando el evento ya terminó (avisar la
+  suspensión de algo que ya pasó sólo confunde).
+- Los avisos salen después de guardar el cambio, sin esperar el envío; si Expo falla, el `PATCH`
+  responde igual (AGENTS §9). Un mensaje por cambio, con todos los teléfonos de quienes lo guardaron.
+  Texto: «Evento suspendido» / «Evento cancelado» / «El evento se hace» + el título; `data`:
+  `{ tipo: "evento-estado", eventoId, estado }`.
+- Tabla `eventos_guardados` (id `evg-…` interno, índice único `usuarioId + eventoId`, sin clave
+  foránea). Esto cierra M2-2 (M2 no notificaba por no existir los guardados).
+- Semilla: Lucía guarda `evt-017`.
+Descartado: avisar también `cancelado` → `programado` (agrega un caso que la especificación no pide);
+`409` al repetir el `PUT` (rompe la idempotencia de la cola).
+

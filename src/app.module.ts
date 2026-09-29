@@ -13,6 +13,7 @@ import { ArchivosModulo } from './modulos/archivos/archivos.modulo.js';
 import { CategoriasModulo } from './modulos/categorias/categorias.modulo.js';
 import { DispositivosModulo } from './modulos/dispositivos/dispositivos.modulo.js';
 import { EventosModulo } from './modulos/eventos/eventos.modulo.js';
+import { EventosGuardadosModulo } from './modulos/eventos-guardados/eventos-guardados.modulo.js';
 import { FavoritosModulo } from './modulos/favoritos/favoritos.modulo.js';
 import { LugaresModulo } from './modulos/lugares/lugares.modulo.js';
 import { SaludModulo } from './modulos/salud/salud.modulo.js';
@@ -44,6 +45,7 @@ export class AppModule {
         CategoriasModulo,
         LugaresModulo,
         EventosModulo,
+        EventosGuardadosModulo,
         FavoritosModulo,
         VisitasModulo,
         SaludModulo,
