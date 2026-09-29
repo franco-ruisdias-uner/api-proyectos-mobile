@@ -3,9 +3,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CatalogosModulo } from '../catalogos/catalogos.modulo.js';
 import { Adhesion } from './adhesion.entidad.js';
 import { ServicioAdhesiones } from './adhesiones.servicio.js';
+import { ServicioBandeja } from './bandeja.servicio.js';
 import { CambioDeEstado } from './cambio-de-estado.entidad.js';
 import { FotoDeReporte } from './foto.entidad.js';
 import {
+  ControladorBandeja,
   ControladorMisReportes,
   ControladorReportes,
 } from './reportes.controlador.js';
@@ -22,8 +24,12 @@ import { Reporte } from './reporte.entidad.js';
     ]),
     CatalogosModulo,
   ],
-  controllers: [ControladorReportes, ControladorMisReportes],
-  providers: [ServicioReportes, ServicioAdhesiones],
+  controllers: [
+    ControladorReportes,
+    ControladorMisReportes,
+    ControladorBandeja,
+  ],
+  providers: [ServicioReportes, ServicioAdhesiones, ServicioBandeja],
   exports: [ServicioReportes, ServicioAdhesiones],
 })
 export class ReportesModulo {}

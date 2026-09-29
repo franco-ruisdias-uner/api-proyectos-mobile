@@ -5,6 +5,29 @@ forma de las respuestas no cambia: sólo se agregan endpoints y códigos de erro
 
 ## Sin publicar
 
+### M4 — Bandeja del operador
+
+Todos estos endpoints son sólo para operadores: un vecino recibe `403 SIN_PERMISO`.
+
+- `GET /bandeja`: reportes abiertos (`recibido`, `en_revision`, `asignado`), los más apoyados
+  primero (`adhesiones` descendente) y, a igualdad, el más viejo. Filtros `estado` (sólo
+  abiertos), `tipoId` y `zonaId`: por defecto la zona del operador; `zonaId=todas` muestra toda
+  la ciudad. Devuelve `Reporte` completos.
+- `PATCH /reportes/:id/estado` `{ estado, comentario? }`: crea un `CambioDeEstado` con el
+  operador que lo hizo y devuelve el `Reporte`. Pasos válidos: `recibido` → `en_revision` |
+  `rechazado`; `en_revision` → `rechazado`; `asignado` → `resuelto` | `en_revision` |
+  `rechazado`. Rechazar exige `comentario`. `asignado` sólo se alcanza con `/cuadrilla`.
+- `PATCH /reportes/:id/cuadrilla` `{ cuadrillaId, comentario? }`: asigna o reasigna (desde
+  `en_revision` o `asignado`) una cuadrilla activa de la zona del reporte y lo deja `asignado`.
+- `POST /reportes/:id/duplicado` `{ originalId }`: el reporte queda `rechazado` con
+  `duplicadoDe` y el comentario «Duplicado de GCHU-…»; su autor se suma al original.
+  Responde `200` con el reporte duplicado; repetir el pedido no cambia nada.
+- `POST /reportes/:id/fotos` `{ id?, url }`: foto del arreglo (`momento: "arreglo"`) con el
+  reporte `asignado` o `resuelto`, hasta tres. `201`; con `id` propio repetido, `200`.
+- Códigos de error nuevos (todos 422): `TRANSICION_INVALIDA`, `MOTIVO_REQUERIDO`,
+  `CUADRILLA_REQUERIDA`, `CUADRILLA_NO_ENCONTRADA`, `CUADRILLA_INACTIVA`,
+  `CUADRILLA_DE_OTRA_ZONA`, `DUPLICADO_INVALIDO` y `ESTADO_NO_ADMITE_FOTO`.
+
 ### M3 — Mapa y duplicados
 
 - `GET /reportes` (público): el mapa de la ciudad, con los `Reporte` completos, del más nuevo al

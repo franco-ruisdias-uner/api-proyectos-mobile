@@ -146,6 +146,11 @@ operadores no se crean desde la app.
 | `GET` | `/reportes/:id` | público | El detalle de un reporte. |
 | `GET` | `/reportes/codigo/:codigo` | público | Lo mismo, por número de seguimiento (`GCHU-2026-00412`), que es lo que trae el QR. |
 | `GET` | `/reportes/:id/cambios` | público | «Qué fue pasando»: los cambios de estado, del más viejo al más nuevo. |
+| `GET` | `/bandeja` | operador | Reportes abiertos, los más apoyados primero (`adhesiones` descendente y, a igualdad, el más viejo). Filtros `estado` (sólo abiertos), `tipoId`, `zonaId` (por defecto la zona del operador; `todas` para ver todo). |
+| `PATCH` | `/reportes/:id/estado` | operador | `{ estado, comentario? }`. Crea un cambio de estado. Rechazar exige `comentario`; `asignado` va por `/cuadrilla`. |
+| `PATCH` | `/reportes/:id/cuadrilla` | operador | `{ cuadrillaId, comentario? }`. Asigna o reasigna (activa y de la zona del reporte) y pasa a `asignado`. |
+| `POST` | `/reportes/:id/duplicado` | operador | `{ originalId }`. Queda `rechazado` como duplicado y su autor se suma al original. |
+| `POST` | `/reportes/:id/fotos` | operador | `{ id?, url }`. Foto del arreglo (`momento: "arreglo"`), hasta tres, con el reporte `asignado` o `resuelto`. |
 <!-- endpoints:fin -->
 
 ### Códigos de error
@@ -172,6 +177,14 @@ operadores no se crean desde la app.
 | `ARCHIVO_NO_SUBIDO` | 422 | Primero hay que subir la foto o el audio. |
 | `REPORTE_CERRADO` | 422 | Ese reporte ya está cerrado. |
 | `ADHESION_A_REPORTE_PROPIO` | 422 | Ya sos el autor de este reporte. |
+| `TRANSICION_INVALIDA` | 422 | Ese cambio de estado no es posible desde el estado actual. |
+| `MOTIVO_REQUERIDO` | 422 | Contá por qué se rechaza el reporte. |
+| `CUADRILLA_REQUERIDA` | 422 | Para asignar, elegí una cuadrilla. |
+| `CUADRILLA_NO_ENCONTRADA` | 422 | No existe esa cuadrilla. |
+| `CUADRILLA_INACTIVA` | 422 | Esa cuadrilla no está activa. |
+| `CUADRILLA_DE_OTRA_ZONA` | 422 | Esa cuadrilla trabaja en otra zona. |
+| `DUPLICADO_INVALIDO` | 422 | No se puede marcar como duplicado de ese reporte. |
+| `ESTADO_NO_ADMITE_FOTO` | 422 | La foto del arreglo se sube cuando el reporte está asignado o resuelto. |
 | `ERROR_INTERNO` | 500 | Algo salió mal de nuestro lado. Probá de nuevo en un rato. |
 | `ALMACEN_NO_DISPONIBLE` | 503 | No pudimos acceder a los archivos. Probá de nuevo en un rato. |
 <!-- errores:fin -->

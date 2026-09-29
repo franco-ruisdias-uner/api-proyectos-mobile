@@ -77,6 +77,39 @@ export const CATALOGO = {
     estado: 422,
     mensaje: 'Ya sos el autor de este reporte.',
   },
+  TRANSICION_INVALIDA: {
+    estado: 422,
+    mensaje: 'Ese cambio de estado no es posible desde el estado actual.',
+  },
+  MOTIVO_REQUERIDO: {
+    estado: 422,
+    mensaje: 'Contá por qué se rechaza el reporte.',
+  },
+  CUADRILLA_REQUERIDA: {
+    estado: 422,
+    mensaje: 'Para asignar, elegí una cuadrilla.',
+  },
+  CUADRILLA_NO_ENCONTRADA: {
+    estado: 422,
+    mensaje: 'No existe esa cuadrilla.',
+  },
+  CUADRILLA_INACTIVA: {
+    estado: 422,
+    mensaje: 'Esa cuadrilla no está activa.',
+  },
+  CUADRILLA_DE_OTRA_ZONA: {
+    estado: 422,
+    mensaje: 'Esa cuadrilla trabaja en otra zona.',
+  },
+  DUPLICADO_INVALIDO: {
+    estado: 422,
+    mensaje: 'No se puede marcar como duplicado de ese reporte.',
+  },
+  ESTADO_NO_ADMITE_FOTO: {
+    estado: 422,
+    mensaje:
+      'La foto del arreglo se sube cuando el reporte está asignado o resuelto.',
+  },
   ERROR_INTERNO: {
     estado: 500,
     mensaje: 'Algo salió mal de nuestro lado. Probá de nuevo en un rato.',

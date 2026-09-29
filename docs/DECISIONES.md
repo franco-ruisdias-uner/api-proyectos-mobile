@@ -223,3 +223,70 @@ Estado: PROVISORIA (autónomo)
 - `POST /reportes/:id/adhesiones` no tiene cuerpo: lo que se mande se ignora.
 - `radioMetros` acepta decimales.
 - Un token inválido en un endpoint público lo rechaza el guard con 401 (comportamiento de M0).
+
+
+### D3, D4, D5, D6, D11 (M4)
+Estado: PROVISORIA
+Se implementan como dice la sección 10 de `ESPECIFICACION.md`: máquina de estados de la
+sección 5, asignar pasa a `asignado` y exige cuadrilla de la misma zona, duplicado = rechazado
+con comentario automático y autor sumado al original, foto del arreglo opcional al resolver,
+la bandeja muestra por defecto la zona del operador y cualquier operador puede actuar en todas.
+
+### P17 — Orden de las validaciones en los endpoints del operador
+Estado: PROVISORIA (autónomo)
+Hueco: cuando un pedido rompe varias reglas a la vez, cuál error sale.
+Decisión: primero forma del pedido (400), luego 404 del reporte y después, en este orden:
+- `/estado`: `CUADRILLA_REQUERIDA` (si el destino es `asignado`, sea cual sea el origen),
+  `TRANSICION_INVALIDA`, `MOTIVO_REQUERIDO`.
+- `/cuadrilla`: `CUADRILLA_REQUERIDA` (falta, `null` o `""`), `TRANSICION_INVALIDA`,
+  `CUADRILLA_NO_ENCONTRADA`, `CUADRILLA_INACTIVA`, `CUADRILLA_DE_OTRA_ZONA`.
+- `/duplicado`: 404 del duplicado, `DUPLICADO_INVALIDO` (mismo reporte u original inexistente),
+  y ya con el lock: repetición (200), `TRANSICION_INVALIDA` (el duplicado ya está cerrado),
+  `DUPLICADO_INVALIDO` (original cerrado, ya duplicado, o el reporte ya es original de otros).
+- `/fotos`: 404, `ID_EN_USO`/repetición, `ESTADO_NO_ADMITE_FOTO`, tope de tres (400),
+  `ARCHIVO_NO_SUBIDO`.
+Consecuencia en el contrato: ninguna en la forma.
+
+### P18 — Detalles de `/bandeja` y `/estado`
+Estado: PROVISORIA (autónomo)
+Hueco: la especificación no dice qué pasa con `estado=resuelto` en la bandeja, con `asignado →
+en_revision` y la cuadrilla, ni el largo del comentario.
+Decisiones:
+- La bandeja son «reportes abiertos»: `estado` acepta sólo `recibido`, `en_revision` y
+  `asignado`; otro valor es 400 (alternativa descartada: devolver lista vacía).
+- Un `zonaId` que no existe da lista vacía; un operador sin zona ve todas por defecto.
+- `asignado → en_revision` conserva `cuadrillaId` (sigue siendo la última asignada hasta que se
+  reasigne). Alternativa descartada: ponerla en `null`.
+- Reasignar a la misma cuadrilla se acepta y deja un cambio más.
+- `comentario`: se recorta, `""` pasa a `null`, máximo 1000 caracteres (la semilla usa más de
+  400). `cuadrillaId` admite ids cortos (`cua-02`), a diferencia del patrón de 3 caracteres.
+- El `fechaHora` del cambio es el instante del reloj, pero nunca anterior al cambio previo
+  (el `creadoEn` del teléfono puede adelantarse hasta 5 minutos).
+Consecuencia en el contrato: ninguna.
+
+### P19 — Marcar duplicado: respuesta y bordes
+Estado: PROVISORIA (autónomo)
+Hueco: R13 no dice qué devuelve el endpoint ni cubre todos los bordes.
+Decisión: responde **200** con el `Reporte` duplicado (no crea un recurso nuevo: 201 sería
+engañoso). Repetir el pedido con el mismo `originalId` devuelve 200 sin nuevos cambios. Un
+`originalId` que no existe es `DUPLICADO_INVALIDO` (422), no 404: el recurso de la ruta sí
+existe. Un reporte que ya es original de otros no puede pasar a duplicado (evita cadenas). Si
+el autor del duplicado es el del original, o ya estaba sumado, no se agrega adhesión. Los
+adherentes del duplicado no pasan al original.
+Consecuencia en el contrato: 200 en vez de 201.
+
+### P20 — Foto del arreglo
+Estado: PROVISORIA (autónomo)
+Hueco: idempotencia y tope.
+Decisión: 201 la primera vez; con `id` propio repetido en el mismo reporte, 200 con el reporte
+tal cual; el `id` de una foto de otro reporte (o del problema) es `ID_EN_USO`. El tope de tres
+cuenta sólo las del arreglo y la cuarta es `VALIDACION_FALLIDA` con mensaje propio (R15). Sólo
+imágenes (`imagenes/…`).
+Consecuencia en el contrato: ninguna en la forma.
+
+### P21 — Concurrencia en la bandeja
+Estado: PROVISORIA (autónomo)
+Las escrituras del operador toman el lock de la fila del reporte (y en los duplicados, de las
+dos filas en orden de id) y además pasan por una cola dentro del proceso: con SQLite todas las
+transacciones comparten una conexión y, sin la cola, dos pedidos simultáneos se intercalan.
+Las push por cambio de estado son de M5: acá no se manda ninguna.
