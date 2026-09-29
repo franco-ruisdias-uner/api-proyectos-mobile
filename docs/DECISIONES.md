@@ -289,4 +289,21 @@ Estado: PROVISORIA (autónomo)
 Las escrituras del operador toman el lock de la fila del reporte (y en los duplicados, de las
 dos filas en orden de id) y además pasan por una cola dentro del proceso: con SQLite todas las
 transacciones comparten una conexión y, sin la cola, dos pedidos simultáneos se intercalan.
-Las push por cambio de estado son de M5: acá no se manda ninguna.
+Las push por cambio de estado se agregaron en M5 (P22).
+
+### P22 — Push de M5
+Estado: PROVISORIA (autónomo)
+Hueco: §7 lista los hechos pero no todos los bordes.
+Decisión: la push sale después de confirmar la transacción y sólo si el pedido tuvo efecto:
+- Cada `CambioDeEstado` nuevo (`/estado`, `/cuadrilla`, incluida la reasignación, y `/duplicado`)
+  avisa **al autor** del reporte: «Tu reporte GCHU-… fue asignado a una cuadrilla.». No hay push
+  por el `recibido` inicial, por pedidos rechazados (4xx) ni por repeticiones sin cambios.
+- Sumarse (201) avisa al autor con el total: «Un vecino más se sumó a tu reporte GCHU-…. Ya son 3.».
+  Repetir (200) no avisa.
+- Marcar duplicado: el autor del duplicado recibe el aviso de `rechazado`; y si con eso se creó
+  una adhesión nueva al original, el autor del original recibe el aviso de adhesión (alternativa
+  descartada: no avisarle, por tratarse de una adhesión automática).
+- Respeta `avisosActivos`; los adherentes no reciben cambios de estado (D13). El operador que
+  actúa no recibe nada. `datos` de la push: `tipo` (`estado`|`adhesion`), `reporteId`, `codigo`
+  y, en cambios de estado, `estado`.
+Consecuencia en el contrato: ninguna en las respuestas HTTP.

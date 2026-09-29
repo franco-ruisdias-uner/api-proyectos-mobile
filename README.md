@@ -8,8 +8,12 @@ operador municipal lo trabaja desde una bandeja.
 Las respuestas tienen **exactamente** la forma de los tipos del PRD que ya tienen en
 `src/tipos/`. Cuando cambien el mock por `fetch`, no tienen que tocar esos tipos.
 
-> **Estado:** por ahora está la base (sesiones, archivos, dispositivos para push, salud). Los
-> reportes, el mapa y la bandeja se van sumando; lo que cambia queda en `CHANGELOG.md`.
+> **Estado:** están la base (sesiones, archivos, dispositivos para push, salud), los reportes,
+> el mapa, la bandeja del operador y los avisos push. Lo que cambia queda en `CHANGELOG.md`.
+
+**Avisos push:** registrá el teléfono con `POST /dispositivos`. La API le avisa al autor de un
+reporte cuando cambia su estado y cuando alguien se suma (si `avisosActivos` es `true`; se
+cambia con `PATCH /yo`). Para probar sin esperar a un operador: `POST /dispositivos/prueba`.
 
 ---
 

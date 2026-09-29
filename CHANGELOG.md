@@ -5,6 +5,20 @@ forma de las respuestas no cambia: sólo se agregan endpoints y códigos de erro
 
 ## Sin publicar
 
+### M5 — Avisos
+
+Sin endpoints nuevos: `PATCH /yo` (`avisosActivos`) y `POST /dispositivos` ya existían. Ahora la
+API manda notificaciones push a los teléfonos registrados del **autor** del reporte, si tiene los
+avisos activos:
+
+- Cuando cambia el estado (`en_revision`, `asignado`, `resuelto`, `rechazado`, también al
+  reasignar cuadrilla o marcarlo como duplicado): «Tu reporte GCHU-2026-00412 fue asignado a una
+  cuadrilla.»
+- Cuando alguien se suma: «Un vecino más se sumó a tu reporte GCHU-2026-00412. Ya son 3.»
+- Cada push trae `datos` con `tipo` (`estado` o `adhesion`), `reporteId` y `codigo` (y `estado`
+  en los cambios de estado) para abrir la pantalla del reporte al tocarla.
+- Quienes se suman a un reporte no reciben sus cambios de estado.
+
 ### M4 — Bandeja del operador
 
 Todos estos endpoints son sólo para operadores: un vecino recibe `403 SIN_PERMISO`.
