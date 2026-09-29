@@ -255,6 +255,19 @@ describe('GET /yo', () => {
     );
   });
 
+  it('401 con un token válido seguido de palabras de más', async () => {
+    const v = await crearVecino(ctx);
+    const { token } = v;
+    esperarError(
+      await ctx
+        .http()
+        .get('/yo')
+        .set('Authorization', `Bearer ${token} ${token}`),
+      401,
+      'NO_AUTENTICADO',
+    );
+  });
+
   it('AGENTS §7.2 — el token vence a los 30 días', async () => {
     const otro = await crearApp({ ahora: '2026-09-14T10:00:00-03:00' });
     try {

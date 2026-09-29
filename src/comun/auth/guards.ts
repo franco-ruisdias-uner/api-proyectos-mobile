@@ -46,8 +46,9 @@ export class GuardAutenticacion implements CanActivate {
   }
 
   private async usuarioDelToken(cabecera: string): Promise<Usuario | null> {
-    const [esquema, token] = cabecera.split(' ');
-    if (esquema !== 'Bearer' || !token) return null;
+    // Exactamente «Bearer <token>»: una cabecera con palabras de más es inválida.
+    const token = /^Bearer (\S+)$/i.exec(cabecera.trim())?.[1];
+    if (!token) return null;
     const contenido = this.tokens.verificar(token);
     if (!contenido || !esIdDe('usr', contenido.sub)) return null;
     return this.usuarios.findOneBy({ id: contenido.sub });

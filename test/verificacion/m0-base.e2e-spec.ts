@@ -1341,3 +1341,78 @@ describe('AGENTS §11.5 — Swagger documenta los códigos de error de M0', () =
     }
   });
 });
+
+// ============================================================================
+// Segunda pasada
+// ============================================================================
+
+describe('AGENTS §9 / §5.5 — Dos usuarios registran el mismo token de Expo a la vez', () => {
+  it('ninguno recibe 500 y el token queda de uno solo', async () => {
+    const a = await crearVecino(ctx);
+    const b = await crearVecino(ctx);
+    const t = `ExponentPushToken[verif-carrera-${Math.random().toString(36).slice(2, 8)}]`;
+    const cuerpo = { tokenExpo: t, plataforma: 'android' };
+    const res = await Promise.all(
+      [a, b, a, b].map((u) =>
+        ctx
+          .http()
+          .post('/dispositivos')
+          .set(...u.auth)
+          .send(cuerpo),
+      ),
+    );
+    for (const r of res) {
+      expect([200, 201]).toContain(r.status);
+      esperarContrato(r, 'Dispositivo');
+    }
+    const enviadas = await Promise.all(
+      [a, b].map(
+        async (u) =>
+          (
+            await ctx
+              .http()
+              .post('/dispositivos/prueba')
+              .set(...u.auth)
+          ).body.datos.enviadas as number,
+      ),
+    );
+    expect(enviadas[0] + enviadas[1]).toBe(1);
+  });
+});
+
+describe('AGENTS §4.1 — Métodos no soportados sobre rutas existentes', () => {
+  it.each([
+    ['PUT', '/yo'],
+    ['DELETE', '/yo'],
+    ['GET', '/auth/registro'],
+    ['PATCH', '/salud'],
+  ])(
+    '%s %s devuelve el sobre de error, no el de Express',
+    async (metodo, r) => {
+      const v = await crearVecino(ctx);
+      const pedido = ctx
+        .http()
+        [metodo.toLowerCase() as 'put' | 'delete' | 'get' | 'patch'](r)
+        .set(...v.auth);
+      const res = await pedido;
+      expect([404, 405]).toContain(res.status);
+      expect(Object.keys(res.body)).toEqual(['error']);
+      expect(Object.keys(res.body.error).sort()).toEqual(['codigo', 'mensaje']);
+      mensajeParaPersonas(res);
+    },
+  );
+});
+
+describe('AGENTS §7.3 — Cabecera Authorization mal armada', () => {
+  it.each([
+    ['dos tokens', (t: string) => `Bearer ${t} ${t}`],
+    ['token con basura al final', (t: string) => `Bearer ${t}x`],
+    ['token sin el esquema', (t: string) => t],
+  ])('401 NO_AUTENTICADO con %s', async (_caso, armar) => {
+    const v = await crearVecino(ctx);
+    const token = v.auth[1].replace(/^Bearer /, '');
+    const res = await ctx.http().get('/yo').set('Authorization', armar(token));
+    esperarError(res, 401, 'NO_AUTENTICADO');
+    mensajeParaPersonas(res);
+  });
+});
