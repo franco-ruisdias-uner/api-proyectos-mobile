@@ -956,3 +956,388 @@ describe('AGENTS §11.5 — Swagger documenta todos los endpoints de M0', () => 
     ).toBe(true);
   });
 });
+
+// ============================================================================
+// Segunda pasada del verificador
+// ============================================================================
+describe('AGENTS §5.5 / §7.1 — Registro simultáneo con el mismo email escrito distinto', () => {
+  it('mayúsculas y espacios distintos a la vez: uno 201 y el resto 409 EMAIL_YA_REGISTRADO', async () => {
+    const email = unico();
+    const variantes = [email, email.toUpperCase(), `  ${email}  `];
+    const respuestas = await Promise.all(
+      variantes.map((e) =>
+        registro({ nombre: 'Ana', email: e, contrasena: 'clave1234' }),
+      ),
+    );
+    const estados = respuestas.map((r) => r.status).sort();
+    expect(estados).toEqual([201, 409, 409]);
+    for (const r of respuestas.filter((x) => x.status === 409)) {
+      esperarError(r, 409, 'EMAIL_YA_REGISTRADO');
+      mensajeParaPersonas(r);
+    }
+  });
+});
+
+describe('AGENTS §7.2 / §6 — El token vence justo a los 30 días del Reloj', () => {
+  it('un segundo antes sirve; un segundo después, 401', async () => {
+    const res = await registro({
+      nombre: 'Ana',
+      email: unico(),
+      contrasena: 'clave1234',
+    });
+    const auth: [string, string] = [
+      'Authorization',
+      `Bearer ${res.body.datos.token}`,
+    ];
+    ctx.reloj.mover('2026-10-14T09:59:59-03:00');
+    const antes = await ctx
+      .http()
+      .get('/yo')
+      .set(...auth);
+    expect(antes.status).toBe(200);
+    esperarContrato(antes, 'Usuario');
+    ctx.reloj.mover('2026-10-14T10:00:01-03:00');
+    esperarError(
+      await ctx
+        .http()
+        .get('/yo')
+        .set(...auth),
+      401,
+      'NO_AUTENTICADO',
+    );
+  });
+
+  it('el usuario del registro es el mismo que devuelve /yo con ese token', async () => {
+    const res = await registro({
+      nombre: 'Ana',
+      email: unico(),
+      contrasena: 'clave1234',
+      telefono: '3446 55',
+    });
+    const yo = await ctx
+      .http()
+      .get('/yo')
+      .set('Authorization', `Bearer ${res.body.datos.token}`);
+    esperarContrato(yo, 'Usuario');
+    expect(yo.body.datos).toEqual(res.body.datos.usuario);
+  });
+});
+
+describe('AGENTS §7.3 — Entrada adversarial en PATCH /yo', () => {
+  it('__proto__ en el cuerpo no cambia el rol ni rompe la API', async () => {
+    const v = await crearVecino(ctx);
+    const res = await ctx
+      .http()
+      .patch('/yo')
+      .set(...v.auth)
+      .set('Content-Type', 'application/json')
+      .send('{"__proto__":{"rol":"operador"},"constructor":{"x":1}}');
+    expect(res.status).toBeLessThan(500);
+    const yo = await ctx
+      .http()
+      .get('/yo')
+      .set(...v.auth);
+    expect(yo.body.datos.rol).toBe('vecino');
+  });
+
+  it('AGENTS §5.3 — textos enormes: 400 con mensaje en castellano, nunca 500', async () => {
+    const v = await crearVecino(ctx);
+    const res = await ctx
+      .http()
+      .patch('/yo')
+      .set(...v.auth)
+      .send({ nombre: 'n'.repeat(1000), telefono: '1'.repeat(500) });
+    esperarError(res, 400, 'VALIDACION_FALLIDA');
+    mensajeParaPersonas(res);
+  });
+
+  it('telefono null borra el teléfono (P1)', async () => {
+    const v = await crearVecino(ctx, { telefono: '3446 1' });
+    const res = await ctx
+      .http()
+      .patch('/yo')
+      .set(...v.auth)
+      .send({ telefono: null });
+    expect(res.status).toBe(200);
+    esperarContrato(res, 'Usuario');
+    expect(res.body.datos.telefono).toBeNull();
+  });
+
+  it('telefono de sólo espacios nunca queda como texto en blanco', async () => {
+    const v = await crearVecino(ctx, { telefono: '3446 1' });
+    const res = await ctx
+      .http()
+      .patch('/yo')
+      .set(...v.auth)
+      .send({ telefono: '   ' });
+    if (res.status === 200) {
+      esperarContrato(res, 'Usuario');
+      expect(res.body.datos.telefono).toBeNull();
+    } else {
+      esperarError(res, 400, 'VALIDACION_FALLIDA');
+    }
+  });
+
+  it('la respuesta del PATCH es lo que queda guardado', async () => {
+    const v = await crearVecino(ctx);
+    const res = await ctx
+      .http()
+      .patch('/yo')
+      .set(...v.auth)
+      .send({ nombre: 'Norma', telefono: '3446 9', avisosActivos: false });
+    const yo = await ctx
+      .http()
+      .get('/yo')
+      .set(...v.auth);
+    expect(yo.body.datos).toEqual(res.body.datos);
+  });
+});
+
+describe('AGENTS §4.6 / §7.3 — El mensaje de validación dice qué está mal, sin confundir', () => {
+  it.each([
+    ['PATCH /yo teléfono numérico', 'patch', { telefono: 5 }],
+    [
+      'registro con teléfono numérico',
+      'registro',
+      { nombre: 'Ana', contrasena: 'clave1234', telefono: 5 },
+    ],
+  ])(
+    '%s: nombra el teléfono y no dice que es "demasiado largo"',
+    async (_caso, donde, cuerpo) => {
+      let res: Response;
+      if (donde === 'patch') {
+        const v = await crearVecino(ctx);
+        res = await ctx
+          .http()
+          .patch('/yo')
+          .set(...v.auth)
+          .send(cuerpo);
+      } else {
+        res = await registro({ email: unico(), ...cuerpo });
+      }
+      esperarError(res, 400, 'VALIDACION_FALLIDA');
+      expect(res.body.error.mensaje).toMatch(/tel[eé]fono/i);
+      expect(res.body.error.mensaje).not.toMatch(/demasiado larg/i);
+    },
+  );
+
+  it.each([
+    ['PATCH /yo', { avisosActivos: 'si' }],
+    ['POST /dispositivos', { tokenExpo: 'x', plataforma: 'ios' }],
+    [
+      'POST /dispositivos',
+      { tokenExpo: 'ExponentPushToken[x]', plataforma: 'web' },
+    ],
+  ])('%s %j: sin nombres de campo en camelCase', async (ruta2, cuerpo) => {
+    const v = await crearVecino(ctx);
+    const req =
+      ruta2 === 'PATCH /yo'
+        ? ctx.http().patch('/yo')
+        : ctx.http().post('/dispositivos');
+    const res = await req.set(...v.auth).send(cuerpo);
+    esperarError(res, 400, 'VALIDACION_FALLIDA');
+    mensajeParaPersonas(res);
+    expect(res.body.error.mensaje).not.toMatch(/\b[a-z]+[A-Z][a-zA-Z]*\b/);
+  });
+});
+
+describe('AGENTS §9 / §5.3 — /dispositivos con entradas raras', () => {
+  it('un token de Expo enorme: 400, nunca 500 (varchar en MySQL/PostgreSQL)', async () => {
+    const v = await crearVecino(ctx);
+    const res = await ctx
+      .http()
+      .post('/dispositivos')
+      .set(...v.auth)
+      .send({
+        tokenExpo: `ExponentPushToken[${'a'.repeat(600)}]`,
+        plataforma: 'ios',
+      });
+    esperarError(res, 400, 'VALIDACION_FALLIDA');
+  });
+
+  it('DELETE de algo que no es un token de Expo no da 500', async () => {
+    const v = await crearVecino(ctx);
+    const res = await ctx
+      .http()
+      .delete('/dispositivos/hola')
+      .set(...v.auth);
+    expect([204, 400, 404]).toContain(res.status);
+    if (res.status !== 204) expect(Object.keys(res.body)).toEqual(['error']);
+  });
+
+  it('la push de prueba cuenta sólo los dispositivos propios', async () => {
+    const v = await crearVecino(ctx);
+    const otro = await crearVecino(ctx);
+    const s = Math.random().toString(36).slice(2, 8);
+    for (const [u, t] of [
+      [v, `ExponentPushToken[a-${s}]`],
+      [v, `ExpoPushToken[b-${s}]`],
+      [otro, `ExponentPushToken[c-${s}]`],
+    ] as const) {
+      await ctx
+        .http()
+        .post('/dispositivos')
+        .set(...u.auth)
+        .send({ tokenExpo: t, plataforma: 'android' })
+        .expect(201);
+    }
+    const res = await ctx
+      .http()
+      .post('/dispositivos/prueba')
+      .set(...v.auth);
+    expect(res.status).toBe(200);
+    esperarContrato(res, 'PruebaDePush');
+    expect(res.body.datos).toEqual({ enviadas: 2 });
+  });
+});
+
+describe('AGENTS §17.1 — GET /archivos/<clave>: cabeceras y rangos raros', () => {
+  let url: string;
+  beforeAll(async () => {
+    const v = await crearVecino(ctx);
+    const res = await ctx
+      .http()
+      .post('/archivos')
+      .set(...v.auth)
+      .attach('archivo', jpegNumerado(1000), 'foto.jpg');
+    url = ruta(res.body.datos.url);
+  });
+
+  it('206 también trae ETag, Cache-Control inmutable y Accept-Ranges', async () => {
+    const res = await binario(ctx.http().get(url).set('Range', 'bytes=10-19'));
+    expect(res.status).toBe(206);
+    expect(res.headers['etag']).toBeTruthy();
+    expect(res.headers['cache-control']).toBe(
+      'public, max-age=31536000, immutable',
+    );
+    expect(res.headers['accept-ranges']).toBe('bytes');
+  });
+
+  it('HEAD da 200 con el tamaño y sin cuerpo', async () => {
+    const res = await ctx.http().head(url);
+    expect(res.status).toBe(200);
+    expect(res.headers['content-length']).toBe('1000');
+    expect(res.headers['content-type']).toBe('image/jpeg');
+  });
+
+  it.each(['bytes=abc', 'bytes=0-1,5-6', 'bytes=5-2', 'bytes=-0', 'bytes='])(
+    'Range %s: nunca 500; si es error, el sobre de error',
+    async (rango) => {
+      const res = await binario(ctx.http().get(url).set('Range', rango));
+      expect([200, 206, 416]).toContain(res.status);
+      if (res.status === 416) {
+        expect(res.headers['content-range']).toBe('bytes */1000');
+        const cuerpo = JSON.parse((res.body as Buffer).toString('utf8'));
+        expect(Object.keys(cuerpo)).toEqual(['error']);
+        expect(cuerpo.error.codigo).toBe('RANGO_NO_SATISFACIBLE');
+      }
+    },
+  );
+
+  it.each([
+    '/archivos/imagenes/2026/09/%00.jpg',
+    `/archivos/imagenes/2026/09/${'x'.repeat(2000)}.jpg`,
+    '/archivos/imagenes/2026/09/%E0%A4%A.jpg',
+  ])('clave rara %s: 4xx con sobre, no 500', async (camino) => {
+    const res = await ctx.http().get(camino);
+    expect(res.status).toBeGreaterThanOrEqual(400);
+    expect(res.status).toBeLessThan(500);
+    expect(Object.keys(res.body)).toEqual(['error']);
+  });
+
+  it('POST /archivos con JSON en vez de multipart: 400, no 500', async () => {
+    const v = await crearVecino(ctx);
+    const res = await ctx
+      .http()
+      .post('/archivos')
+      .set(...v.auth)
+      .send({ archivo: 'data:image/jpeg;base64,AAAA' });
+    esperarError(res, 400, 'VALIDACION_FALLIDA');
+    mensajeParaPersonas(res);
+  });
+});
+
+describe('AGENTS §11.4 — CORS, /salud y simulación', () => {
+  it('la verificación previa de CORS de una ruta con sesión no pide token', async () => {
+    const res = await ctx
+      .http()
+      .options('/yo')
+      .set('Origin', 'http://localhost:8081')
+      .set('Access-Control-Request-Method', 'PATCH')
+      .set('Access-Control-Request-Headers', 'authorization,content-type');
+    expect(res.status).toBeLessThan(300);
+    expect(res.headers['access-control-allow-origin']).toBeTruthy();
+  });
+
+  it('/salud informa el motor con el que está corriendo y el almacén local', async () => {
+    const res = await ctx.http().get('/salud');
+    esperarContrato(res, 'Salud');
+    expect(res.body.datos.motor).toBe(process.env.DB_MOTOR ?? 'better-sqlite3');
+    expect(res.body.datos.almacen).toBe('local');
+    expect(res.body.datos.version).toMatch(/^\d+\.\d+\.\d+/);
+  });
+
+  describe('prendida', () => {
+    let sim: AppDePrueba;
+    beforeAll(async () => {
+      sim = await crearApp({ entorno: { SIMULACION_HABILITADA: 'true' } });
+    });
+    afterAll(() => sim.cerrar());
+
+    it.each(['demora-abc', 'error-404', ''])(
+      'X-Simular "%s" no rompe nada: /salud responde 200',
+      async (valor) => {
+        const res = await sim.http().get('/salud').set('X-Simular', valor);
+        expect(res.status).toBe(200);
+        esperarContrato(res, 'Salud');
+      },
+    );
+
+    it('error-500 en una ruta con sesión, sin token: sobre de ERROR_INTERNO', async () => {
+      const res = await sim
+        .http()
+        .patch('/yo')
+        .set('X-Simular', 'error-500')
+        .send({});
+      esperarError(res, 500, 'ERROR_INTERNO');
+    });
+  });
+});
+
+describe('AGENTS §11.5 — Swagger documenta los códigos de error de M0', () => {
+  it.each([
+    ['/auth/registro', 'post', ['EMAIL_YA_REGISTRADO', 'VALIDACION_FALLIDA']],
+    ['/auth/ingreso', 'post', ['CREDENCIALES_INVALIDAS']],
+    ['/yo', 'get', ['NO_AUTENTICADO']],
+    [
+      '/archivos',
+      'post',
+      ['ARCHIVO_DEMASIADO_GRANDE', 'TIPO_DE_ARCHIVO_NO_PERMITIDO'],
+    ],
+    [
+      '/archivos/{clave}',
+      'get',
+      ['ARCHIVO_NO_ENCONTRADO', 'RANGO_NO_SATISFACIBLE'],
+    ],
+  ])('%s %s menciona %j', async (camino, metodo, codigos) => {
+    const res = await ctx.http().get('/docs-json');
+    const op = res.body.paths[camino]?.[metodo];
+    expect(op).toBeDefined();
+    const texto = JSON.stringify(op);
+    for (const c of codigos) expect(texto, c).toContain(c);
+  });
+
+  it('las rutas públicas no piden sesión en Swagger', async () => {
+    const res = await ctx.http().get('/docs-json');
+    const p = res.body.paths;
+    for (const [c, m] of [
+      ['/salud', 'get'],
+      ['/auth/registro', 'post'],
+      ['/auth/ingreso', 'post'],
+      ['/archivos/{clave}', 'get'],
+    ]) {
+      const sec = p[c][m].security as unknown[] | undefined;
+      expect(sec === undefined || sec.length === 0, `${m} ${c}`).toBe(true);
+    }
+  });
+});

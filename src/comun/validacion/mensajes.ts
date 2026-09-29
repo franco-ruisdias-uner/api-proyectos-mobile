@@ -34,6 +34,9 @@ const DE_PRESENCIA = new Set([
   'isEmail',
 ]);
 
+/** Restricciones de tipo: si fallan, los mensajes de las demás reglas no tienen sentido. */
+const DE_TIPO = new Set(['isString', 'isNumber', 'isInt', 'isBoolean']);
+
 function primerError(errores: ValidationError[]): ValidationError | undefined {
   for (const e of errores) {
     if (e.constraints && Object.keys(e.constraints).length > 0) return e;
@@ -59,10 +62,13 @@ export function mensajeDeValidacion(errores: ValidationError[]): string {
     return `Falta ${etiqueta(e.property)}.`;
   }
 
+  const formatoIncorrecto = `Revisá ${etiqueta(e.property)}: no tiene el formato correcto.`;
+  if (restricciones.some((r) => DE_TIPO.has(r))) return formatoIncorrecto;
+
   for (const r of restricciones) {
     const propio = (e.contexts?.[r] as { mensaje?: string } | undefined)
       ?.mensaje;
     if (propio) return propio;
   }
-  return `Revisá ${etiqueta(e.property)}: no tiene el formato correcto.`;
+  return formatoIncorrecto;
 }

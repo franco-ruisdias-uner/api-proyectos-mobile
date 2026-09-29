@@ -50,6 +50,23 @@ describe('AGENTS §7.3 — El error de validación nombra el primer campo, en ca
     ).toBe('La contraseña tiene que tener al menos 8 caracteres.');
   });
 
+  it('si el tipo está mal, no usa el mensaje de otra regla (un número no es "demasiado largo")', () => {
+    expect(
+      mensajeDeValidacion([
+        error(
+          'telefono',
+          { isString: 'x', maxLength: 'y' },
+          {
+            value: 5,
+            contexts: {
+              maxLength: { mensaje: 'El teléfono es demasiado largo.' },
+            },
+          },
+        ),
+      ]),
+    ).toBe('Revisá el teléfono: no tiene el formato correcto.');
+  });
+
   it('entra en los objetos anidados y nombra el campo de adentro', () => {
     expect(
       mensajeDeValidacion([
