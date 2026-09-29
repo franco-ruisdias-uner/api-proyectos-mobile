@@ -6,6 +6,7 @@ import { ErrorApi } from '../../comun/errores/catalogo.js';
 import { nuevoId } from '../../comun/ids/ids.js';
 import { Reloj } from '../../comun/reloj/reloj.js';
 import type { Usuario } from '../usuarios/usuario.entidad.js';
+import { AvisosDeReportes } from './avisos-de-reportes.servicio.js';
 import { Adhesion } from './adhesion.entidad.js';
 import { Reporte } from './reporte.entidad.js';
 import { esEstadoAbierto } from './reglas/estados.js';
@@ -20,6 +21,7 @@ export class ServicioAdhesiones {
     private readonly adhesiones: Repository<Adhesion>,
     private readonly servicioReportes: ServicioReportes,
     private readonly reloj: Reloj,
+    private readonly avisos: AvisosDeReportes,
   ) {}
 
   /** Sumarse a un reporte ajeno y abierto (R10). `creada` es false si ya estaba sumado. */
@@ -64,7 +66,9 @@ export class ServicioAdhesiones {
       if (!esViolacionDeUnicidad(error)) throw error;
       return this.respuesta(reporteId, false);
     }
-    return this.respuesta(reporteId, true);
+    const respuesta = await this.respuesta(reporteId, true);
+    await this.avisos.adhesion(reporte, respuesta.reporte.adhesiones);
+    return respuesta;
   }
 
   private async respuesta(reporteId: string, creada: boolean) {
@@ -77,7 +81,8 @@ export class ServicioAdhesiones {
 export async function recalcularAdhesiones(
   manager: DataSource['manager'],
   reporteId: string,
-): Promise<void> {
+): Promise<number> {
   const total = await manager.countBy(Adhesion, { reporteId });
   await manager.update(Reporte, { id: reporteId }, { adhesiones: total });
+  return total;
 }

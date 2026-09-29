@@ -18,6 +18,7 @@ import { Cuadrilla } from '../catalogos/cuadrilla.entidad.js';
 import type { Usuario } from '../usuarios/usuario.entidad.js';
 import { Adhesion } from './adhesion.entidad.js';
 import { recalcularAdhesiones } from './adhesiones.servicio.js';
+import { AvisosDeReportes } from './avisos-de-reportes.servicio.js';
 import { CambioDeEstado } from './cambio-de-estado.entidad.js';
 import {
   ZONA_TODAS,
@@ -78,6 +79,7 @@ export class ServicioBandeja {
     private readonly servicioReportes: ServicioReportes,
     private readonly archivos: ServicioArchivos,
     private readonly reloj: Reloj,
+    private readonly avisos: AvisosDeReportes,
   ) {}
 
   /** Reportes abiertos: los más apoyados primero y, a igualdad, el más viejo. */
@@ -105,7 +107,7 @@ export class ServicioBandeja {
     id: string,
     dto: CambiarEstadoDto,
   ): Promise<ReporteCompleto> {
-    await this.transaccion(async (manager) => {
+    const reporte = await this.transaccion(async (manager) => {
       const reporte = await reporteBloqueado(manager, id);
       const resultado = transicionPorEstado(reporte.estado, dto.estado);
       if (resultado !== 'ok') throw new ErrorApi(resultado);
@@ -119,7 +121,9 @@ export class ServicioBandeja {
         dto.comentario ?? null,
         operador,
       );
+      return reporte;
     });
+    await this.avisos.cambioDeEstado(reporte, dto.estado);
     return this.servicioReportes.obtener(id);
   }
 
@@ -129,7 +133,7 @@ export class ServicioBandeja {
     id: string,
     dto: AsignarCuadrillaDto,
   ): Promise<ReporteCompleto> {
-    await this.transaccion(async (manager) => {
+    const reporte = await this.transaccion(async (manager) => {
       const reporte = await reporteBloqueado(manager, id);
       if (!dto.cuadrillaId) throw new ErrorApi('CUADRILLA_REQUERIDA');
       const resultado = transicionPorCuadrilla(reporte.estado);
@@ -150,7 +154,9 @@ export class ServicioBandeja {
         operador,
         cuadrilla.id,
       );
+      return reporte;
     });
+    await this.avisos.cambioDeEstado(reporte, 'asignado');
     return this.servicioReportes.obtener(id);
   }
 
@@ -160,7 +166,7 @@ export class ServicioBandeja {
     id: string,
     { originalId }: MarcarDuplicadoDto,
   ): Promise<ReporteCompleto> {
-    await this.transaccion(async (manager) => {
+    const efectos = await this.transaccion(async (manager) => {
       if (!(await manager.existsBy(Reporte, { id }))) {
         throw new ErrorApi('REPORTE_NO_ENCONTRADO');
       }
@@ -179,7 +185,7 @@ export class ServicioBandeja {
       const original = bloqueados.get(originalId)!;
 
       // Repetir el mismo pedido (la cola offline reintenta) no cambia nada.
-      if (duplicado.duplicadoDe === originalId) return;
+      if (duplicado.duplicadoDe === originalId) return null;
       const resultado = transicionPorEstado(duplicado.estado, 'rechazado');
       if (resultado !== 'ok') throw new ErrorApi(resultado);
       if (
@@ -199,6 +205,7 @@ export class ServicioBandeja {
       );
       await manager.update(Reporte, { id }, { duplicadoDe: originalId });
 
+      let totalOriginal: number | null = null;
       if (duplicado.autorId !== original.autorId) {
         const yaSumado = await manager.existsBy(Adhesion, {
           reporteId: originalId,
@@ -215,9 +222,17 @@ export class ServicioBandeja {
             }),
           );
         }
-        await recalcularAdhesiones(manager, originalId);
+        totalOriginal = await recalcularAdhesiones(manager, originalId);
+        if (yaSumado) totalOriginal = null;
       }
+      return { duplicado, original, totalOriginal };
     });
+    if (efectos) {
+      await this.avisos.cambioDeEstado(efectos.duplicado, 'rechazado');
+      if (efectos.totalOriginal !== null) {
+        await this.avisos.adhesion(efectos.original, efectos.totalOriginal);
+      }
+    }
     return this.servicioReportes.obtener(id);
   }
 
