@@ -55,6 +55,10 @@ async function probar({ motor }) {
   const audio = await fetch(molino.audioguia.url.replace(/^https?:\/\/[^/]+/, BASE), { headers: { Range: 'bytes=0-99' } });
   if (audio.status !== 206) throw new Error(`La audioguía con Range respondió ${audio.status}`);
   await audio.arrayBuffer();
+  const evento = await pedir('/eventos/evt-017');
+  if (evento.estado !== 200 || evento.cuerpo?.datos?.lugarId !== 'lug-009') {
+    throw new Error(`GET /eventos/evt-017 respondió ${evento.estado}: ${JSON.stringify(evento.cuerpo)?.slice(0, 300)}`);
+  }
   const ingreso = await pedir('/auth/ingreso', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

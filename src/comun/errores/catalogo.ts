@@ -32,6 +32,8 @@ export const CATALOGO_ERRORES = {
     estado: 404,
     mensaje: 'Ese código no es de Mi Ciudad. Probá con el cartel de otro lugar.',
   },
+  // Agenda
+  EVENTO_NO_ENCONTRADO: { estado: 404, mensaje: 'No existe ese evento.' },
   // Proyecto
   CATEGORIA_NO_ENCONTRADA: { estado: 422, mensaje: 'Alguna de las categorías elegidas no existe.' },
 } as const satisfies Record<string, { estado: number; mensaje: string }>;

@@ -211,3 +211,34 @@ Decisión:
   tono. La duración que publica la API se lee del archivo (R20). Las imágenes son PNG generados.
 - El anfiteatro (`lug-009`) no tiene horarios: abre sólo con eventos.
 Consecuencia en el contrato: ninguna.
+
+### D3 — `finalizado`: ¿se guarda o se calcula?
+Estado: PROVISORIA
+Hueco: el PRD tiene el estado `finalizado` pero nadie lo cambia a mano.
+Decisión: se calcula al leer (R9): un evento guardado como `programado` cuyo fin efectivo ya pasó
+sale como `finalizado`. La base guarda sólo `programado`, `suspendido` o `cancelado`, y una
+columna interna `finEfectivo` (el `fin`, o las 23:59:59 del día de `inicio` en Buenos Aires) para
+poder filtrar en la base. Es `finalizado` cuando `finEfectivo` es **anterior** a ahora (a la hora
+exacta del fin, todavía no). `suspendido` y `cancelado` no cambian solos.
+Consecuencia en el contrato: ninguna; `estado` puede valer los cuatro valores del PRD.
+
+### M2-1 — Agenda: bordes de los filtros
+Estado: PROVISORIA (autónomo)
+Hueco: la especificación define `fecha`, `desde` y `hasta` pero no todos los bordes.
+Decisión:
+- Un día es de las 00:00 a las 24:00 de Buenos Aires, **medio abierto**: un evento que termina
+  justo a las 00:00 no aparece en el día siguiente; uno que empieza a las 00:00 sí.
+- `desde` vale hoy si no viene, también cuando sólo viene `hasta` (un `hasta` en el pasado da
+  lista vacía). `hasta` anterior a `desde` es `VALIDACION_FALLIDA`.
+- `fecha` junto con `desde` o `hasta` es `VALIDACION_FALLIDA`.
+- Los días van de 1900 a 2999 y deben existir (no hay 30 de febrero).
+- `estado=programado` no incluye los ya terminados (salen como `finalizado`).
+- Un `lugarId` que no existe o está mal formado da lista vacía, como `categoriaId` en M1.
+Descartado: `hasta` solo = "todo hasta ahí" (contradice "sin nada: desde hoy").
+
+
+### M2-2 — Cambio de estado sin notificar todavía
+Estado: PROVISORIA (autónomo)
+`PATCH /eventos/:id/estado` cambia el estado y responde. El push a quienes guardaron el evento
+(especificación §7) es de M5, que agrega los eventos guardados; por eso M2 no notifica.
+

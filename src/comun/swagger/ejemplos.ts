@@ -1,5 +1,5 @@
 import type { Sesion } from '../../../contrato/api.js';
-import type { Categoria, Lugar, Usuario } from '../../../contrato/tipos.js';
+import type { Categoria, Evento, Lugar, Usuario } from '../../../contrato/tipos.js';
 import { CATALOGO_ERRORES, type CodigoError } from '../errores/catalogo.js';
 
 /** Ejemplos de Swagger, tomados del PRD. */
@@ -55,6 +55,20 @@ export const EJEMPLO_LUGAR: Lugar = {
   accesible: false,
   activo: true,
   actualizadoEn: '2026-08-01T10:30:00-03:00',
+};
+
+export const EJEMPLO_EVENTO: Evento = {
+  id: 'evt-017',
+  titulo: 'Peña en el anfiteatro',
+  descripcion: 'Noche de folklore con músicos de la región.',
+  lugarId: 'lug-009',
+  direccionLibre: null,
+  coordenadas: null,
+  inicio: '2026-11-14T21:00:00-03:00',
+  fin: '2026-11-14T23:30:00-03:00',
+  imagenUrl: 'http://192.168.0.10:3000/archivos/imagenes/2026/09/semilla-museos-1.png',
+  precio: 3500,
+  estado: 'programado',
 };
 
 export function ejemploError(codigo: CodigoError) {

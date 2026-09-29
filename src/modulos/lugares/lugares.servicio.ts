@@ -96,6 +96,10 @@ export class LugaresServicio {
     return aContrato(lugar, this.reloj.ahora());
   }
 
+  async existe(id: string): Promise<boolean> {
+    return (await this.buscar(id)) !== null;
+  }
+
   /** R6: cualquier cosa que no sea el QR de un lugar nuestro es `QR_NO_RECONOCIDO`. */
   async porQr(codigo: string): Promise<Lugar> {
     const id = leerCodigoQr(codigo);

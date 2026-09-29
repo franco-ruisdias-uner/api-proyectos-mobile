@@ -4,7 +4,7 @@ import { conSesion } from '../utilidades/builders.js';
 import { duracionMp3Constante } from '../utilidades/audio.js';
 import { Sembrador } from '../../src/semillas/sembrador.js';
 import { USUARIOS_SEMILLA } from '../../src/semillas/datos/usuarios.js';
-import type { Categoria, Lugar } from '../../contrato/tipos.js';
+import type { Categoria, Evento, Lugar } from '../../contrato/tipos.js';
 
 describe('AGENTS §10.4 — Los datos de demo cumplen el contrato', () => {
   let ctx: AppDePrueba;
@@ -269,5 +269,48 @@ describe('Especificación §8 — Catálogo de demo', () => {
         expect(res.body.datos.id).toBe(l.id);
       }
     });
+  });
+});
+
+describe('Especificación §8 — Agenda de demo', () => {
+  let ctx: AppDePrueba;
+  let eventos: Evento[];
+
+  beforeAll(async () => {
+    ctx = await crearApp();
+    await ctx.app.get(Sembrador).sembrar();
+    const res = await ctx.http().get('/eventos').query({ desde: '2000-01-01', porPagina: 100 }).expect(200);
+    esperarContrato(res.body, 'Evento');
+    eventos = res.body.datos;
+  });
+  afterAll(() => ctx.cerrar());
+
+  it('evt-017 es la peña en el anfiteatro (lug-009), hoy a la noche', () => {
+    const e = eventos.find((x) => x.id === 'evt-017');
+    expect(e).toMatchObject({
+      titulo: 'Peña en el anfiteatro',
+      lugarId: 'lug-009',
+      inicio: '2026-11-14T21:00:00-03:00',
+      estado: 'programado',
+    });
+  });
+
+  it('trae los casos que pide la especificación', () => {
+    const estados = eventos.map((e) => e.estado);
+    for (const estado of ['programado', 'suspendido', 'cancelado', 'finalizado']) {
+      expect(estados).toContain(estado);
+    }
+    expect(eventos.some((e) => e.lugarId === null && e.direccionLibre && e.coordenadas)).toBe(true);
+    expect(eventos.some((e) => e.precio === 0)).toBe(true);
+    expect(eventos.some((e) => e.precio === null)).toBe(true);
+    expect(eventos.some((e) => e.fin && e.fin.slice(0, 10) !== e.inicio.slice(0, 10))).toBe(true);
+    expect(eventos.some((e) => e.inicio.startsWith('2026-11-15') && e.fin === null)).toBe(true);
+    expect(eventos.some((e) => e.inicio.startsWith('2026-11-24'))).toBe(true);
+  });
+
+  it('R7 — cada evento sembrado apunta a un lugar que existe', async () => {
+    for (const e of eventos.filter((x) => x.lugarId)) {
+      await ctx.http().get(`/lugares/${e.lugarId}`).expect(200);
+    }
   });
 });

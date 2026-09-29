@@ -12,6 +12,7 @@ import type { Entorno } from './config/entorno.js';
 import { ArchivosModulo } from './modulos/archivos/archivos.modulo.js';
 import { CategoriasModulo } from './modulos/categorias/categorias.modulo.js';
 import { DispositivosModulo } from './modulos/dispositivos/dispositivos.modulo.js';
+import { EventosModulo } from './modulos/eventos/eventos.modulo.js';
 import { LugaresModulo } from './modulos/lugares/lugares.modulo.js';
 import { SaludModulo } from './modulos/salud/salud.modulo.js';
 import { UsuariosModulo } from './modulos/usuarios/usuarios.modulo.js';
@@ -40,6 +41,7 @@ export class AppModule {
         DispositivosModulo,
         CategoriasModulo,
         LugaresModulo,
+        EventosModulo,
         SaludModulo,
         SemillasModulo,
       ],

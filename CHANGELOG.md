@@ -3,6 +3,18 @@
 Lo que cambia en la API, escrito para quienes la usan desde la app. Desde la `v1.0.0` no se
 cambia la forma de ninguna respuesta: sólo se agregan cosas.
 
+## 0.3.0 — Agenda
+
+- `GET /eventos`: la agenda por `inicio`, con filtros por día (`fecha`, o `desde` y `hasta`),
+  `lugarId` y `estado`. Sin filtros de día, desde hoy. Un evento que cruza la medianoche aparece
+  en los dos días.
+- `GET /eventos/:id`: el detalle.
+- `PATCH /eventos/:id/estado`: el administrador suspende, cancela o reprograma un evento
+  (`programado`, `suspendido` o `cancelado`).
+- `estado: "finalizado"` se calcula solo cuando un evento programado termina.
+- Error nuevo: `EVENTO_NO_ENCONTRADO`.
+- Datos de demo: 8 eventos, entre ellos `evt-017` (la peña en el anfiteatro).
+
 ## 0.2.0 — Catálogo
 
 - `GET /categorias`: las categorías de lugares, por `orden`.

@@ -4,9 +4,13 @@ import { AlmacenArchivos } from '../comun/archivos/almacen-archivos.js';
 import { hashearContrasena } from '../comun/auth/contrasenas.js';
 import { Reloj } from '../comun/reloj/reloj.js';
 import { CategoriasServicio } from '../modulos/categorias/categorias.servicio.js';
+import { EventosServicio } from '../modulos/eventos/eventos.servicio.js';
+import { comienzoDelDia } from '../modulos/eventos/reglas/agenda.js';
 import { LugaresServicio } from '../modulos/lugares/lugares.servicio.js';
 import { UsuarioEntidad } from '../modulos/usuarios/usuario.entidad.js';
+import { diaLocal } from '../comun/fechas/fechas.js';
 import { CATEGORIAS_SEMILLA, LUGARES_SEMILLA } from './datos/catalogo.js';
+import { EVENTOS_SEMILLA, type Momento } from './datos/eventos.js';
 import { USUARIOS_SEMILLA } from './datos/usuarios.js';
 import { duracionMp3, MediosSemilla } from './medios.js';
 
@@ -26,6 +30,7 @@ export class Sembrador {
     private readonly almacen: AlmacenArchivos,
     private readonly categorias: CategoriasServicio,
     private readonly lugares: LugaresServicio,
+    private readonly eventos: EventosServicio,
   ) {}
 
   async estaVacia(): Promise<boolean> {
@@ -49,9 +54,10 @@ export class Sembrador {
       });
     }
     await this.sembrarCatalogo(ahora);
+    await this.sembrarAgenda(ahora);
     this.log.log(
       `Datos de demo cargados: ${USUARIOS_SEMILLA.length} usuarios, ${CATEGORIAS_SEMILLA.length} categorías ` +
-        `y ${LUGARES_SEMILLA.length} lugares.`,
+        `${LUGARES_SEMILLA.length} lugares y ${EVENTOS_SEMILLA.length} eventos.`,
     );
   }
 
@@ -75,6 +81,28 @@ export class Sembrador {
           fijo && fijo.getTime() <= ahora.getTime()
             ? fijo
             : new Date(ahora.getTime() - actualizadoHaceDias * DIA),
+      });
+    }
+  }
+
+  /** M2: la agenda, relativa a hoy en hora de Buenos Aires. */
+  private async sembrarAgenda(ahora: Date): Promise<void> {
+    const medios = new MediosSemilla(this.almacen, ahora);
+    const hoy = diaLocal(ahora);
+    const instante = ({ dia, hora }: Momento): Date => {
+      const [h, m] = hora.split(':').map(Number);
+      // Sumar días al mediodía y volver a las 00:00 evita depender del largo del día.
+      const base = comienzoDelDia(
+        diaLocal(new Date(comienzoDelDia(hoy).getTime() + (dia * 24 + 12) * 3600_000)),
+      );
+      return new Date(base.getTime() + (h * 60 + m) * 60_000);
+    };
+    for (const { imagen, inicio, fin, ...evento } of EVENTOS_SEMILLA) {
+      await this.eventos.cargar({
+        ...evento,
+        inicio: instante(inicio),
+        fin: fin ? instante(fin) : null,
+        imagenClave: imagen ? await medios.subir(imagen) : null,
       });
     }
   }

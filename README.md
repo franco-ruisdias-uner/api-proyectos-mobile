@@ -183,6 +183,28 @@ Para **mirar** lugares, mapa y agenda no hace falta cuenta. La cuenta es para gu
 - Las fotos y audios de demo están generados por código. Los lugares son reales, con
   coordenadas aproximadas; los restaurantes y el hotel son inventados.
 
+### Agenda de eventos
+
+- `GET /eventos` trae los eventos por `inicio`; `GET /eventos/:id`, el detalle. No hace falta
+  cuenta. Filtros, que se pueden combinar (salvo `fecha` con `desde`/`hasta`):
+
+  | Parámetro | Qué hace |
+  |---|---|
+  | `fecha=2026-11-14` | Los eventos de ese día. |
+  | `desde=2026-11-14`, `hasta=2026-11-30` | Un rango de días, inclusive. Sin `desde`: desde hoy. Sin `hasta`: sin tope. |
+  | `lugarId=lug-009` | Sólo los de ese lugar. Uno que no existe da la lista vacía. |
+  | `estado=suspendido` | `programado`, `suspendido`, `cancelado` o `finalizado`. |
+
+- Sin filtros de día, la lista arranca **hoy** (un evento de hoy que ya terminó igual aparece, con
+  `estado: "finalizado"`). Un evento aparece en **cada día que toca**: una peña de 21:00 a 02:00
+  sale en los dos días. Sin `fin`, cuenta hasta las 23:59 del día de `inicio`.
+- **`finalizado` lo calcula la API**: es un evento `programado` que ya terminó. Un evento
+  `suspendido` o `cancelado` sigue así aunque pase la fecha.
+- Un evento tiene o `lugarId` o `direccionLibre` (con `coordenadas`, si las hay), nunca los dos.
+- Para probar los cambios de estado, ingresen con `turismo@colon.demo.ar` y manden
+  `PATCH /eventos/evt-017/estado` con `{ "estado": "suspendido" }`. Un turista recibe `403`.
+  Las notificaciones a quienes guardaron el evento llegan con el módulo de eventos guardados.
+
 ### Endpoints
 
 `🌐` sin cuenta · `🔒` con sesión
@@ -203,6 +225,9 @@ Para **mirar** lugares, mapa y agenda no hace falta cuenta. La cuenta es para gu
 | `GET` | `/lugares` | 🌐 | Lugares |
 | `GET` | `/lugares/qr/:codigo` | 🌐 | Lugar de un código QR |
 | `GET` | `/lugares/:id` | 🌐 | Detalle de un lugar |
+| `GET` | `/eventos` | 🌐 | Agenda de eventos |
+| `GET` | `/eventos/:id` | 🌐 | Detalle de un evento |
+| `PATCH` | `/eventos/:id/estado` | 🔒 | Suspender, cancelar o reprogramar un evento |
 | `GET` | `/salud` | 🌐 | ¿Anda la API? |
 <!-- /tabla:endpoints -->
 
@@ -222,6 +247,7 @@ según el `codigo`, que no cambia nunca.
 | 404 | `ARCHIVO_NO_ENCONTRADO` | No encontramos ese archivo. |
 | 404 | `LUGAR_NO_ENCONTRADO` | No existe ese lugar. |
 | 404 | `QR_NO_RECONOCIDO` | Ese código no es de Mi Ciudad. Probá con el cartel de otro lugar. |
+| 404 | `EVENTO_NO_ENCONTRADO` | No existe ese evento. |
 | 409 | `EMAIL_YA_REGISTRADO` | Ya hay una cuenta con ese email. |
 | 413 | `PEDIDO_DEMASIADO_GRANDE` | El pedido es demasiado grande. |
 | 413 | `ARCHIVO_DEMASIADO_GRANDE` | El archivo es demasiado grande. |

@@ -5,6 +5,8 @@ import { hashearContrasena } from '../../src/comun/auth/contrasenas.js';
 import { nuevoId } from '../../src/comun/ids/ids.js';
 import { CategoriasServicio } from '../../src/modulos/categorias/categorias.servicio.js';
 import type { LugarACargar } from '../../src/modulos/lugares/lugar-a-cargar.js';
+import type { EventoACargar } from '../../src/modulos/eventos/evento-a-cargar.js';
+import { EventosServicio } from '../../src/modulos/eventos/eventos.servicio.js';
 import { LugaresServicio } from '../../src/modulos/lugares/lugares.servicio.js';
 import { UsuarioEntidad } from '../../src/modulos/usuarios/usuario.entidad.js';
 import type { AppDePrueba } from './crear-app.js';
@@ -127,3 +129,26 @@ export async function crearLugar(ctx: AppDePrueba, datos: Partial<LugarACargar> 
 
 /** Clave del almacén a partir de la URL que devolvió `POST /archivos`. */
 export const claveDe = (url: string) => new URL(url).pathname.replace(/^\/archivos\//, '');
+
+/**
+ * Crea un evento por el servicio de la agenda. Por defecto: mañana a las 21:00 de Buenos Aires
+ * (con el reloj de prueba), en un lugar nuevo, sin fin. Devuelve el id.
+ */
+export async function crearEvento(ctx: AppDePrueba, datos: Partial<EventoACargar> = {}): Promise<string> {
+  contador++;
+  const sinLugar = datos.direccionLibre !== undefined && datos.direccionLibre !== null;
+  const lugarId = sinLugar ? null : (datos.lugarId ?? (await crearLugar(ctx)));
+  return ctx.app.get(EventosServicio).cargar({
+    titulo: `Evento ${contador}`,
+    descripcion: 'Un evento para no perderse.',
+    direccionLibre: null,
+    coordenadas: null,
+    inicio: new Date('2026-11-15T21:00:00-03:00'),
+    fin: null,
+    imagenClave: null,
+    precio: null,
+    estado: 'programado',
+    ...datos,
+    lugarId,
+  });
+}
