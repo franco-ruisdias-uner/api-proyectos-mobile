@@ -7,6 +7,7 @@ import {
   MaxLength,
 } from 'class-validator';
 import {
+  Opcional,
   Recortar,
   VacioANulo,
 } from '../../../comun/validacion/transformaciones.js';
@@ -14,7 +15,7 @@ import {
 export class ActualizarYoDto {
   @ApiPropertyOptional({ example: 'Norma Pereyra', maxLength: 120 })
   @Recortar()
-  @IsOptional()
+  @Opcional()
   @IsString()
   @IsNotEmpty()
   @MaxLength(120, { context: { mensaje: 'El nombre es demasiado largo.' } })
@@ -36,7 +37,7 @@ export class ActualizarYoDto {
     example: false,
     description: 'Interruptor de notificaciones push.',
   })
-  @IsOptional()
+  @Opcional()
   @IsBoolean()
   avisosActivos?: boolean;
 }
