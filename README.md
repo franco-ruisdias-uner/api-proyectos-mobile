@@ -168,6 +168,11 @@ volver a ingresar.
 | `POST` | `/archivos` | 🔒 con sesión | Subir una foto, un audio o un video |
 | `GET` | `/archivos/:clave` | 🌐 público | Descargar un archivo |
 | `GET` | `/salud` | 🌐 público | ¿Anda la API? |
+| `GET` | `/lineas` | 🌐 público | Las líneas, con sus recorridos |
+| `GET` | `/lineas/:id` | 🌐 público | Detalle de una línea |
+| `GET` | `/paradas` | 🌐 público | Paradas: búsqueda, por línea y cercanas |
+| `GET` | `/paradas/qr/:codigo` | 🌐 público | Resolver el QR de una parada |
+| `GET` | `/paradas/:id` | 🌐 público | Detalle de una parada |
 | `POST` | `/auth/registro` | 🌐 público | Crear una cuenta de pasajero |
 | `POST` | `/auth/ingreso` | 🌐 público | Ingresar con email y contraseña |
 | `GET` | `/yo` | 🔒 con sesión | Mi cuenta |
@@ -222,6 +227,9 @@ usalo para decidir qué hacer. El **mensaje** está en castellano y se puede mos
 | `NO_AUTENTICADO` | 401 | Tenés que ingresar con tu cuenta. |
 | `SIN_PERMISO` | 403 | No tenés permiso para hacer esto. |
 | `ARCHIVO_NO_ENCONTRADO` | 404 | No encontramos ese archivo. |
+| `LINEA_NO_ENCONTRADA` | 404 | No existe esa línea. |
+| `PARADA_NO_ENCONTRADA` | 404 | No existe esa parada. |
+| `QR_NO_RECONOCIDO` | 404 | Ese código no es de una parada de Paraná. |
 | `RUTA_NO_ENCONTRADA` | 404 | Esa dirección no existe en la API. |
 | `EMAIL_YA_REGISTRADO` | 409 | Ya hay una cuenta con ese email. |
 | `ARCHIVO_DEMASIADO_GRANDE` | 413 | El archivo es demasiado grande. |

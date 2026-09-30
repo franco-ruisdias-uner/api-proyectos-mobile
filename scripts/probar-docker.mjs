@@ -13,12 +13,30 @@ const COMPOSES = [
   { nombre: 'mariadb', archivo: 'compose.mariadb.yaml', motor: 'mariadb' },
 ];
 
-/**
- * Lo que se prueba contra cada compose, además de /salud: que las semillas se cargaron.
- * Mientras no haya listados públicos (llegan con M1), se prueba el ingreso de una cuenta
- * de demo; después se suma GET /lineas.
- */
+/** Lo que se prueba contra cada compose, además de /salud: que las semillas se cargaron. */
 const PRUEBAS = [
+  {
+    nombre: 'GET /lineas trae las 14 líneas de demo, con recorridos',
+    async correr() {
+      const r = await fetch(`${BASE}/lineas`);
+      const cuerpo = await r.json();
+      const lineas = cuerpo?.datos ?? [];
+      if (r.status !== 200 || cuerpo.meta?.total !== 14 || lineas.length !== 14) {
+        throw new Error(`esperaba 14 líneas, vino ${r.status}: ${JSON.stringify(cuerpo).slice(0, 300)}`);
+      }
+      if (lineas.some((l) => l.recorridos.length !== 2)) throw new Error('hay líneas sin ida y vuelta');
+    },
+  },
+  {
+    nombre: 'GET /paradas/par-101 y su QR',
+    async correr() {
+      const r = await fetch(`${BASE}/paradas/qr/PARANA:par-101`);
+      const cuerpo = await r.json();
+      if (r.status !== 200 || cuerpo?.datos?.nombre !== 'Alameda y Urquiza') {
+        throw new Error(`esperaba Alameda y Urquiza, vino ${r.status}: ${JSON.stringify(cuerpo)}`);
+      }
+    },
+  },
   {
     nombre: 'ingreso con la cuenta de demo julian@mail.com',
     async correr() {
