@@ -3,6 +3,7 @@
   "definitions": {
     "ArchivoSubido": {
       "additionalProperties": false,
+      "description": "Respuesta de POST /archivos.",
       "properties": {
         "bytes": {
           "type": "number"
@@ -207,6 +208,7 @@
     },
     "Meta": {
       "additionalProperties": false,
+      "description": "Paginación de toda respuesta de lista.",
       "properties": {
         "pagina": {
           "type": "number"
@@ -376,6 +378,7 @@
     },
     "RespuestaError": {
       "additionalProperties": false,
+      "description": "Error: { error: { codigo, mensaje } } — sin otros campos.",
       "properties": {
         "error": {
           "additionalProperties": false,
@@ -401,6 +404,7 @@
     },
     "Salud": {
       "additionalProperties": false,
+      "description": "Respuesta de GET /salud.",
       "properties": {
         "almacen": {
           "enum": [
@@ -448,6 +452,7 @@
     },
     "Sesion": {
       "additionalProperties": false,
+      "description": "Respuesta de POST /auth/registro y POST /auth/ingreso.",
       "properties": {
         "token": {
           "type": "string"

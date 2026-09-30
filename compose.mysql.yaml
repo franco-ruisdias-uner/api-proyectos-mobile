@@ -1,0 +1,29 @@
+# docker compose -f compose.mysql.yaml up → API + MySQL 8.4 con los datos de demo.
+name: api-transporte-publico-mysql
+services:
+  api:
+    extends: { file: compose.yaml, service: api }
+    environment:
+      DB_MOTOR: mysql
+      DB_URL: mysql://api:api@mysql:3306/api
+    depends_on:
+      mysql: { condition: service_healthy }
+  mysql:
+    image: mysql:8.4
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: api
+      MYSQL_USER: api
+      MYSQL_PASSWORD: api
+    ports: ["${PUERTO_DB:-3307}:3306"]
+    volumes: [mysql:/var/lib/mysql]
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uapi -papi"]
+      interval: 3s
+      timeout: 3s
+      retries: 60
+volumes:
+  datos:
+  archivos:
+  mysql:

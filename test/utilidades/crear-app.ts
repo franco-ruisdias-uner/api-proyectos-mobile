@@ -84,7 +84,9 @@ export async function crearApp(opciones: OpcionesDeApp = {}): Promise<AppDePrueb
 
   const app = modulo.createNestApplication<NestExpressApplication>({ logger: ['fatal'] });
   configurarAplicacion(app);
-  await app.init();
+  // Escucha explícitamente en 127.0.0.1: si supertest levanta el servidor solo, escucha en
+  // "::" y en algunas máquinas la conexión a 127.0.0.1:<puerto> la atiende otro proceso.
+  await app.listen(0, '127.0.0.1');
 
   const dataSource = app.get<DataSource>(getDataSourceToken());
   if (config.db.motor !== 'better-sqlite3') {
