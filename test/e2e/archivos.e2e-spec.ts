@@ -255,3 +255,43 @@ describe('AGENTS §8 y §18.2 — de dónde sale el origen de las URLs', () => {
     }
   });
 });
+
+describe('AGENTS §17.1 — el almacén no responde', () => {
+  it('503 ALMACEN_NO_DISPONIBLE al subir y al bajar', async () => {
+    const { mkdtemp, rm, writeFile } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const directorio = await mkdtemp(join(tmpdir(), 'almacen-roto-'));
+    const ctx = await crearApp({ entorno: { DIRECTORIO_ARCHIVOS: directorio } });
+    try {
+      const u = await crearUsuario(ctx);
+      const subida = await ctx.http
+        .post('/archivos')
+        .set(u.auth)
+        .attach('archivo', jpeg(), 'a.jpg');
+      const ruta = new URL(subida.body.datos.url as string).pathname;
+      // La carpeta desaparece y en su lugar queda un archivo: el disco "no responde".
+      await rm(directorio, { recursive: true });
+      await writeFile(directorio, 'no soy una carpeta');
+      esperarError(
+        await ctx.http.post('/archivos').set(u.auth).attach('archivo', jpeg(), 'b.jpg'),
+        503,
+        'ALMACEN_NO_DISPONIBLE',
+      );
+      esperarError(await ctx.http.get(ruta), 503, 'ALMACEN_NO_DISPONIBLE');
+    } finally {
+      await ctx.cerrar();
+    }
+  });
+
+  it('si la carpeta de archivos no se puede usar, la API no arranca y dice qué revisar', async () => {
+    const { mkdtemp, writeFile } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const archivo = join(await mkdtemp(join(tmpdir(), 'almacen-')), 'soy-un-archivo');
+    await writeFile(archivo, 'x');
+    await expect(crearApp({ entorno: { DIRECTORIO_ARCHIVOS: archivo } })).rejects.toThrow(
+      /DIRECTORIO_ARCHIVOS/,
+    );
+  });
+});

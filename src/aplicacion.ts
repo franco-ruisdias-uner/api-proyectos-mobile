@@ -25,7 +25,13 @@ export function configurarAplicacion(app: NestExpressApplication): void {
   app.useGlobalFilters(new FiltroDeExcepciones());
   app.useGlobalPipes(crearValidationPipe());
 
-  const documento = new DocumentBuilder()
+  SwaggerModule.setup('docs', app, () => SwaggerModule.createDocument(app, documentoSwagger()), {
+    jsonDocumentUrl: 'docs-json',
+  });
+}
+
+export function documentoSwagger() {
+  return new DocumentBuilder()
     .setTitle('API Transporte Público · Paraná')
     .setDescription(
       'API del Trabajo Final de Desarrollo para Móviles (UNER). Todas las respuestas vienen en ' +
@@ -35,7 +41,4 @@ export function configurarAplicacion(app: NestExpressApplication): void {
     .setVersion(VERSION)
     .addBearerAuth()
     .build();
-  SwaggerModule.setup('docs', app, () => SwaggerModule.createDocument(app, documento), {
-    jsonDocumentUrl: 'docs-json',
-  });
 }
