@@ -327,3 +327,16 @@ Decisión:
 - Si el almacén no responde al arrancar, la API no arranca y el mensaje dice qué revisar.
 - Alternativa descartada: un adaptador por proveedor (duplica el manejo de Range y de errores).
 Consecuencia en el contrato: ninguna. `Salud.almacen` ya admitía todos los proveedores.
+
+### P24 — Cuántos baches hay en Rocamora y Bolívar (M7)
+Estado: PROVISORIA (autónomo)
+Hueco: §8 pide «cinco reportes de bache a menos de 50 m, uno de ellos marcado como duplicado».
+Leído literal serían cinco en total (cuatro abiertos); la semilla tiene seis a menos de 50 m
+entre sí: el del PRD (`rep-00412`) y `rep-00420` a `rep-00424`, con `rep-00424` duplicado de
+`rep-00412`.
+Decisión: se deja así. `/reportes/cercanos` devuelve cinco abiertos (el del PRD más cuatro), que
+es lo que muestra bien el caso de los baches repetidos, y el duplicado queda afuera. Alternativa
+descartada: sacar un bache, que dejaría sólo cuatro abiertos.
+Consecuencia en el contrato: ninguna. Además: con el reloj por defecto (2026-09-14) `rep-00412`
+tiene código `GCHU-2026-00412`; si se mueve `RELOJ_FIJO` a otro año, el código cambia de año
+(«recalculado para el año en curso», §8).
