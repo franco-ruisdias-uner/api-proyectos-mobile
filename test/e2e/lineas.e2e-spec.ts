@@ -135,6 +135,10 @@ describe('Espec. M1 — GET /lineas y GET /lineas/:id (PRD §1, tipo Linea)', ()
     }
   });
 
+  it('un id con un % suelto en la ruta también es LINEA_NO_ENCONTRADA', async () => {
+    esperarError(await ctx.http.get('/lineas/%E0%A4%A'), 404, 'LINEA_NO_ENCONTRADA');
+  });
+
   it('el id no distingue mayúsculas en ningún motor: LIN-05 no es lin-05', async () => {
     await crearLinea(ctx, { id: 'lin-mayus' });
     await ctx.http.get('/lineas/lin-mayus').expect(200);

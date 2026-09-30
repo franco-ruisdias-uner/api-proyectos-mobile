@@ -211,3 +211,12 @@ La parada "Almafuerte y Newbery" se ubicó sobre Almafuerte, sin poder confirmar
 exacta con Newbery (OpenStreetMap no la mostró). **Conviene que la cátedra revise los nombres
 y las ubicaciones antes de publicar.**
 Consecuencia en el contrato: ninguna.
+
+### A16 — Un `%` suelto en un id de la ruta
+Estado: PROVISORIA (autónomo)
+Decisión: `/paradas/qr/%E0%A4%A`, `/lineas/%E0%A4%A` y `/paradas/%E0%A4%A` (Express no puede
+decodificarlos) responden con el código de la entidad de la ruta (`QR_NO_RECONOCIDO`,
+`LINEA_NO_ENCONTRADA`, `PARADA_NO_ENCONTRADA`), igual que cualquier otro id mal formado (A7).
+Además, `latitud` + `longitud` sin `radioMetros` es válido: no filtra, y sirve para
+`orden=distancia`.
+Consecuencia en el contrato: ninguna nueva.

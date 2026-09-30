@@ -62,6 +62,10 @@ describe('Espec. M1 — GET /paradas/:id (PRD §1, tipo Parada)', () => {
     });
   });
 
+  it('un id con un % suelto en la ruta también es PARADA_NO_ENCONTRADA, no un 400 genérico', async () => {
+    esperarError(await ctx.http.get('/paradas/%E0%A4%A'), 404, 'PARADA_NO_ENCONTRADA');
+  });
+
   it('PARADA_NO_ENCONTRADA (404), también con un id mal formado o de otra mayúscula', async () => {
     await crearParada(ctx, { id: 'par-abc' });
     for (const id of ['par-nada', 'lin-05', 'x', 'PAR-ABC']) {
@@ -270,6 +274,7 @@ describe('Espec. M1 + R4 — GET /paradas/qr/:codigo', () => {
     ['un byte nulo', 'PARANA:par-101%00'],
     ['un texto larguísimo', 'PARANA:par-' + 'x'.repeat(5000)],
     ['sólo espacios', '%20%20'],
+    ['un % suelto (mal codificado)', '%E0%A4%A'],
     ['comillas y SQL', "PARANA:par-101'%20OR%201=1--"],
   ])('QR_NO_RECONOCIDO (404, nunca 500) con %s', async (_caso, codigo) => {
     const r = await ctx.http.get(`/paradas/qr/${codigo}`);
