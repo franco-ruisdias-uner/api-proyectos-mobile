@@ -50,3 +50,14 @@ export interface Salud {
   almacen: "local" | "aws" | "supabase" | "r2" | "b2" | "s3proxy" | "localstack";
   version: string;
 }
+
+/** Respuesta de POST /dispositivos: el token de push registrado. */
+export interface Dispositivo {
+  tokenExpo: string;
+  plataforma: "android" | "ios";
+}
+
+/** Respuesta de POST /dispositivos/prueba. */
+export interface PruebaDePush {
+  enviadas: number;
+}
