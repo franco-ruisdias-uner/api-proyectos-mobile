@@ -8,8 +8,9 @@ operador municipal lo trabaja desde una bandeja.
 Las respuestas tienen **exactamente** la forma de los tipos del PRD que ya tienen en
 `src/tipos/`. Cuando cambien el mock por `fetch`, no tienen que tocar esos tipos.
 
-> **Estado:** están la base (sesiones, archivos, dispositivos para push, salud), los reportes,
-> el mapa, la bandeja del operador y los avisos push. Lo que cambia queda en `CHANGELOG.md`.
+> **Estado:** la API está completa: sesiones, archivos, dispositivos para push, catálogos,
+> reportes, mapa, bandeja del operador, avisos push, publicación en la nube y datos de demo.
+> Lo que cambia queda en `CHANGELOG.md`.
 
 **Avisos push:** registrá el teléfono con `POST /dispositivos`. La API le avisa al autor de un
 reporte cuando cambia su estado y cuando alguien se suma (si `avisosActivos` es `true`; se
@@ -106,6 +107,25 @@ Todos tienen la contraseña **`demo1234`**.
 | `operador.norte@demo.ar` | operador | Zona norte. |
 | `operador.sur@demo.ar` | operador | Zona sur, con los avisos apagados. |
 | `lucia@demo.ar`, `tomas@demo.ar`, `carolina@demo.ar`, `martin@demo.ar` | vecino | Otros vecinos con reportes (por ejemplo, los baches repetidos de Rocamora y Bolívar). |
+
+### Casos de prueba en los datos de demo
+
+Los datos de demo traen los casos incómodos que pide el PRD. Las fechas son relativas al reloj
+de la API (los reportes son siempre "de hace pocos días").
+
+| Para probar… | Usen |
+|---|---|
+| El reporte del PRD (con `fot-901`, `cam-1177` y la Cuadrilla 2) | `rep-00412`, número de seguimiento `GCHU-<año>-00412` (sirve para `/reportes/codigo/:codigo` y el QR) |
+| Un reporte con cinco cambios de estado, reasignación y foto del arreglo | `rep-00398` |
+| Un rechazo con un motivo de más de 400 caracteres | `rep-00405` |
+| Cinco baches a menos de 50 m (`/reportes/cercanos?latitud=-33.0089&longitud=-58.5142`), uno marcado como duplicado | `rep-00420` a `rep-00424` (el duplicado es `rep-00424`, de `rep-00412`) |
+| Un reporte con dos fotos | `rep-00430` |
+| Un reporte con audio y sin texto | `rep-00431` |
+| Un reporte con muchas adhesiones (primero en la bandeja) | `rep-00412` |
+| Una lista vacía | ingresá con `nuevo@demo.ar` y pedí `/yo/reportes` |
+| Un error de red | cabecera `X-Simular: error-500` (sección 7) |
+
+Hay reportes en las cuatro zonas y en los cinco estados.
 
 Una cuenta nueva creada desde la app (`POST /auth/registro`) siempre es `vecino`. Los
 operadores no se crean desde la app.

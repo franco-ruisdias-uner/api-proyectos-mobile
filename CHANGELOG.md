@@ -5,6 +5,11 @@ forma de las respuestas no cambia: sólo se agregan endpoints y códigos de erro
 
 ## Sin publicar
 
+### M7 — Datos de demo y README
+
+Sin endpoints ni cambios en las respuestas. El README ahora trae una guía de casos de prueba de
+los datos de demo (qué reporte usar para cada caso del PRD) y su estado al día.
+
 ### M6 — Nube
 
 Sin endpoints ni cambios en las respuestas. Lo que cambia es dónde puede correr la API:
