@@ -63,7 +63,7 @@ const RUTAS_CON_PARAMETRO: [RegExp, CodigoDeError][] = [
 ];
 
 function esErrorDeDecodificacion(excepcion: unknown): boolean {
-  return excepcion instanceof Error && /^Failed to decode param/.test(excepcion.message);
+  return excepcion instanceof Error && excepcion.message.startsWith('Failed to decode param');
 }
 
 /**
