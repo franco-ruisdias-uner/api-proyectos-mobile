@@ -472,7 +472,7 @@ describe('AGENTS §7.1 y DECISIONES A5 — /yo', () => {
   });
 
   it('las rutas de módulos futuros no existen todavía (sin adelantar trabajo)', async () => {
-    esperarErrorLimpio(await ctx.http.get('/lineas'), 404, 'RUTA_NO_ENCONTRADA');
+    esperarErrorLimpio(await ctx.http.get('/horarios'), 404, 'RUTA_NO_ENCONTRADA');
   });
 });
 

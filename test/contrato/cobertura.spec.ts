@@ -8,7 +8,16 @@ const esquema = JSON.parse(readFileSync('contrato/esquema.json', 'utf8')) as {
 };
 
 /** Lo que la API ya devuelve, módulo por módulo. Cada módulo agrega los suyos. */
-const DEVUELTAS = ['Salud', 'Sesion', 'Usuario', 'ArchivoSubido', 'Dispositivo', 'PruebaDePush'];
+const DEVUELTAS = [
+  'Salud',
+  'Sesion',
+  'Usuario',
+  'ArchivoSubido',
+  'Dispositivo',
+  'PruebaDePush',
+  'Linea',
+  'Parada',
+];
 
 /** Piezas que no se devuelven solas: van dentro de otras o son el sobre. */
 const AUXILIARES = [
@@ -25,8 +34,6 @@ const AUXILIARES = [
 
 /** Entidades del PRD que llegan en módulos siguientes (espec. §3). */
 const PENDIENTES: Record<string, string> = {
-  Linea: 'M1',
-  Parada: 'M1',
   Horario: 'M2',
   Aviso: 'M4',
   ReporteDeDemora: 'M5',

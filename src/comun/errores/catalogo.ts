@@ -28,6 +28,11 @@ export const CATALOGO = {
   EMAIL_YA_REGISTRADO: { estado: 409, mensaje: 'Ya hay una cuenta con ese email.' },
   CREDENCIALES_INVALIDAS: { estado: 401, mensaje: 'El email o la contraseña no son correctos.' },
 
+  // Red (M1)
+  LINEA_NO_ENCONTRADA: { estado: 404, mensaje: 'No existe esa línea.' },
+  PARADA_NO_ENCONTRADA: { estado: 404, mensaje: 'No existe esa parada.' },
+  QR_NO_RECONOCIDO: { estado: 404, mensaje: 'Ese código no es de una parada de Paraná.' },
+
   // Archivos
   ARCHIVO_NO_ENCONTRADO: { estado: 404, mensaje: 'No encontramos ese archivo.' },
 } as const satisfies Record<string, EntradaDeCatalogo>;
