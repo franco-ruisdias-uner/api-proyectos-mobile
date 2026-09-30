@@ -1,6 +1,7 @@
 // pnpm archivos:probar — con la configuración del .env, sube un archivo chico, lo lee entero
 // y por rango, y lo borra. Dice en castellano qué salió mal (AGENTS §17.4).
 import 'reflect-metadata';
+import { randomBytes } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import type { Readable } from 'node:stream';
 
@@ -44,7 +45,7 @@ try {
   const entorno = validarEntorno(process.env);
   const almacen = crearAlmacen(entorno);
   console.log(`Proveedor: ${almacen.proveedor}`);
-  const clave = `imagenes/2000/01/prueba${Date.now()}.jpg`;
+  const clave = `imagenes/2000/01/prueba-${randomBytes(6).toString('hex')}.jpg`;
   const contenido = Buffer.from(Array.from({ length: 200 }, (_, i) => i % 251));
 
   await almacen.prepararse();
