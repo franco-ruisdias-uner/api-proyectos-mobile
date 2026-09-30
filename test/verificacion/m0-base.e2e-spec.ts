@@ -380,6 +380,32 @@ describe('AGENTS §7.2 y §7.3 — tokens que no sirven → 401 NO_AUTENTICADO',
   });
 });
 
+describe('RFC 7235 — el esquema de Authorization no distingue mayúsculas', () => {
+  it.each([['bearer'], ['BEARER'], ['Bearer']])('%s <token> → 200 en GET /yo', async (esquema) => {
+    const u = await crearUsuario(ctx);
+    const r = await ctx.http.get('/yo').set('Authorization', `${esquema} ${u.token}`);
+    expect(r.status).toBe(200);
+    esperarContrato(r.body, 'Usuario');
+  });
+
+  it('bearer en minúsculas con un token basura sigue siendo 401', async () => {
+    esperarErrorLimpio(
+      await ctx.http.get('/yo').set('Authorization', 'bearer basura'),
+      401,
+      'NO_AUTENTICADO',
+    );
+  });
+
+  it('el token solo, sin esquema, → 401', async () => {
+    const u = await crearUsuario(ctx);
+    esperarErrorLimpio(
+      await ctx.http.get('/yo').set('Authorization', u.token),
+      401,
+      'NO_AUTENTICADO',
+    );
+  });
+});
+
 describe('AGENTS §7.3 — lo público sigue público aunque venga un token roto', () => {
   const basura = { Authorization: 'Bearer esto-no-es-un-jwt' };
 
@@ -612,9 +638,36 @@ describe('AGENTS §8 y §17.1 — GET /archivos/<clave> con Range: bordes', () =
     expect([200, 206]).toContain(r.status);
   });
 
-  it('un Range basura nunca da 500', async () => {
-    const r = await ctx.http.get(ruta).set('Range', 'bytes=abc');
-    expect(r.status).toBeLessThan(500);
+  it.each([['bytes=abc'], ['bytes='], ['bytes=20-10'], ['Range 0-5'], ['bytes=0-1,5-6']])(
+    'A2 — un Range que no se entiende (%s) se ignora → 200 entero, sin Content-Range',
+    async (rango) => {
+      const r = await pedir(rango);
+      expect(r.status).toBe(200);
+      expect(r.headers['content-range']).toBeUndefined();
+      expect(r.headers['content-length']).toBe('1000');
+      expect((r.body as Buffer).equals(contenido)).toBe(true);
+    },
+  );
+
+  it('RFC 9110 — un sufijo más largo que el archivo (bytes=-5000) → 206 con todo', async () => {
+    const r = await pedir('bytes=-5000').expect(206);
+    expect(r.headers['content-range']).toBe('bytes 0-999/1000');
+    expect((r.body as Buffer).equals(contenido)).toBe(true);
+  });
+
+  it('A2 — un sufijo de cero bytes (bytes=-0) es un rango bien escrito imposible → 416', async () => {
+    const r = await ctx.http.get(ruta).set('Range', 'bytes=-0');
+    esperarErrorLimpio(r, 416, 'RANGO_NO_VALIDO');
+    expect(r.headers['content-range']).toBe('bytes */1000');
+  });
+
+  it('A2 — bytes=5000-6000 sigue siendo 416 aunque haya un rango ignorado antes', async () => {
+    await pedir('bytes=abc').expect(200);
+    esperarErrorLimpio(
+      await ctx.http.get(ruta).set('Range', 'bytes=5000-6000'),
+      416,
+      'RANGO_NO_VALIDO',
+    );
   });
 
   it('el ETag es estable entre pedidos', async () => {
