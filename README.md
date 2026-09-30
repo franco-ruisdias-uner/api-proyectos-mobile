@@ -10,8 +10,9 @@ cambies tus mocks por `fetch`, los datos encajan sin tocar los tipos. Los tipos 
 API (el sobre de las respuestas, la sesión, los archivos) están en
 [`contrato/api.ts`](contrato/api.ts): copialos a tu proyecto.
 
-> **Estado:** está lista la base (cuenta, sesión, archivos, notificaciones). Las líneas,
-> paradas, horarios, avisos y reportes se van sumando: mirá el [CHANGELOG](CHANGELOG.md).
+> **Estado:** están listas la base (cuenta, sesión, archivos, notificaciones) y la red (líneas
+> y paradas, con búsqueda, cercanas y QR). Los horarios, avisos y reportes se van sumando:
+> mirá el [CHANGELOG](CHANGELOG.md).
 
 Toda respuesta viene en un sobre:
 

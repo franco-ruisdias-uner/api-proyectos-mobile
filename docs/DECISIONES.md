@@ -155,3 +155,59 @@ Decisión: del JWT (que dura 30 días). Los roles se asignan sólo por semilla y
 la API, así que no hay forma de que queden desactualizados. Si algún día se pueden cambiar,
 hay que releerlo de la base.
 Consecuencia en el contrato: ninguna.
+
+---
+
+## Decisiones tomadas en modo autónomo (M1)
+
+### A10 — Filtros de `/paradas` que no encuentran nada
+Estado: PROVISORIA (autónomo)
+Hueco: no está dicho qué pasa con `lineaId=lin-zzz` (bien formado, inexistente) ni con filtros
+a medias (`latitud` sin `longitud`, `radioMetros` solo, `orden=distancia` sin punto).
+Opciones: A) `lineaId` inexistente → 404 `LINEA_NO_ENCONTRADA`. B) lista vacía.
+Decisión: B para el inexistente (un filtro que no encuentra nada es una lista vacía; la app no
+tiene que manejar un error por filtrar). Un `lineaId` mal formado y los filtros a medias son
+`400 VALIDACION_FALLIDA`, con el mensaje nombrando lo que falta.
+Consecuencia en el contrato: ninguna nueva.
+
+### A11 — Búsqueda `q` en paradas
+Estado: PROVISORIA (autónomo)
+Hueco: la especificación dice "nombre o calle", pero la `Parada` del PRD sólo tiene `nombre`
+(que ya trae las dos calles: "Alameda y Urquiza").
+Decisión: se busca en `nombre`, sin tildes ni mayúsculas, como subtexto. Los comodines `%` y
+`_` se toman como texto común. No hay columna de calle aparte.
+Consecuencia en el contrato: ninguna.
+
+### A12 — Orden y paginación de paradas en memoria
+Estado: PROVISORIA (autónomo)
+Decisión: los filtros de texto, sentido, línea y caja de coordenadas van en la consulta; el
+orden (por nombre o distancia), el radio exacto y la paginación se hacen en TypeScript
+(`reglas/seleccion-de-paradas.ts`), porque el orden de textos de la base cambia de un motor a
+otro (AGENTS §5.5) y la distancia no se guarda. Con cientos o pocos miles de paradas no pesa.
+Consecuencia en el contrato: ninguna; el orden es igual en los cuatro motores.
+
+### A13 — Radio máximo
+Estado: PROVISORIA (autónomo)
+Decisión: `radioMetros` de 1 a 50 000 (50 km), `latitud` de -90 a 90, `longitud` de -180 a 180.
+Consecuencia en el contrato: fuera de esos rangos, `400 VALIDACION_FALLIDA`.
+
+### A14 — Qué es "parada con QR"
+Estado: PROVISORIA (autónomo)
+Decisión: `GET /paradas/qr/:codigo` busca por la columna `codigoQr` (formato D5). Una parada
+sin QR (`codigoQr: null`) no se resuelve ni siquiera con `PARANA:<su id>`: da `QR_NO_RECONOCIDO`.
+Consecuencia en el contrato: ninguna nueva.
+
+### A15 — Forma de los datos de la red de demo
+Estado: PROVISORIA (autónomo)
+Hueco: la especificación pide 60 a 80 paradas en esquinas reales y trazados sobre calles reales,
+pero no dice de dónde salen.
+Decisión: los trazados y las esquinas salen de OpenStreetMap (ruteo de OSRM) entre lugares
+conocidos de Paraná (`scripts/generar-red.mjs`, que se corrió una vez; el resultado está en
+`src/semillas/datos/red.ts`). Hay 73 paradas: `par-101` (PRD) y `par-102` ("Almafuerte y
+Newbery", de la especificación) fijas; el resto, `par-103…` de ida y `par-2xx` de vuelta. Las
+coordenadas son aproximadas y la vuelta está corrida ~13 m de la ida (la otra vereda). Las
+paradas de la vuelta tienen ids distintos que las de la ida (R1).
+La parada "Almafuerte y Newbery" se ubicó sobre Almafuerte, sin poder confirmar la esquina
+exacta con Newbery (OpenStreetMap no la mostró). **Conviene que la cátedra revise los nombres
+y las ubicaciones antes de publicar.**
+Consecuencia en el contrato: ninguna.

@@ -5,6 +5,19 @@ cambia la forma de ninguna respuesta: sólo se agregan cosas.
 
 ## Sin publicar
 
+### M1 — Red
+
+- **Líneas:** `GET /lineas` (las catorce, con sus recorridos, ordenadas por número: "2" antes
+  que "14") y `GET /lineas/:id`. Sin cuenta.
+- **Paradas:** `GET /paradas` con los filtros `q` (nombre, sin tildes), `lineaId`, `sentido` y
+  las cercanas (`latitud` + `longitud` + `radioMetros`), con `orden=nombre` u `orden=distancia`.
+  `porPagina` llega a **1000** para que puedas guardar todas las paradas en el teléfono.
+  También `GET /paradas/:id` y `GET /paradas/qr/:codigo` (el QR es `PARANA:<id de la parada>`).
+- `Parada.lineaIds` sale de los recorridos: la ida y la vuelta tienen paradas distintas.
+- **Errores nuevos:** `LINEA_NO_ENCONTRADA`, `PARADA_NO_ENCONTRADA` y `QR_NO_RECONOCIDO`.
+- **Datos de demo:** las 14 líneas (la 11 está inactiva) y 73 paradas sobre calles de Paraná;
+  `lin-05` y `par-101` son los del PRD.
+
 ### M0 — Base
 
 - **Cuenta:** `POST /auth/registro`, `POST /auth/ingreso` y `GET /yo`. El registro crea
