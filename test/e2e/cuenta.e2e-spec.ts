@@ -45,8 +45,10 @@ describe('AGENTS §7.1 — POST /auth/registro', () => {
     const r = await ctx.http
       .post('/auth/registro')
       .send({ nombre: 'Sin Secretos', email: 'secretos@prueba.ar', contrasena: 'clave-segura' });
-    const texto = JSON.stringify(r.body);
-    expect(texto).not.toMatch(/scrypt|contrasena|clave-segura|rol|pasajero/);
+    expect(Object.keys(r.body.datos).sort()).toEqual(['token', 'usuario']);
+    expect(Object.keys(r.body.datos.usuario)).not.toContain('rol');
+    const usuario = JSON.stringify(r.body.datos.usuario);
+    expect(usuario).not.toMatch(/scrypt|contrasena|clave-segura|pasajero/);
   });
 
   it('guarda el email en minúsculas y sin espacios', async () => {
@@ -206,6 +208,11 @@ describe('AGENTS §7.1 — GET /yo', () => {
     ['Bearer vacío', 'Bearer '],
   ])('401 NO_AUTENTICADO con %s', async (_caso, cabecera) => {
     esperarError(await ctx.http.get('/yo').set('Authorization', cabecera), 401, 'NO_AUTENTICADO');
+  });
+
+  it('el esquema "bearer" no distingue mayúsculas', async () => {
+    const u = await crearUsuario(ctx);
+    await ctx.http.get('/yo').set('Authorization', `bearer ${u.token}`).expect(200);
   });
 
   it('401 con un token firmado con otro secreto', async () => {

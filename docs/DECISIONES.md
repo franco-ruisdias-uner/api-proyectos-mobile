@@ -93,7 +93,10 @@ siempre, pero sólo borra el token si es de quien lo pide.
 Estado: PROVISORIA (autónomo)
 Hueco: AGENTS §8 pide soporte de `Range` pero no dice qué hacer con un rango imposible.
 Opciones: A) 416 con un código nuevo. B) ignorar el rango y mandar el archivo entero (200).
-Decisión: A, como dice HTTP: `416 RANGO_NO_VALIDO` con `Content-Range: bytes */<total>`.
+Decisión: A, como dice HTTP (RFC 9110 §14.2): un rango bien escrito que cae fuera del archivo
+→ `416 RANGO_NO_VALIDO` con `Content-Range: bytes */<total>`. Una cabecera `Range` que no se
+entiende (otra unidad, mal escrita, fin antes que el inicio) o con varios rangos se ignora y
+va el archivo entero (200).
 Consecuencia en el contrato: un código de error nuevo.
 
 ### A3 — Qué URL de archivo es "de esta API"
@@ -144,3 +147,11 @@ Decisión: JSON mal formado → `400 VALIDACION_FALLIDA` ("Lo que mandaste no es
 válido."); cuerpo que supera el límite → `413 ARCHIVO_DEMASIADO_GRANDE` con el mensaje "Lo
 que mandaste es demasiado grande.". Ninguno sale como 500.
 Consecuencia en el contrato: ninguna nueva.
+
+### A9 — El rol sale del token
+Estado: PROVISORIA (autónomo)
+Hueco: no está dicho si el rol se toma del JWT o se relee de la base en cada pedido.
+Decisión: del JWT (que dura 30 días). Los roles se asignan sólo por semilla y no cambian desde
+la API, así que no hay forma de que queden desactualizados. Si algún día se pueden cambiar,
+hay que releerlo de la base.
+Consecuencia en el contrato: ninguna.

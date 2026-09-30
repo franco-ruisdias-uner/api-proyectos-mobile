@@ -18,8 +18,10 @@ export class Guardia implements CanActivate {
     if (this.reflector.getAllAndOverride<boolean>(CLAVE_PUBLICO, objetivos)) return true;
 
     const pedido = contexto.switchToHttp().getRequest<PedidoConSesion>();
-    const [tipo, token] = (pedido.headers.authorization ?? '').split(' ');
-    const usuario = tipo === 'Bearer' && token ? await this.sesiones.verificar(token) : null;
+    // El esquema no distingue mayúsculas (RFC 9110 §11.1): "Bearer" o "bearer".
+    const [tipo, token] = (pedido.headers.authorization ?? '').trim().split(/\s+/);
+    const esBearer = tipo?.toLowerCase() === 'bearer';
+    const usuario = esBearer && token ? await this.sesiones.verificar(token) : null;
     if (!usuario) throw new ErrorDeApi('NO_AUTENTICADO');
     pedido.usuario = usuario;
 

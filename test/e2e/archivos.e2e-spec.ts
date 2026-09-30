@@ -166,6 +166,15 @@ describe('AGENTS §8 — archivos', () => {
       expect(r.headers['content-range']).toBe('bytes */1000');
     });
 
+    it.each([['items=0-5'], ['bytes=abc'], ['bytes=20-10'], ['bytes=0-1,5-6']])(
+      'RFC 9110 §14.2 — un Range que no se entiende (%s) se ignora: 200 con el archivo entero',
+      async (rango) => {
+        const r = await ctx.http.get(rutaDe(url)).set('Range', rango).buffer(true).parse(binario);
+        expect(r.status).toBe(200);
+        expect((r.body as Buffer).equals(contenido)).toBe(true);
+      },
+    );
+
     it('una clave que no existe → 404 ARCHIVO_NO_ENCONTRADO', async () => {
       esperarError(
         await ctx.http.get('/archivos/imagenes/2026/09/noexisteningunarchivoasi.jpg'),
