@@ -114,3 +114,69 @@ describe('AGENTS §11.3 — El entorno se valida al arrancar', () => {
     );
   });
 });
+
+describe('AGENTS §18.2 — ENTORNO=publicado', () => {
+  const publicado = {
+    ENTORNO: 'publicado',
+    JWT_SECRETO: 'un-secreto-propio-de-mas-de-32-caracteres-seguro',
+    DB_PROVEEDOR: 'neon',
+    DB_URL: 'postgres://u:p@ep-x.neon.tech/db',
+    ARCHIVOS_PROVEEDOR: 's3proxy',
+  };
+
+  it('con todo en orden arranca y la simulación queda apagada por defecto', () => {
+    const e = validarEntorno(publicado);
+    expect(e.SIMULACION_HABILITADA).toBe(false);
+    expect(e.DB_MOTOR).toBe('postgres');
+    expect(e.BASE.ssl).toBe('si');
+  });
+
+  it.each([
+    [
+      'la base es SQLite',
+      { DB_PROVEEDOR: '', DB_URL: '' },
+      /no puede ser SQLite/,
+    ],
+    [
+      'los archivos son locales',
+      { ARCHIVOS_PROVEEDOR: 'local' },
+      /no pueden ser locales/,
+    ],
+    [
+      'JWT_SECRETO es el de desarrollo',
+      { JWT_SECRETO: 'solo-para-desarrollo-no-usar-en-produccion' },
+      /JWT_SECRETO tiene que ser propio/,
+    ],
+    ['JWT_SECRETO es corto', { JWT_SECRETO: 'corto' }, /al menos 32/],
+    [
+      'la simulación está habilitada',
+      { SIMULACION_HABILITADA: 'true' },
+      /SIMULACION_HABILITADA tiene que ser false/,
+    ],
+  ])('no arranca si %s', (_caso, cambios, patron) => {
+    expect(() => validarEntorno({ ...publicado, ...cambios })).toThrow(patron);
+  });
+});
+
+describe('AGENTS §17 y §18.1 — proveedores en el entorno', () => {
+  it('DB_PROVEEDOR define el motor sin DB_MOTOR', () => {
+    const e = validarEntorno({
+      ...minimo,
+      DB_PROVEEDOR: 'aiven-mysql',
+      DB_URL: 'mysql://u:p@x.aivencloud.com:1/db',
+    });
+    expect(e.DB_MOTOR).toBe('mysql');
+  });
+
+  it('un proveedor S3 sin sus variables no arranca y dice cuáles faltan', () => {
+    expect(() =>
+      validarEntorno({ ...minimo, ARCHIVOS_PROVEEDOR: 'supabase' }),
+    ).toThrow(/SUPABASE_PROYECTO[\s\S]*S3_BUCKET/);
+  });
+
+  it('ARCHIVOS_REDIRIGIR con archivos locales es un error', () => {
+    expect(() =>
+      validarEntorno({ ...minimo, ARCHIVOS_REDIRIGIR: 'true' }),
+    ).toThrow(/ARCHIVOS_REDIRIGIR/);
+  });
+});

@@ -1,6 +1,16 @@
 // Variables de entorno: se validan al arrancar y, si algo falta o está mal, la API no arranca
 // y dice en castellano qué arreglar (AGENTS §11.3).
 import { parsearInstante } from '../comun/fechas/fechas.js';
+import {
+  configuracionS3,
+  PROVEEDORES_ARCHIVOS,
+  type ConfiguracionS3,
+  type ProveedorArchivos,
+} from '../comun/archivos/proveedores.js';
+import {
+  configuracionBase,
+  type ConfiguracionBase,
+} from '../comun/db/proveedores.js';
 
 export const MOTORES = [
   'better-sqlite3',
@@ -13,9 +23,10 @@ export type Motor = (typeof MOTORES)[number];
 export const ENTORNOS = ['desarrollo', 'test', 'publicado'] as const;
 export const NOTIFICACIONES = ['expo', 'registro'] as const;
 
-/** Proveedores de archivos del contrato (Salud.almacen). En M0 sólo está el disco. */
-export const PROVEEDORES_ARCHIVOS = ['local'] as const;
-export type ProveedorArchivos = (typeof PROVEEDORES_ARCHIVOS)[number];
+export { PROVEEDORES_ARCHIVOS, type ProveedorArchivos };
+
+/** Secreto de desarrollo de .env.example y de los compose: no vale para publicar. */
+const SECRETO_DE_DESARROLLO = 'solo-para-desarrollo-no-usar-en-produccion';
 
 export interface Entorno {
   PUERTO: number;
@@ -29,6 +40,11 @@ export interface Entorno {
   JWT_SECRETO: string;
   ARCHIVOS_PROVEEDOR: ProveedorArchivos;
   DIRECTORIO_ARCHIVOS: string;
+  /** Sólo con un proveedor S3: la configuración ya resuelta. */
+  S3: ConfiguracionS3 | null;
+  ARCHIVOS_REDIRIGIR: boolean;
+  /** Base de datos: proveedor, esquema y SSL ya resueltos. */
+  BASE: ConfiguracionBase;
   NOTIFICACIONES: (typeof NOTIFICACIONES)[number];
   RELOJ_FIJO: Date | null;
   SIMULACION_HABILITADA: boolean;
@@ -120,7 +136,20 @@ export function validarEntorno(crudo: Crudo): Entorno {
     );
   }
 
-  const DB_MOTOR = opcion('DB_MOTOR', MOTORES, 'better-sqlite3');
+  const base = configuracionBase({
+    DB_PROVEEDOR: texto('DB_PROVEEDOR'),
+    DB_MOTOR: texto('DB_MOTOR'),
+    DB_URL: texto('DB_URL'),
+    DB_SSL: texto('DB_SSL'),
+    DB_SSL_CA: texto('DB_SSL_CA'),
+    DB_ESQUEMA: texto('DB_ESQUEMA'),
+  });
+  if (!base.ok) problemas.push(...base.problemas);
+  const DB_MOTOR = opcion(
+    'DB_MOTOR',
+    MOTORES,
+    base.ok ? base.config.motor : 'better-sqlite3',
+  );
   const DB_URL = texto('DB_URL') ?? null;
   if (DB_MOTOR !== 'better-sqlite3' && DB_URL === null) {
     problemas.push(
@@ -143,6 +172,62 @@ export function validarEntorno(crudo: Crudo): Entorno {
     }
   }
 
+  const ARCHIVOS_PROVEEDOR = opcion(
+    'ARCHIVOS_PROVEEDOR',
+    PROVEEDORES_ARCHIVOS,
+    'local',
+  );
+  const ARCHIVOS_REDIRIGIR = booleano('ARCHIVOS_REDIRIGIR', false);
+  let S3: ConfiguracionS3 | null = null;
+  if (ARCHIVOS_PROVEEDOR !== 'local') {
+    const vars: Record<string, string | undefined> = {};
+    for (const k of [
+      'ARCHIVOS_PROVEEDOR',
+      'ARCHIVOS_CREAR_BUCKET',
+      'S3_BUCKET',
+      'S3_REGION',
+      'S3_ENDPOINT',
+      'S3_FORZAR_PATH_STYLE',
+      'S3_ACCESS_KEY_ID',
+      'S3_SECRET_ACCESS_KEY',
+      'SUPABASE_PROYECTO',
+      'R2_CUENTA',
+    ])
+      vars[k] = texto(k);
+    const s3 = configuracionS3(vars);
+    if (s3.ok) S3 = s3.config;
+    else problemas.push(...s3.problemas);
+  } else if (ARCHIVOS_REDIRIGIR) {
+    problemas.push(
+      'ARCHIVOS_REDIRIGIR=true sólo sirve con un proveedor en la nube: con ARCHIVOS_PROVEEDOR=local los archivos los sirve la API.',
+    );
+  }
+
+  const SIMULACION_HABILITADA = booleano(
+    'SIMULACION_HABILITADA',
+    ENTORNO !== 'publicado',
+  );
+  const DB_SINCRONIZAR = booleano('DB_SINCRONIZAR', true);
+
+  if (ENTORNO === 'publicado') {
+    if (DB_MOTOR === 'better-sqlite3')
+      problemas.push(
+        'Con ENTORNO=publicado la base no puede ser SQLite: el disco del host se borra en cada reinicio. Definí DB_PROVEEDOR (por ejemplo supabase) y DB_URL.',
+      );
+    if (ARCHIVOS_PROVEEDOR === 'local')
+      problemas.push(
+        'Con ENTORNO=publicado los archivos no pueden ser locales: el disco del host se borra en cada reinicio. Definí ARCHIVOS_PROVEEDOR (por ejemplo supabase).',
+      );
+    if (JWT_SECRETO === SECRETO_DE_DESARROLLO || JWT_SECRETO.length < 32)
+      problemas.push(
+        "Con ENTORNO=publicado JWT_SECRETO tiene que ser propio, secreto y de al menos 32 caracteres (no el de desarrollo). Generá uno con: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"",
+      );
+    if (SIMULACION_HABILITADA)
+      problemas.push(
+        'Con ENTORNO=publicado SIMULACION_HABILITADA tiene que ser false: la simulación de fallas es sólo para desarrollo.',
+      );
+  }
+
   const entorno: Entorno = {
     PUERTO,
     ENTORNO,
@@ -151,17 +236,25 @@ export function validarEntorno(crudo: Crudo): Entorno {
     DB_MOTOR,
     DB_URL,
     DB_ARCHIVO: texto('DB_ARCHIVO') ?? 'datos/api.sqlite',
-    DB_SINCRONIZAR: booleano('DB_SINCRONIZAR', true),
+    DB_SINCRONIZAR,
     JWT_SECRETO,
-    ARCHIVOS_PROVEEDOR: opcion(
-      'ARCHIVOS_PROVEEDOR',
-      PROVEEDORES_ARCHIVOS,
-      'local',
-    ),
+    ARCHIVOS_PROVEEDOR,
     DIRECTORIO_ARCHIVOS: texto('DIRECTORIO_ARCHIVOS') ?? './archivos',
+    S3,
+    ARCHIVOS_REDIRIGIR,
+    BASE: base.ok
+      ? base.config
+      : {
+          proveedor: null,
+          motor: DB_MOTOR,
+          esquema: null,
+          ssl: 'no',
+          sslCa: null,
+          conexion: null,
+        },
     NOTIFICACIONES: opcion('NOTIFICACIONES', NOTIFICACIONES, 'expo'),
     RELOJ_FIJO,
-    SIMULACION_HABILITADA: booleano('SIMULACION_HABILITADA', true),
+    SIMULACION_HABILITADA,
     SEMBRAR_SI_VACIA: booleano('SEMBRAR_SI_VACIA', false),
   };
 

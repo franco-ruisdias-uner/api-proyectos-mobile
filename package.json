@@ -20,9 +20,14 @@
     "verificar": "pnpm tipos && pnpm lint && pnpm test && pnpm test:e2e",
     "contrato:esquema": "ts-json-schema-generator --path \"contrato/*.ts\" --type \"*\" --no-type-check -o contrato/esquema.json && prettier --write contrato/esquema.json",
     "db:reiniciar": "nest build && node dist/src/semillas/reiniciar.js",
-    "docker:probar": "node scripts/probar-docker.mjs"
+    "docker:probar": "node scripts/probar-docker.mjs",
+    "archivos:probar": "nest build && node dist/src/herramientas/archivos-probar.js",
+    "db:probar": "nest build && node dist/src/herramientas/db-probar.js",
+    "publicado:probar": "node scripts/publicado-probar.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1143.0",
+    "@aws-sdk/s3-request-presigner": "^3.1143.0",
     "@date-fns/tz": "^1.5.0",
     "@nestjs/common": "^12.0.1",
     "@nestjs/config": "^12.0.1",

@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { sinMilisegundos } from '../fechas/fechas.js';
 import type { Motor } from '../../config/entorno.js';
+import { motorDeProveedor } from './proveedores.js';
 
 /**
  * Motor para el que se declaran las columnas. Los decoradores se evalúan al importar las
@@ -15,7 +16,8 @@ import type { Motor } from '../../config/entorno.js';
  * importar la app, y opcionesTypeOrm() verifica que coincida con el DB_MOTOR validado.
  */
 export function motorDeColumnas(): Motor {
-  return (process.env.DB_MOTOR?.trim() || 'better-sqlite3') as Motor;
+  return (motorDeProveedor(process.env.DB_PROVEEDOR) ??
+    (process.env.DB_MOTOR?.trim() || 'better-sqlite3')) as Motor;
 }
 
 export const LARGO_ID = 40;

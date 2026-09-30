@@ -60,8 +60,14 @@ jobs:
       TZ: ${{ matrix.tz }}
       DB_MOTOR: ${{ matrix.motor }}
       DB_URL: ${{ matrix.url }}
+      S3_ENDPOINT_PRUEBA: http://127.0.0.1:58080
     steps:
       - uses: actions/checkout@v4
+      - name: S3Proxy (los tests de archivos contra S3)
+        run: |
+          docker run -d --name s3proxy -p 58080:8080 \
+            -e S3PROXY_ENDPOINT=http://0.0.0.0:8080 -e S3PROXY_AUTHORIZATION=none \
+            -e JCLOUDS_PROVIDER=transient andrewgaul/s3proxy:sha-2e7c868
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -79,6 +85,9 @@ jobs:
               s.on("error", () => (++n > 90 ? process.exit(1) : setTimeout(probar, 1000)));
             };
             probar();'
+      - name: Esperar S3Proxy
+        run: |
+          for i in $(seq 1 60); do curl -sf http://127.0.0.1:58080/ >/dev/null && exit 0; sleep 1; done; exit 1
       - run: pnpm test:e2e
 
   docker:

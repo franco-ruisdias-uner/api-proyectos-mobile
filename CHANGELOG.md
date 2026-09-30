@@ -5,6 +5,16 @@ forma de las respuestas no cambia: sólo se agregan endpoints y códigos de erro
 
 ## Sin publicar
 
+### M6 — Nube
+
+Sin endpoints ni cambios en las respuestas. Lo que cambia es dónde puede correr la API:
+
+- **Archivos**: además del disco, cualquier servicio compatible con S3 (`ARCHIVOS_PROVEEDOR=aws | supabase | r2 | b2 | s3proxy | localstack`). Las URLs de las fotos siguen siendo `<origen>/archivos/<clave>`, así que la app no cambia. `GET /salud` informa el proveedor en `almacen`.
+- **Base de datos** administrada con `DB_PROVEEDOR=supabase | neon | aiven-postgres | aiven-mysql` (más `DB_SSL`, `DB_SSL_CA`, `DB_ESQUEMA`).
+- **Publicación**: `render.yaml`, `ENTORNO=publicado` y `CONFIAR_PROXY=true` (las URLs de los archivos salen `https://`). Guía en el README, sección 9.
+- Comandos nuevos: `pnpm archivos:probar`, `pnpm db:probar`, `pnpm publicado:probar <url>`. `pnpm db:reiniciar` contra una base en la nube pide `--confirmar`.
+- Docker: `compose.almacen-s3.yaml` y `compose.almacen-localstack.yaml` se suman a cualquier compose.
+
 ### M5 — Avisos
 
 Sin endpoints nuevos: `PATCH /yo` (`avisosActivos`) y `POST /dispositivos` ya existían. Ahora la

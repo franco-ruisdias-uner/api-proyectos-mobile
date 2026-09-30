@@ -14,7 +14,7 @@ import { AlmacenArchivos } from './comun/archivos/almacen-archivos.js';
 import { ArchivosModulo } from './comun/archivos/archivos.modulo.js';
 import { MiddlewareOrigen } from './comun/archivos/origen.js';
 import { AuthComunModulo } from './comun/auth/auth-comun.modulo.js';
-import { opcionesTypeOrm } from './comun/db/opciones.js';
+import { crearDataSource, opcionesTypeOrm } from './comun/db/opciones.js';
 import { FiltroErrores } from './comun/errores/filtro-errores.js';
 import { NotificacionesModulo } from './comun/notificaciones/notificaciones.modulo.js';
 import { Reloj } from './comun/reloj/reloj.js';
@@ -51,6 +51,7 @@ export class AppModule implements NestModule, OnApplicationBootstrap {
         TypeOrmModule.forRootAsync({
           inject: [ENTORNO],
           useFactory: opcionesTypeOrm,
+          dataSourceFactory: async (opciones) => crearDataSource(opciones!),
         }),
         RelojModulo,
         AuthComunModulo,

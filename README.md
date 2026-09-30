@@ -215,7 +215,44 @@ Para que la API crea que es otro momento (por ejemplo, para probar fechas), pong
 - Sin Docker: `pnpm db:reiniciar`.
 - Con Docker: `docker compose down -v` y `docker compose up`.
 
-## 9. Problemas frecuentes
+## 9. Publicar la API en internet (Render + Supabase)
+
+Con Docker la API corre en tu compu; publicada tiene una dirección `https://` que anda desde
+cualquier red. La necesitan para el **build de producción con EAS**: una app instalada no puede
+apuntar a la IP de una notebook. Todo lo que sigue es gratis y sin tarjeta.
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+(Pegá la dirección del repo de tu grupo cuando Render la pida; el archivo `render.yaml` ya tiene la configuración.)
+
+1. **Supabase**: creá un proyecto en <https://supabase.com>. Anotá la *Reference ID* (Project Settings → General).
+2. **Base**: en *Connect* copiá la cadena del **Session pooler** (host `…pooler.supabase.com`, puerto **5432**, usuario `postgres.<referencia>`). No sirven la conexión directa (sólo IPv6) ni el puerto 6543.
+3. **Archivos**: en *Storage* creá un bucket (por ejemplo `archivos`). En *Project Settings → Storage → S3 Connection* generá las claves S3 y anotá la región. Esas claves dan acceso a todos los buckets: no las suban al repo.
+4. **Render**: *New → Blueprint*, elijan el repo. Render pide los secretos: `DB_URL` (paso 2), `JWT_SECRETO` (uno propio de 32+ caracteres: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`), `SUPABASE_PROYECTO`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID` y `S3_SECRET_ACCESS_KEY`.
+5. **Probar**: `pnpm publicado:probar https://<su-servicio>.onrender.com`.
+
+Para probar antes desde su compu, pongan las mismas variables en `.env` y corran `pnpm db:probar`
+(la base) y `pnpm archivos:probar` (los archivos): dicen en castellano qué está mal. Con una base
+en la nube, `pnpm db:reiniciar --confirmar` borra **sólo** el esquema de la API (`api`).
+
+Cosas que conviene saber:
+
+- **Arranque en frío**: el servicio gratis de Render se duerme a los 15 minutos sin tráfico y tarda alrededor de un minuto en despertar. La primera llamada puede demorar: la app tiene que mostrar que está cargando.
+- **Supabase gratis pausa el proyecto** después de una semana sin uso: se reactiva desde el panel.
+- Con `ENTORNO=publicado` la API **no arranca** si la base es SQLite, si los archivos son locales, si `JWT_SECRETO` es el de desarrollo o tiene menos de 32 caracteres, o si la simulación de fallas está habilitada.
+- Otras opciones que también andan: Koyeb para la API; Neon o Aiven (`DB_PROVEEDOR=neon | aiven-postgres | aiven-mysql`) para la base; Cloudflare R2 o Backblaze B2 (`ARCHIVOS_PROVEEDOR=r2 | b2`) para los archivos. El `.env.example` trae un bloque por proveedor.
+- Firebase Storage no se soporta (exige plan con facturación y no habla S3).
+
+### Archivos en un emulador de S3 (Docker)
+
+| Comando | Qué levanta |
+|---|---|
+| `docker compose -f compose.yaml -f compose.almacen-s3.yaml up` | API + SQLite + archivos en S3Proxy |
+| `docker compose -f compose.postgres.yaml -f compose.almacen-s3.yaml up` | API + PostgreSQL + archivos en S3Proxy |
+| `LOCALSTACK_AUTH_TOKEN=… docker compose -f compose.yaml -f compose.almacen-localstack.yaml up` | Lo mismo con LocalStack ("AWS local"; pide una cuenta gratis) |
+
+La app no se entera: las URLs de las fotos son siempre `<origen>/archivos/<clave>`.
+
+## 10. Problemas frecuentes
 
 | Problema | Qué hacer |
 |---|---|
@@ -225,11 +262,14 @@ Para que la API crea que es otro momento (por ejemplo, para probar fechas), pong
 | Con XAMPP la base queda rara o da errores | Usen `DB_MOTOR=mariadb`, no `mysql`. |
 | Error `EADDRINUSE` (el puerto 3000 ya está en uso) | Cierren la otra API o cambien `PUERTO` en `.env` (con Docker: `PUERTO=3001 docker compose up`). |
 | Todo da `401 NO_AUTENTICADO` | Falta la cabecera `Authorization: Bearer <token>`, o el token venció: vuelvan a ingresar. |
+| La API publicada tarda un minuto en responder | Es el arranque en frío del plan gratis de Render. Esperen y reintenten. |
+| `pnpm db:probar` dice que el pooler no reconoce el usuario | En Supabase el usuario es `postgres.<referencia>` y hay que usar el *Session pooler* (puerto 5432). |
 | Las fotos no cargan en el teléfono | Pidan las URLs usando la IP de la compu: la API arma las URLs con la dirección por la que entró el pedido. |
 
 ## Para la cátedra
 
 - `pnpm verificar`: tipos, lint, tests unitarios y e2e (SQLite en memoria).
-- `pnpm test:e2e:matriz`: la misma suite contra PostgreSQL, MySQL y MariaDB en Docker.
+- `pnpm test:e2e:matriz`: la misma suite contra PostgreSQL, MySQL y MariaDB en Docker, y los tests de archivos contra S3Proxy.
+- `pnpm archivos:probar`, `pnpm db:probar` y `pnpm publicado:probar <url>`: comprueban una configuración real (necesitan cuentas; no corren en la CI).
 - `pnpm docker:probar`: levanta los cuatro `compose` y los prueba.
 - Reglas del proyecto: `AGENTS.md` y `docs/ESPECIFICACION.md`. Decisiones: `docs/DECISIONES.md`.

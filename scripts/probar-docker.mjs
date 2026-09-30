@@ -8,6 +8,20 @@ const BASE = `http://127.0.0.1:${PUERTO}`;
 
 const COMPOSES = [
   { archivo: 'compose.yaml', motor: 'better-sqlite3' },
+  {
+    archivo: 'compose.yaml',
+    adicionales: ['compose.almacen-s3.yaml'],
+    motor: 'better-sqlite3',
+    almacen: 's3proxy',
+  },
+  {
+    // LocalStack pide cuenta: sólo corre si hay token.
+    archivo: 'compose.postgres.yaml',
+    adicionales: ['compose.almacen-localstack.yaml'],
+    motor: 'postgres',
+    almacen: 'localstack',
+    requiere: 'LOCALSTACK_AUTH_TOKEN',
+  },
   { archivo: 'compose.postgres.yaml', motor: 'postgres' },
   { archivo: 'compose.mysql.yaml', motor: 'mysql' },
   { archivo: 'compose.mariadb.yaml', motor: 'mariadb' },
@@ -113,9 +127,20 @@ const docker = (args, { silencioso = false } = {}) =>
     encoding: 'utf8',
   });
 
-async function probarUno({ archivo, motor }) {
-  const proyecto = `probar-${motor}`;
-  const compose = ['compose', '-p', proyecto, '-f', archivo];
+async function probarUno({
+  archivo,
+  motor,
+  adicionales = [],
+  almacen = 'local',
+}) {
+  const proyecto = `probar-${motor}${almacen === 'local' ? '' : `-${almacen}`}`;
+  const compose = [
+    'compose',
+    '-p',
+    proyecto,
+    ...[archivo, ...adicionales].flatMap((a) => ['-f', a]),
+  ];
+  archivo = [archivo, ...adicionales].join(' + ');
   console.log(`\n▶ ${archivo}`);
   let ok = false;
   try {
@@ -138,6 +163,11 @@ async function probarUno({ archivo, motor }) {
       cuerpo?.datos?.estado !== 'ok'
     ) {
       throw new Error(`/salud → ${salud.status} ${JSON.stringify(cuerpo)}`);
+    }
+    if (cuerpo.datos.almacen !== almacen) {
+      throw new Error(
+        `/salud dice almacén ${cuerpo.datos.almacen}, se esperaba ${almacen}`,
+      );
     }
     if (cuerpo.datos.motor !== motor) {
       throw new Error(
@@ -163,12 +193,25 @@ async function probarUno({ archivo, motor }) {
 }
 
 const pedidos = process.argv.slice(2);
-const elegidos =
+const elegidos = (
   pedidos.length > 0
     ? COMPOSES.filter((c) => pedidos.includes(c.archivo))
-    : COMPOSES;
+    : COMPOSES
+).filter((c) => {
+  if (c.requiere && !process.env[c.requiere]) {
+    console.log(
+      `\n· ${[c.archivo, ...(c.adicionales ?? [])].join(' + ')}: se saltea (falta ${c.requiere})`,
+    );
+    return false;
+  }
+  return true;
+});
 const resultados = [];
-for (const c of elegidos) resultados.push([c.archivo, await probarUno(c)]);
+for (const c of elegidos)
+  resultados.push([
+    [c.archivo, ...(c.adicionales ?? [])].join(' + '),
+    await probarUno(c),
+  ]);
 
 console.log('\nDocker:');
 for (const [archivo, ok] of resultados)

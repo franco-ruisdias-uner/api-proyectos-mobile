@@ -30,11 +30,16 @@ const correr = (comando, args, env = {}) =>
     shell: process.platform === 'win32',
   }).status;
 
+// S3Proxy va siempre: los tests de archivos contra S3 (AGENTS §17.4) corren con cada motor.
+const S3_ENDPOINT_PRUEBA = 'http://127.0.0.1:58080';
 const deRed = elegidos.filter((m) => m !== 'better-sqlite3');
 const compose = ['compose', '-f', 'compose.matriz.yaml'];
-if (deRed.length > 0) {
-  console.log(`\n▶ Levantando ${deRed.join(', ')} con Docker…`);
-  if (correr('docker', [...compose, 'up', '-d', '--wait', ...deRed]) !== 0) {
+{
+  const servicios = [...deRed, 's3'];
+  console.log(`\n▶ Levantando ${servicios.join(', ')} con Docker…`);
+  if (
+    correr('docker', [...compose, 'up', '-d', '--wait', ...servicios]) !== 0
+  ) {
     console.error('No se pudieron levantar las bases. ¿Está Docker andando?');
     process.exit(1);
   }
@@ -51,12 +56,12 @@ try {
         {
           DB_MOTOR: motor,
           DB_URL: MOTORES[motor].DB_URL ?? '',
+          S3_ENDPOINT_PRUEBA,
         },
       ) === 0;
   }
 } finally {
-  if (deRed.length > 0 && !mantener)
-    correr('docker', [...compose, 'down', '-v']);
+  if (!mantener) correr('docker', [...compose, 'down', '-v']);
 }
 
 console.log('\nMatriz:');

@@ -307,3 +307,23 @@ Decisión: la push sale después de confirmar la transacción y sólo si el pedi
   actúa no recibe nada. `datos` de la push: `tipo` (`estado`|`adhesion`), `reporteId`, `codigo`
   y, en cambios de estado, `estado`.
 Consecuencia en el contrato: ninguna en las respuestas HTTP.
+
+### P23 — Un adaptador S3 y presets de datos (M6)
+Estado: PROVISORIA (autónomo)
+Hueco: la especificación no detalla cómo se arma la nube (AGENTS §17 y §18 sí).
+Decisión:
+- Un solo adaptador S3 (`@aws-sdk/client-s3`) para todos los proveedores; los presets son una
+  tabla en `src/comun/archivos/proveedores.ts` y `configuracionS3()` es pura. Fuera de AWS el
+  cliente usa `requestChecksumCalculation`/`responseChecksumValidation: 'WHEN_REQUIRED'`.
+- Dependencia nueva `@aws-sdk/s3-request-presigner`, sólo para `ARCHIVOS_REDIRIGIR=true` (302 a
+  una URL firmada de 15 minutos); no alcanzaba con el cliente solo. Por defecto está apagado.
+- `DB_PROVEEDOR` define el motor (si `DB_MOTOR` lo contradice, no arranca). La URL se parsea con
+  `URL` y se decodifica; con un preset, TypeORM recibe host/puerto/usuario/clave por separado.
+- El esquema de PostgreSQL (`DB_ESQUEMA`) se crea con `queryRunner.createSchema` en un
+  `dataSourceFactory` propio antes de sincronizar; `dropDatabase` sólo borra las tablas de ese
+  esquema (probado en la matriz con una tabla ajena en `public`).
+- `ENTORNO=publicado` apaga `SIMULACION_HABILITADA` por defecto y rechaza SQLite, archivos
+  locales y un `JWT_SECRETO` de desarrollo o de menos de 32 caracteres.
+- Si el almacén no responde al arrancar, la API no arranca y el mensaje dice qué revisar.
+- Alternativa descartada: un adaptador por proveedor (duplica el manejo de Range y de errores).
+Consecuencia en el contrato: ninguna. `Salud.almacen` ya admitía todos los proveedores.

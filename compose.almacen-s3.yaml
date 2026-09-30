@@ -1,0 +1,28 @@
+# Se SUMA a cualquiera de los compose: archivos en S3Proxy, un servidor compatible con S3.
+#   docker compose -f compose.yaml -f compose.almacen-s3.yaml up
+services:
+  api:
+    environment:
+      ARCHIVOS_PROVEEDOR: s3proxy
+      ARCHIVOS_CREAR_BUCKET: "true"
+      S3_BUCKET: archivos
+      S3_ACCESS_KEY_ID: clave-de-mentira
+      S3_SECRET_ACCESS_KEY: clave-de-mentira
+    depends_on:
+      s3: { condition: service_healthy }
+  s3:
+    image: andrewgaul/s3proxy:sha-2e7c868
+    environment:
+      S3PROXY_ENDPOINT: http://0.0.0.0:8080
+      S3PROXY_AUTHORIZATION: none
+      JCLOUDS_PROVIDER: filesystem
+      JCLOUDS_FILESYSTEM_BASEDIR: /data
+    ports: ["${PUERTO_S3:-8080}:8080"]
+    volumes: [s3:/data]
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+volumes:
+  s3:

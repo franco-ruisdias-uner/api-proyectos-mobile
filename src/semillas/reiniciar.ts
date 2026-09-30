@@ -16,7 +16,17 @@ const { sembrar } = await import('./sembrar.js');
 type DataSource = import('typeorm').DataSource;
 
 try {
-  validarEntorno(process.env);
+  const entornoValidado = validarEntorno(process.env);
+  // Contra una base en la nube se borra datos de verdad: pide confirmación explícita.
+  if (entornoValidado.BASE.proveedor && !process.argv.includes('--confirmar')) {
+    const donde = entornoValidado.BASE.esquema
+      ? ` (sólo el esquema «${entornoValidado.BASE.esquema}» de la API)`
+      : '';
+    console.error(
+      `\nLa base es de ${entornoValidado.BASE.proveedor}${donde}: reiniciarla borra sus datos.\nSi es lo que querés, repetí el comando con --confirmar: pnpm db:reiniciar --confirmar\n`,
+    );
+    process.exit(1);
+  }
   // Sin sincronizar al arrancar ni sembrar solo: acá se hace a mano, en orden.
   const app = await NestFactory.createApplicationContext(
     AppModule.registrar({ DB_SINCRONIZAR: 'false', SEMBRAR_SI_VACIA: 'false' }),
