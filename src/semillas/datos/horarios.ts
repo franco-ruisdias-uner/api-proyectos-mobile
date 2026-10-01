@@ -43,7 +43,12 @@ export const LINEA_QUE_TERMINA_A_LAS_21 = 'lin-13';
 const MIN_FIN_TEMPRANO = 21 * 60;
 
 /** El horario del ejemplo del PRD: lin-05 pasa por par-101 (ida) a las 10:42 un día hábil. */
-const EJEMPLO_PRD = { id: 'hor-4410', lineaId: 'lin-05', paradaId: 'par-101', minuto: 10 * 60 + 42 };
+const EJEMPLO_PRD = {
+  id: 'hor-4410',
+  lineaId: 'lin-05',
+  paradaId: 'par-101',
+  minuto: 10 * 60 + 42,
+};
 
 const hhmm = (minutos: number): string =>
   `${String(Math.floor(minutos / 60)).padStart(2, '0')}:${String(minutos % 60).padStart(2, '0')}`;

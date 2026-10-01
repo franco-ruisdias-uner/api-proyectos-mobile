@@ -22,7 +22,13 @@ const riff = (formato: string) => {
 describe('AGENTS §8 — se chequea la firma del archivo, no la extensión', () => {
   it.each([
     ['jpeg', conRelleno([0xff, 0xd8, 0xff, 0xe0]), 'imagen', 'image/jpeg', 'jpg'],
-    ['png', conRelleno([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), 'imagen', 'image/png', 'png'],
+    [
+      'png',
+      conRelleno([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      'imagen',
+      'image/png',
+      'png',
+    ],
     ['webp', riff('WEBP'), 'imagen', 'image/webp', 'webp'],
     ['mp3 con ID3', conRelleno([0x49, 0x44, 0x33, 0x04]), 'audio', 'audio/mpeg', 'mp3'],
     ['mp3 sin ID3', conRelleno([0xff, 0xfb, 0x90, 0x00]), 'audio', 'audio/mpeg', 'mp3'],

@@ -27,8 +27,14 @@ describe('AGENTS §17.1 — claves de archivos generadas por el servidor', () =>
   });
 
   it.each([
-    ['http://192.168.0.10:3000/archivos/imagenes/2026/09/abcdefghijklmnopqrstuvwx.jpg', 'imagenes/2026/09/abcdefghijklmnopqrstuvwx.jpg'],
-    ['https://api.ejemplo.ar/archivos/videos/2026/09/abcdefghijklmnopqrstuvwx.mp4', 'videos/2026/09/abcdefghijklmnopqrstuvwx.mp4'],
+    [
+      'http://192.168.0.10:3000/archivos/imagenes/2026/09/abcdefghijklmnopqrstuvwx.jpg',
+      'imagenes/2026/09/abcdefghijklmnopqrstuvwx.jpg',
+    ],
+    [
+      'https://api.ejemplo.ar/archivos/videos/2026/09/abcdefghijklmnopqrstuvwx.mp4',
+      'videos/2026/09/abcdefghijklmnopqrstuvwx.mp4',
+    ],
     ['file:///data/archivos/imagenes/2026/09/abcdefghijklmnopqrstuvwx.jpg', null],
     ['https://otro.sitio/fotos/abc.jpg', null],
     ['https://api.ejemplo.ar/archivos/../secreto', null],

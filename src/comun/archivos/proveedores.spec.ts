@@ -53,9 +53,7 @@ describe('AGENTS §17.2 — presets de proveedores S3', () => {
   });
 
   it('b2: el endpoint sale de la región', () => {
-    const c = ok(
-      configuracionS3('b2', { S3_BUCKET: 'b', S3_REGION: 'us-west-004', ...claves }),
-    );
+    const c = ok(configuracionS3('b2', { S3_BUCKET: 'b', S3_REGION: 'us-west-004', ...claves }));
     expect(c.endpoint).toBe('https://s3.us-west-004.backblazeb2.com');
     expect(c.region).toBe('us-west-004');
   });
@@ -105,9 +103,9 @@ describe('AGENTS §17.2 — presets de proveedores S3', () => {
     });
 
     it('una variable vacía cuenta como faltante', () => {
-      expect(problemas(configuracionS3('aws', { S3_BUCKET: '  ', S3_REGION: 'r', ...claves }))[0]).toMatch(
-        /S3_BUCKET/,
-      );
+      expect(
+        problemas(configuracionS3('aws', { S3_BUCKET: '  ', S3_REGION: 'r', ...claves }))[0],
+      ).toMatch(/S3_BUCKET/);
     });
   });
 
@@ -118,10 +116,12 @@ describe('AGENTS §17.2 — presets de proveedores S3', () => {
       expect(c.endpoint).toBe('https://s3.otro.com');
     });
     it('path style forzado en ambos sentidos', () => {
-      expect(ok(configuracionS3('aws', { ...base, S3_FORZAR_PATH_STYLE: 'true' })).forcePathStyle).toBe(true);
       expect(
-        ok(configuracionS3('s3proxy', { S3_FORZAR_PATH_STYLE: 'false' })).forcePathStyle,
-      ).toBe(false);
+        ok(configuracionS3('aws', { ...base, S3_FORZAR_PATH_STYLE: 'true' })).forcePathStyle,
+      ).toBe(true);
+      expect(ok(configuracionS3('s3proxy', { S3_FORZAR_PATH_STYLE: 'false' })).forcePathStyle).toBe(
+        false,
+      );
     });
     it('rechaza un endpoint que no es http ni https', () => {
       expect(problemas(configuracionS3('aws', { ...base, S3_ENDPOINT: 'ftp://x' }))[0]).toMatch(
@@ -129,13 +129,17 @@ describe('AGENTS §17.2 — presets de proveedores S3', () => {
       );
     });
     it('rechaza un valor raro de S3_FORZAR_PATH_STYLE', () => {
-      expect(
-        problemas(configuracionS3('aws', { ...base, S3_FORZAR_PATH_STYLE: 'si' }))[0],
-      ).toMatch(/S3_FORZAR_PATH_STYLE/);
+      expect(problemas(configuracionS3('aws', { ...base, S3_FORZAR_PATH_STYLE: 'si' }))[0]).toMatch(
+        /S3_FORZAR_PATH_STYLE/,
+      );
     });
     it('ARCHIVOS_CREAR_BUCKET se puede activar o apagar', () => {
-      expect(ok(configuracionS3('aws', { ...base, ARCHIVOS_CREAR_BUCKET: 'true' })).crearBucket).toBe(true);
-      expect(ok(configuracionS3('s3proxy', { ARCHIVOS_CREAR_BUCKET: 'false' })).crearBucket).toBe(false);
+      expect(
+        ok(configuracionS3('aws', { ...base, ARCHIVOS_CREAR_BUCKET: 'true' })).crearBucket,
+      ).toBe(true);
+      expect(ok(configuracionS3('s3proxy', { ARCHIVOS_CREAR_BUCKET: 'false' })).crearBucket).toBe(
+        false,
+      );
       expect(problemas(configuracionS3('aws', { ...base, ARCHIVOS_CREAR_BUCKET: 'x' }))[0]).toMatch(
         /ARCHIVOS_CREAR_BUCKET/,
       );

@@ -21,7 +21,8 @@ const HORA = 3600_000;
  * vigentes, uno próximo y uno terminado, también con RELOJ_FIJO.
  */
 export function avisosDeDemo(ahora: Date): AvisoSemilla[] {
-  const en = (milisegundos: number) => new Date(Math.floor((ahora.getTime() + milisegundos) / 1000) * 1000);
+  const en = (milisegundos: number) =>
+    new Date(Math.floor((ahora.getTime() + milisegundos) / 1000) * 1000);
   return [
     // Del PRD, con su id exacto: desvío por obra en Corrientes, con trazado alternativo y video.
     {
@@ -59,7 +60,8 @@ export function avisosDeDemo(ahora: Date): AvisoSemilla[] {
     {
       id: 'avi-090',
       titulo: 'Unidad descompuesta en Almafuerte y Newbery',
-      detalle: 'Una unidad de la línea 8 quedó parada en Almafuerte y Newbery. El servicio se normaliza en un rato.',
+      detalle:
+        'Una unidad de la línea 8 quedó parada en Almafuerte y Newbery. El servicio se normaliza en un rato.',
       lineaIds: ['lin-08'],
       desde: en(-1 * HORA),
       hasta: en(3 * HORA),

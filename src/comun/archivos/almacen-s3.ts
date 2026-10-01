@@ -77,7 +77,8 @@ export class AlmacenS3 implements AlmacenArchivos {
             return;
           } catch (errorAlCrear) {
             ultimo = errorAlCrear;
-            if (['BucketAlreadyOwnedByYou', 'BucketAlreadyExists'].includes(nombreDe(errorAlCrear))) return;
+            if (['BucketAlreadyOwnedByYou', 'BucketAlreadyExists'].includes(nombreDe(errorAlCrear)))
+              return;
           }
         }
         // Credenciales o permisos mal puestos no se arreglan reintentando.
@@ -131,7 +132,8 @@ export class AlmacenS3 implements AlmacenArchivos {
       if (faltaLaClave(error)) throw new ArchivoNoEncontrado(clave);
       throw new AlmacenNoDisponible(error);
     }
-    if (!respuesta.Body) throw new AlmacenNoDisponible(new Error('El almacén respondió sin contenido'));
+    if (!respuesta.Body)
+      throw new AlmacenNoDisponible(new Error('El almacén respondió sin contenido'));
     // Con rango, el total viene en Content-Range ("bytes 10-19/100"); ContentLength es lo pedido.
     const total = respuesta.ContentRange?.match(/\/(\d+)$/)?.[1];
     const bytesTotales = total !== undefined ? Number(total) : (respuesta.ContentLength ?? 0);

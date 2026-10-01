@@ -67,7 +67,10 @@ export class ArchivosControlador {
     @UploadedFile() archivo: Express.Multer.File | undefined,
   ): Promise<RespuestaUno<ArchivoSubido>> {
     if (!archivo) {
-      throw new ErrorDeApi('VALIDACION_FALLIDA', 'Falta el archivo: mandalo en el campo «archivo».');
+      throw new ErrorDeApi(
+        'VALIDACION_FALLIDA',
+        'Falta el archivo: mandalo en el campo «archivo».',
+      );
     }
     return respuestaUno(await this.archivos.subir(archivo.buffer));
   }
@@ -108,7 +111,10 @@ export class ArchivosControlador {
     respuesta.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     if (rango) {
       respuesta.status(206);
-      respuesta.setHeader('Content-Range', `bytes ${rango.inicio}-${rango.fin}/${lectura.bytesTotales}`);
+      respuesta.setHeader(
+        'Content-Range',
+        `bytes ${rango.inicio}-${rango.fin}/${lectura.bytesTotales}`,
+      );
       respuesta.setHeader('Content-Length', String(rango.fin - rango.inicio + 1));
     } else {
       respuesta.status(200);

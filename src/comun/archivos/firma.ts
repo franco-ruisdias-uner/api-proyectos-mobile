@@ -9,7 +9,19 @@ export interface ArchivoDetectado {
 }
 
 const MARCAS_DE_AUDIO_MP4 = ['M4A ', 'M4B '];
-const MARCAS_DE_VIDEO_MP4 = ['isom', 'iso2', 'iso4', 'iso5', 'iso6', 'mp41', 'mp42', 'avc1', 'M4V ', 'MSNV', 'dash'];
+const MARCAS_DE_VIDEO_MP4 = [
+  'isom',
+  'iso2',
+  'iso4',
+  'iso5',
+  'iso6',
+  'mp41',
+  'mp42',
+  'avc1',
+  'M4V ',
+  'MSNV',
+  'dash',
+];
 
 /**
  * Detecta el tipo por los primeros bytes (la "firma"), no por la extensión ni por lo que
@@ -29,14 +41,17 @@ export function detectarTipoDeArchivo(contenido: Buffer): ArchivoDetectado | nul
   }
   if (texto(4, 8) === 'ftyp') {
     const marca = texto(8, 12);
-    if (MARCAS_DE_AUDIO_MP4.includes(marca)) return { tipo: 'audio', mime: 'audio/mp4', extension: 'm4a' };
-    if (MARCAS_DE_VIDEO_MP4.includes(marca)) return { tipo: 'video', mime: 'video/mp4', extension: 'mp4' };
+    if (MARCAS_DE_AUDIO_MP4.includes(marca))
+      return { tipo: 'audio', mime: 'audio/mp4', extension: 'm4a' };
+    if (MARCAS_DE_VIDEO_MP4.includes(marca))
+      return { tipo: 'video', mime: 'video/mp4', extension: 'mp4' };
     return null;
   }
   if (texto(0, 3) === 'ID3') return { tipo: 'audio', mime: 'audio/mpeg', extension: 'mp3' };
   if (contenido[0] === 0xff) {
     // ADTS (AAC): 1111 1111 1111 x00x — capa 00
-    if ((contenido[1] & 0xf6) === 0xf0) return { tipo: 'audio', mime: 'audio/aac', extension: 'aac' };
+    if ((contenido[1] & 0xf6) === 0xf0)
+      return { tipo: 'audio', mime: 'audio/aac', extension: 'aac' };
     // MPEG audio (MP3): sincronización de 11 bits y capa III
     if ((contenido[1] & 0xe0) === 0xe0 && (contenido[1] & 0x06) === 0x02) {
       return { tipo: 'audio', mime: 'audio/mpeg', extension: 'mp3' };

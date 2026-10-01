@@ -18,7 +18,8 @@ export interface ConfiguracionS3 {
   checksumsSoloSiHaceFalta: boolean;
 }
 
-export type ResultadoS3 = { ok: true; config: ConfiguracionS3 } | { ok: false; problemas: string[] };
+export type ResultadoS3 =
+  { ok: true; config: ConfiguracionS3 } | { ok: false; problemas: string[] };
 
 type Entorno = Record<string, string | undefined>;
 
@@ -62,9 +63,7 @@ export const PRESETS_S3: Record<ProveedorS3, Preset> = {
     endpoint: (env) => `https://${env.SUPABASE_PROYECTO}.storage.supabase.co/storage/v1/s3`,
   },
   r2: {
-    variables: [
-      { nombre: 'R2_CUENTA', donde: 'el ID de cuenta de Cloudflare, en el panel de R2' },
-    ],
+    variables: [{ nombre: 'R2_CUENTA', donde: 'el ID de cuenta de Cloudflare, en el panel de R2' }],
     pideRegion: false,
     pideBucket: true,
     pideClaves: true,
@@ -119,9 +118,7 @@ export function configuracionS3(proveedor: ProveedorS3, entrada: Entorno): Resul
   for (const nombre of Object.keys(entrada)) env[nombre] = valor(entrada, nombre);
   const problemas: string[] = [];
   const falta = (nombre: string, donde: string) =>
-    problemas.push(
-      `Falta ${nombre} (con ARCHIVOS_PROVEEDOR=${proveedor}): es ${donde}.`,
-    );
+    problemas.push(`Falta ${nombre} (con ARCHIVOS_PROVEEDOR=${proveedor}): es ${donde}.`);
 
   for (const v of preset.variables) if (!env[v.nombre]) falta(v.nombre, v.donde);
   if (preset.pideBucket && !env.S3_BUCKET) falta('S3_BUCKET', BUCKET_DONDE);
