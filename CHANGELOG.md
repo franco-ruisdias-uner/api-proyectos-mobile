@@ -5,6 +5,16 @@ forma de las respuestas no cambia: sólo se agregan endpoints y códigos de erro
 
 ## Sin publicar
 
+### M8 — Notificaciones para completar
+
+- **Código de error nuevo:** `NO_IMPLEMENTADO` (501).
+- `POST /dispositivos`, `DELETE /dispositivos/:tokenExpo` y `POST /dispositivos/prueba` los
+  programan los alumnos: hasta entonces responden `501 NO_IMPLEMENTADO`. La forma de sus
+  respuestas, cuando funcionen, es la de siempre. Mientras tanto, los demás flujos (cambiar un
+  estado, sumarse) responden igual que antes; la push queda pendiente y se anota en el log.
+- Guía en `docs/NOTIFICACIONES.md`; la consigna se corre con `pnpm test:notificaciones`.
+- Variable nueva: `EXPO_PUSH_URL` (dirección del servicio de Expo; los tests usan uno falso).
+
 ### M7 — Datos de demo y README
 
 Sin endpoints ni cambios en las respuestas. El README ahora trae una guía de casos de prueba de

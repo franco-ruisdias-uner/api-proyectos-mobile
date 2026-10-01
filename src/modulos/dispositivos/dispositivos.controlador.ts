@@ -40,11 +40,11 @@ export class ControladorDispositivos {
   @ApiOperation({
     summary: 'Registrar el token de push de este teléfono',
     description:
-      'Llamalo después de ingresar. Se puede repetir: si ya estaba registrado responde 200. Si el token era de otra cuenta, pasa a la tuya.',
+      'LO COMPLETAN LOS ALUMNOS: hasta entonces responde 501 NO_IMPLEMENTADO. Llamalo después de ingresar. Se puede repetir: si ya estaba registrado responde 200. Si el token era de otra cuenta, pasa a la tuya.',
   })
   @DocRespuestaUno(201, DispositivoDoc, 'Registrado.')
   @DocRespuestaUno(200, DispositivoDoc, 'Ya estaba registrado.')
-  @DocErrores('VALIDACION_FALLIDA')
+  @DocErrores('VALIDACION_FALLIDA', 'NO_IMPLEMENTADO')
   async registrar(
     @UsuarioActual() usuario: Usuario,
     @Body() dto: RegistrarDispositivoDto,
@@ -60,13 +60,14 @@ export class ControladorDispositivos {
   @ApiOperation({
     summary: 'Mandarme una push de prueba',
     description:
-      'Le manda una notificación a cada teléfono registrado de tu cuenta. Sirve para depurar.',
+      'LO COMPLETAN LOS ALUMNOS: hasta entonces responde 501 NO_IMPLEMENTADO. Le manda una notificación a cada teléfono registrado de tu cuenta. Sirve para depurar.',
   })
   @DocRespuestaUno(
     200,
     PruebaDePushDoc,
     'A cuántos dispositivos se mandó (0 si tenés los avisos apagados).',
   )
+  @DocErrores('NO_IMPLEMENTADO')
   async probar(
     @UsuarioActual() usuario: Usuario,
   ): Promise<RespuestaUno<PruebaDePush>> {
@@ -78,9 +79,10 @@ export class ControladorDispositivos {
   @ApiOperation({
     summary: 'Dar de baja el token de este teléfono',
     description:
-      'Llamalo al cerrar sesión. Si ya no estaba, también responde 204.',
+      'LO COMPLETAN LOS ALUMNOS: hasta entonces responde 501 NO_IMPLEMENTADO. Llamalo al cerrar sesión. Si ya no estaba, también responde 204.',
   })
   @ApiNoContentResponse({ description: 'Dado de baja (sin cuerpo).' })
+  @DocErrores('NO_IMPLEMENTADO')
   async darDeBaja(
     @UsuarioActual() usuario: Usuario,
     @Param('tokenExpo') tokenExpo: string,

@@ -340,3 +340,26 @@ descartada: sacar un bache, que dejaría sólo cuatro abiertos.
 Consecuencia en el contrato: ninguna. Además: con el reloj por defecto (2026-09-14) `rep-00412`
 tiene código `GCHU-2026-00412`; si se mueve `RELOJ_FIJO` a otro año, el código cambia de año
 («recalculado para el año en curso», §8).
+
+### P25 — Notificaciones en dos puertos y vaciado (M8)
+Estado: PROVISORIA (autónomo)
+Hueco: AGENTS §19 define los puertos pero no cómo se mantiene el 201/200 de `POST /dispositivos`
+ni qué pasa con `prueba` cuando el almacén está vacío.
+Decisión:
+- El repo tenía un puerto `Notificador` con `expo-server-sdk` y la entidad `Dispositivo` dentro
+  del dominio. Se llevó a `AlmacenTokensPush` y `EnviadorPush` (`src/comun/notificaciones/puertos.ts`)
+  sin cambiar el contrato; `expo-server-sdk` se sacó (el enviador usa `fetch`, un mensaje de Expo
+  por token, en tandas de 100) y la validación del token es una expresión regular propia.
+- Como `guardar` devuelve `void`, el servicio decide 201 o 200 mirando antes si el token ya era
+  del usuario (`tokensDe`). La baja sólo borra tokens propios.
+- Un puerto sin implementar tira `PuertoSinImplementar`: el filtro de errores lo traduce a
+  `501 NO_IMPLEMENTADO`, y `Avisos` lo anota en el log («Push pendiente de implementar: …») sin
+  romper el pedido. `prueba` usa `propagar` para que el 501 llegue a quien la llama.
+- La solución completa quedó en la rama `solucion-notificaciones` (entidad `Dispositivo`,
+  `AlmacenTokensTypeOrm`, `EnviadorExpo`); en `main` están `AlmacenTokensPorHacer` y
+  `EnviadorPorHacer` en `src/notificaciones-alumnos/`.
+- Los tests de dominio usan dobles en memoria de los dos puertos (`test/utilidades/notificaciones.ts`)
+  y registran dispositivos sin pasar por la API. Los de `/dispositivos` (incluidos los de la
+  verificación de M0) se mudaron a `test/notificaciones/` y usan un Expo falso.
+Alternativa descartada: que `guardar` devuelva si creó o no (cambia el puerto que ya pide §19.2).
+Consecuencia en el contrato: ninguna en las formas; se agrega el código `NO_IMPLEMENTADO` (501).
