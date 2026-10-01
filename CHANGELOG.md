@@ -5,6 +5,14 @@ cambia la forma de ninguna respuesta: sólo se agregan cosas.
 
 ## Sin publicar
 
+### M7 — Datos de demo completos y README
+
+- **`rep-3390` es ahora idéntico al del PRD:** `motivo: "no_paso"`, comentario "Hace 25 minutos que espero".
+- **`avi-088`** suma el punto de trazado del PRD y su detalle dice que las líneas desvían por Santa Fe.
+- **Nuevo reporte de demo con foto:** `rep-3394` (línea 14, `par-101`). `GET /reportes-demora?paradaId=par-101` ahora
+  trae cuatro reportes recientes en vez de tres.
+- README: sección 5.1 con qué hay en los datos de demo y dónde está cada caso feo.
+
 ### M6 — Nube
 
 No cambia ninguna respuesta de la API: es todo para poder **publicarla** con una dirección `https://`

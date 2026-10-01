@@ -506,3 +506,29 @@ punta, contra S3Proxy (matriz y Docker). Los endpoints son los de la sección 17
 real están `pnpm db:probar`, `pnpm archivos:probar` y `pnpm publicado:probar <url>`. Pendiente para el primer grupo que
 publique: correr esas tres cosas y avisar si algún preset no encaja.
 Consecuencia en el contrato: ninguna.
+
+### A46 — `rep-3390` y `avi-088` igualados al PRD
+Estado: CERRADA (resuelve el pendiente de A34)
+Hueco: en M5 el texto del PRD no se pudo leer; ahora sí (extracción del PDF con `pypdf`).
+Decisión: `rep-3390` pasa a ser exactamente el del PRD: `motivo: "no_paso"`, `comentario: "Hace 25 minutos que
+espero"`, `fotoUri: null`, 2 confirmaciones. `avi-088` suma el punto de trazado del PRD (`-31.7345, -60.5230`) y su
+detalle dice "desvían por Santa Fe", como el ejemplo. Las fechas siguen siendo relativas a "ahora" (no las fijas del
+PRD, 14/9 al 5/10 de 2026) para que la demo tenga siempre un aviso vigente; así lo pide `ESPECIFICACION.md` §8.
+Consecuencia en el contrato: ninguna.
+
+### A47 — Foto de demo y video de demo
+Estado: PROVISORIA (autónomo)
+Hueco: A32 pedía reemplazar el video por un clip real; no hay `ffmpeg` ni clips sin derechos en el repo, y AGENTS
+pide medios "generados, sin derechos de terceros".
+Decisión: se mantiene el MP4 mínimo generado (sin imagen, sirve para probar descarga y `Range`) y se suma `rep-3394`,
+con una foto PNG válida de 160×90 generada en código (`src/semillas/medios/foto-de-demo.ts`) y subida por el puerto
+de archivos al sembrar. Alternativa descartada: agregar un binario de video al repo (peso y licencia). El README avisa
+que el video no tiene imagen.
+Consecuencia en el contrato: ninguna.
+
+### A48 — Validación de las semillas contra el contrato
+Estado: PROVISORIA (autónomo)
+Decisión: `test/e2e/semillas-contrato.e2e-spec.ts` siembra los datos completos y pasa por `esperarContrato` cada lista
+sembrada (líneas, paradas, horarios línea por línea, feriados, avisos, reportes, sesión y usuario de cada cuenta,
+resumen), entrando por la API. Corre en los cuatro motores con la suite e2e normal.
+Consecuencia en el contrato: ninguna.

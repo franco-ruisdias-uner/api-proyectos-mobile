@@ -10,10 +10,9 @@ cambies tus mocks por `fetch`, los datos encajan sin tocar los tipos. Los tipos 
 API (el sobre de las respuestas, la sesión, los archivos) están en
 [`contrato/api.ts`](contrato/api.ts): copialos a tu proyecto.
 
-> **Estado:** están listas la base (cuenta, sesión, archivos, notificaciones), la red (líneas
-> y paradas, con búsqueda, cercanas y QR) y los horarios (tabla, próximos y feriados). Los
-> avisos y reportes se van sumando:
-> mirá el [CHANGELOG](CHANGELOG.md).
+> **Estado:** la API está completa: red (líneas, paradas, búsqueda, cercanas y QR), horarios
+> (tabla, próximos y feriados), cuenta y favoritos, avisos con push, reportes de demora y la
+> publicación en la nube. Los cambios, versión por versión, están en el [CHANGELOG](CHANGELOG.md).
 
 Toda respuesta viene en un sobre:
 
@@ -171,6 +170,45 @@ fetch(`${API}/yo`, { headers: { Authorization: `Bearer ${token}` } });
 
 El token dura **30 días**. Cuando vence, la API responde `401 NO_AUTENTICADO` y hay que
 volver a ingresar.
+
+## 5.1. Qué hay en los datos de demo
+
+Al arrancar (o con `pnpm db:reiniciar`) la API carga una red de juguete pero verosímil de
+Paraná. Los ids de los ejemplos del PRD son los mismos, para que tus pantallas se parezcan a
+las del documento.
+
+| Qué | Cuánto | Detalle |
+|---|---|---|
+| Líneas | 14 | `lin-05` es "Puerto Viejo — San Agustín" (la del PRD). Las 5 y 14 tienen ida y vuelta completas, con paradas **distintas** en cada sentido. |
+| Paradas | 73 | `par-101` es Alameda y Urquiza. También están Almafuerte y Newbery y la zona de calle Corrientes. |
+| Horarios | miles | De tabla, generados por frecuencia: primer servicio 05:20, último hacia las 23:00, con frecuencias distintas en hábiles, sábados, domingos y feriados. `hor-4410` es el del PRD. |
+| Feriados | 2026 y 2027 | Nacionales, de la fuente oficial. |
+| Avisos | 5 | `avi-088` es el desvío por obra en Corrientes (con trazado alternativo y video). |
+| Reportes | 5 | `rep-3390` es el del PRD (no pasó, 2 confirmaciones). |
+
+Las fechas de avisos y reportes son **relativas a "ahora"**: siempre hay avisos vigentes,
+uno próximo y uno terminado, aunque levantes la API otro día o congeles el reloj.
+
+**Los casos feos que el PRD pide probar, y dónde encontrarlos:**
+
+| Caso | Dónde |
+|---|---|
+| Se terminó el servicio del día | La línea `lin-13` termina a las 21:00. Con `RELOJ_FIJO=2026-09-18T22:00:00-03:00`, `GET /paradas/<cabecera>/proximos?lineaId=lin-13` sólo trae servicios de mañana (se reconocen porque su `hora` es menor que la actual). |
+| Una línea con desvío | `avi-088` (líneas 2, 7 y 9), con `trazadoAlternativo` y `videoUrl`. |
+| Un aviso sin video | `avi-089` (`informativo`, sin fecha de fin) y los demás, salvo `avi-088`. |
+| Un aviso de suspensión | `avi-090`: la unidad descompuesta en Almafuerte y Newbery (línea 8). |
+| Un aviso próximo y uno terminado | `avi-091` (empieza en tres días) y `avi-092` (ya terminó): `GET /avisos?estado=todos`. |
+| Una línea inactiva | `lin-11`: no tiene servicio y no aparece en los próximos. |
+| Paradas sin refugio, y con y sin QR | `par-103` y `par-106` no tienen refugio; `par-104` y `par-108` no tienen QR. |
+| Una lista vacía | Entrá con `nuevo@demo.ar` (sin favoritos), o pedí los reportes de una parada que no tiene (todas salvo `par-101`). |
+| Un reporte con foto | `rep-3394` (la foto se baja de `/archivos/...`). |
+| Un reporte viejo | `rep-3393`: pasaron más de 90 minutos, no se lista ni se puede confirmar. |
+| Un feriado que cae sábado | 20 de junio de 2026 (Belgrano): usa la tabla de feriado. |
+| Un error de red | Cabecera `X-Simular: error-500` (sección 8). |
+
+El video y la foto de demo están generados en el código (sin derechos de terceros): el video
+es un MP4 mínimo, sirve para probar la descarga y el `Range`, pero no tiene imagen. Para ver
+imagen real, subí tu propio clip con `POST /archivos`.
 
 ## 6. Endpoints
 
