@@ -143,8 +143,7 @@ export function configuracionBase(e: Crudo): ResultadoBase {
     };
   }
   const sslCa = texto(e, 'DB_SSL_CA') ?? null;
-  const ssl: ModoSsl =
-    (modoPedido as ModoSsl | undefined) ?? (sslCa ? 'si' : (preset?.ssl ?? 'no'));
+  const ssl: ModoSsl = (modoPedido as ModoSsl | undefined) ?? (sslCa ? 'si' : (preset?.ssl ?? 'no'));
 
   const esquemaPedido = texto(e, 'DB_ESQUEMA');
   if (esquemaPedido !== undefined && !/^[A-Za-z_][A-Za-z0-9_]{0,62}$/.test(esquemaPedido)) {
@@ -220,7 +219,10 @@ export function motorEfectivo(e: Crudo): Motor {
  * lo reconoce (en ese caso se muestra el error original).
  */
 export function traducirErrorDeConexion(error: unknown, ssl: ModoSsl = 'no'): string | null {
-  const texto = error instanceof Error ? `${error.message} ${String((error as { code?: unknown }).code ?? '')}` : String(error);
+  const texto =
+    error instanceof Error
+      ? `${error.message} ${String((error as { code?: unknown }).code ?? '')}`
+      : String(error);
   if (/self[- ]signed|unable to verify|certificate|CERT_|UNABLE_TO_GET_ISSUER/i.test(texto)) {
     return ssl === 'si'
       ? 'No se pudo verificar el certificado de la base. Probá con DB_SSL=si-sin-verificar (cifra sin verificar), o pasá el certificado de la CA del proveedor en DB_SSL_CA.'

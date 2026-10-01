@@ -37,7 +37,9 @@ describe('M4', () => {
       const lugarId = await crearLugar(ctx);
       const url = await subirArchivo(ctx, token, MUESTRAS.png());
       const vacia = await crear(token, base(lugarId)).expect(201);
-      const llena = await crear(token, base(lugarId, { fotoUri: url, nota: 'Hola', origen: 'gps' })).expect(201);
+      const llena = await crear(token, base(lugarId, { fotoUri: url, nota: 'Hola', origen: 'gps' })).expect(
+        201,
+      );
       const patch = await ctx
         .http()
         .patch(`/yo/visitas/${vacia.body.datos.id}`)
@@ -354,7 +356,9 @@ describe('M4', () => {
       const cuerpo = base(lugarId, { id: 'vis-conc0001' });
       const rs = await Promise.all(Array.from({ length: 10 }, () => crear(token, cuerpo)));
       const estados = rs.map((r) => r.status).sort();
-      expect(estados, JSON.stringify(rs.map((r) => r.body))).toEqual([200, 200, 200, 200, 200, 200, 200, 200, 200, 201]);
+      expect(estados, JSON.stringify(rs.map((r) => r.body))).toEqual([
+        200, 200, 200, 200, 200, 200, 200, 200, 200, 201,
+      ]);
       const l = await ctx.http().get('/yo/visitas').set(conSesion(token)).expect(200);
       expect(l.body.meta.total).toBe(1);
     });
@@ -417,7 +421,11 @@ describe('M4', () => {
       return { ...u, lugarId, id: r.body.datos.id as string, visita: r.body.datos };
     }
     const patch = (token: string, id: string, cuerpo: unknown) =>
-      ctx.http().patch(`/yo/visitas/${id}`).set(conSesion(token)).send(cuerpo as object);
+      ctx
+        .http()
+        .patch(`/yo/visitas/${id}`)
+        .set(conSesion(token))
+        .send(cuerpo as object);
 
     it('foto y nota juntas, luego null en ambas', async () => {
       const v = await visita({ nota: 'vieja' });
@@ -478,10 +486,13 @@ describe('M4', () => {
       expect(r.body.datos).toEqual(v.visita);
     });
 
-    it.each([['vis-noexiste1'], ['xxx'], ['lug-004'], ['vis-'], ['%20']])('404 VISITA_NO_ENCONTRADA para %s', async (id) => {
-      const v = await visita();
-      esperarError(await patch(v.token, id, { nota: 'x' }), 404, 'VISITA_NO_ENCONTRADA');
-    });
+    it.each([['vis-noexiste1'], ['xxx'], ['lug-004'], ['vis-'], ['%20']])(
+      '404 VISITA_NO_ENCONTRADA para %s',
+      async (id) => {
+        const v = await visita();
+        esperarError(await patch(v.token, id, { nota: 'x' }), 404, 'VISITA_NO_ENCONTRADA');
+      },
+    );
 
     it('SIN_PERMISO 403 con visita ajena, y no cambia; el 403 no filtra datos', async () => {
       const v = await visita({ nota: 'privada' });
@@ -547,13 +558,18 @@ describe('M4', () => {
       expect(ids).toEqual(l.body.datos.map((v: { id: string }) => v.id));
     });
 
-    it.each([['pagina=0'], ['pagina=-1'], ['pagina=abc'], ['porPagina=0'], ['porPagina=501'], ['porPagina=-5'], ['porPagina=1.5']])(
-      '?%s es 400',
-      async (q) => {
-        const { token } = await registrarTurista(ctx);
-        esError(await ctx.http().get(`/yo/visitas?${q}`).set(conSesion(token)), 400);
-      },
-    );
+    it.each([
+      ['pagina=0'],
+      ['pagina=-1'],
+      ['pagina=abc'],
+      ['porPagina=0'],
+      ['porPagina=501'],
+      ['porPagina=-5'],
+      ['porPagina=1.5'],
+    ])('?%s es 400', async (q) => {
+      const { token } = await registrarTurista(ctx);
+      esError(await ctx.http().get(`/yo/visitas?${q}`).set(conSesion(token)), 400);
+    });
 
     it('porPagina=500 y default 20', async () => {
       const { token } = await registrarTurista(ctx);

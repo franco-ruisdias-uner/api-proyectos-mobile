@@ -43,7 +43,12 @@ describe('AGENTS §17.2 — Presets de proveedores de archivos', () => {
 
   it('r2: endpoint de la cuenta y región auto (fija)', () => {
     const c = ok(
-      configuracionS3('r2', { ...claves, R2_CUENTA: '0123abcd', S3_BUCKET: 'archivos', S3_REGION: 'lo-que-sea' }),
+      configuracionS3('r2', {
+        ...claves,
+        R2_CUENTA: '0123abcd',
+        S3_BUCKET: 'archivos',
+        S3_REGION: 'lo-que-sea',
+      }),
     );
     expect(c.endpoint).toBe('https://0123abcd.r2.cloudflarestorage.com');
     expect(c.forcePathStyle).toBe(false);
@@ -51,7 +56,9 @@ describe('AGENTS §17.2 — Presets de proveedores de archivos', () => {
   });
 
   it('r2: la región no hace falta (es auto)', () => {
-    expect(ok(configuracionS3('r2', { ...claves, R2_CUENTA: '0123abcd', S3_BUCKET: 'archivos' })).region).toBe('auto');
+    expect(
+      ok(configuracionS3('r2', { ...claves, R2_CUENTA: '0123abcd', S3_BUCKET: 'archivos' })).region,
+    ).toBe('auto');
   });
 
   it('b2: el endpoint sale de la región', () => {
@@ -63,18 +70,21 @@ describe('AGENTS §17.2 — Presets de proveedores de archivos', () => {
   it.each([
     ['s3proxy', 'http://s3:8080'],
     ['localstack', 'http://localstack:4566'],
-  ] as const)('%s: emulador, sin variables, con claves de mentira y crea el bucket', (proveedor, endpoint) => {
-    const c = ok(configuracionS3(proveedor, {}));
-    expect(c).toMatchObject({
-      endpoint,
-      region: 'us-east-1',
-      forcePathStyle: true,
-      bucket: 'archivos',
-      crearBucket: true,
-      checksumsSoloSiHacenFalta: true,
-    });
-    expect(c.credenciales.accessKeyId).toContain('mentira');
-  });
+  ] as const)(
+    '%s: emulador, sin variables, con claves de mentira y crea el bucket',
+    (proveedor, endpoint) => {
+      const c = ok(configuracionS3(proveedor, {}));
+      expect(c).toMatchObject({
+        endpoint,
+        region: 'us-east-1',
+        forcePathStyle: true,
+        bucket: 'archivos',
+        crearBucket: true,
+        checksumsSoloSiHacenFalta: true,
+      });
+      expect(c.credenciales.accessKeyId).toContain('mentira');
+    },
+  );
 
   describe('variables que faltan (dicen cuál y dónde se consigue)', () => {
     it('aws sin nada', () => {
@@ -86,12 +96,18 @@ describe('AGENTS §17.2 — Presets de proveedores de archivos', () => {
       expect(e).toMatch(/Falta S3_SECRET_ACCESS_KEY/);
     });
     it('supabase sin el proyecto', () => {
-      const e = error(configuracionS3('supabase', { ...claves, S3_BUCKET: 'archivos', S3_REGION: 'sa-east-1' }));
+      const e = error(
+        configuracionS3('supabase', { ...claves, S3_BUCKET: 'archivos', S3_REGION: 'sa-east-1' }),
+      );
       expect(e).toMatch(/Falta SUPABASE_PROYECTO.*dashboard\/project/);
     });
     it('supabase sin claves: dice que se generan en «S3 Connection»', () => {
       const e = error(
-        configuracionS3('supabase', { SUPABASE_PROYECTO: 'abc', S3_BUCKET: 'archivos', S3_REGION: 'sa-east-1' }),
+        configuracionS3('supabase', {
+          SUPABASE_PROYECTO: 'abc',
+          S3_BUCKET: 'archivos',
+          S3_REGION: 'sa-east-1',
+        }),
       );
       expect(e).toMatch(/Falta S3_ACCESS_KEY_ID.*S3 Connection/);
     });
@@ -103,7 +119,9 @@ describe('AGENTS §17.2 — Presets de proveedores de archivos', () => {
       expect(e).toMatch(/Falta S3_REGION.*us-west-004/);
     });
     it('un valor en blanco cuenta como faltante', () => {
-      expect(error(configuracionS3('aws', { ...claves, S3_BUCKET: '  ', S3_REGION: 'x' }))).toMatch(/Falta S3_BUCKET/);
+      expect(error(configuracionS3('aws', { ...claves, S3_BUCKET: '  ', S3_REGION: 'x' }))).toMatch(
+        /Falta S3_BUCKET/,
+      );
     });
   });
 
@@ -120,33 +138,77 @@ describe('AGENTS §17.2 — Presets de proveedores de archivos', () => {
     expect(c.endpoint).toBe('https://minio.ejemplo.com');
     expect(c.forcePathStyle).toBe(true);
     expect(
-      ok(configuracionS3('supabase', { ...claves, S3_BUCKET: 'archivos', S3_REGION: 'x', S3_ENDPOINT: 'http://a:1', S3_FORZAR_PATH_STYLE: 'false' }))
-        .forcePathStyle,
+      ok(
+        configuracionS3('supabase', {
+          ...claves,
+          S3_BUCKET: 'archivos',
+          S3_REGION: 'x',
+          S3_ENDPOINT: 'http://a:1',
+          S3_FORZAR_PATH_STYLE: 'false',
+        }),
+      ).forcePathStyle,
     ).toBe(false);
   });
 
   it('con S3_ENDPOINT propio no hace falta SUPABASE_PROYECTO', () => {
     expect(
-      'error' in configuracionS3('supabase', { ...claves, S3_BUCKET: 'archivos', S3_REGION: 'x', S3_ENDPOINT: 'http://a:1' }),
+      'error' in
+        configuracionS3('supabase', {
+          ...claves,
+          S3_BUCKET: 'archivos',
+          S3_REGION: 'x',
+          S3_ENDPOINT: 'http://a:1',
+        }),
     ).toBe(false);
   });
 
   it('S3_ENDPOINT mal formado', () => {
-    const e = error(configuracionS3('aws', { ...claves, S3_BUCKET: 'archivos', S3_REGION: 'x', S3_ENDPOINT: 'ftp://x' }));
+    const e = error(
+      configuracionS3('aws', { ...claves, S3_BUCKET: 'archivos', S3_REGION: 'x', S3_ENDPOINT: 'ftp://x' }),
+    );
     expect(e).toMatch(/S3_ENDPOINT/);
   });
 
   it('nombre de bucket inválido', () => {
-    expect(error(configuracionS3('aws', { ...claves, S3_BUCKET: 'Mi Bucket!', S3_REGION: 'x' }))).toMatch(/S3_BUCKET no es un nombre válido/);
+    expect(error(configuracionS3('aws', { ...claves, S3_BUCKET: 'Mi Bucket!', S3_REGION: 'x' }))).toMatch(
+      /S3_BUCKET no es un nombre válido/,
+    );
   });
 
   it('ARCHIVOS_REDIRIGIR: sí en la nube, no con emuladores', () => {
-    expect(ok(configuracionS3('aws', { ...claves, S3_BUCKET: 'archivos', S3_REGION: 'x', ARCHIVOS_REDIRIGIR: 'true' })).redirigir).toBe(true);
+    expect(
+      ok(
+        configuracionS3('aws', {
+          ...claves,
+          S3_BUCKET: 'archivos',
+          S3_REGION: 'x',
+          ARCHIVOS_REDIRIGIR: 'true',
+        }),
+      ).redirigir,
+    ).toBe(true);
     expect(error(configuracionS3('s3proxy', { ARCHIVOS_REDIRIGIR: 'true' }))).toMatch(/emulador/);
-    expect(error(configuracionS3('aws', { ...claves, S3_BUCKET: 'archivos', S3_REGION: 'x', ARCHIVOS_REDIRIGIR: 'tal vez' }))).toMatch(/ARCHIVOS_REDIRIGIR/);
+    expect(
+      error(
+        configuracionS3('aws', {
+          ...claves,
+          S3_BUCKET: 'archivos',
+          S3_REGION: 'x',
+          ARCHIVOS_REDIRIGIR: 'tal vez',
+        }),
+      ),
+    ).toMatch(/ARCHIVOS_REDIRIGIR/);
   });
 
   it('ARCHIVOS_CREAR_BUCKET se puede activar fuera de los emuladores', () => {
-    expect(ok(configuracionS3('aws', { ...claves, S3_BUCKET: 'archivos', S3_REGION: 'x', ARCHIVOS_CREAR_BUCKET: 'true' })).crearBucket).toBe(true);
+    expect(
+      ok(
+        configuracionS3('aws', {
+          ...claves,
+          S3_BUCKET: 'archivos',
+          S3_REGION: 'x',
+          ARCHIVOS_CREAR_BUCKET: 'true',
+        }),
+      ).crearBucket,
+    ).toBe(true);
   });
 });

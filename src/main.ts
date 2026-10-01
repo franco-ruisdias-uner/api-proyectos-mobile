@@ -48,6 +48,8 @@ arrancar().catch((error: unknown) => {
   const mensaje = error instanceof Error ? error.message : String(error);
   const explicacion =
     error instanceof AlmacenNoDisponible ? null : traducirErrorDeConexion(error, sslDeEntorno());
-  console.error(explicacion ? `No se pudo conectar con la base de datos. ${explicacion}\n(${mensaje})` : mensaje);
+  console.error(
+    explicacion ? `No se pudo conectar con la base de datos. ${explicacion}\n(${mensaje})` : mensaje,
+  );
   process.exit(1);
 });

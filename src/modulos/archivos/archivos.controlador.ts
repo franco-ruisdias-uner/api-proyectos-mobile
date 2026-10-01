@@ -120,7 +120,8 @@ export class ArchivosControlador {
   @ApiResponse({ status: 206, description: 'La parte pedida con `Range`.' })
   @ApiResponse({
     status: 302,
-    description: 'Con `ARCHIVOS_REDIRIGIR=true` (sólo servicios en la nube): a una URL firmada de 15 minutos.',
+    description:
+      'Con `ARCHIVOS_REDIRIGIR=true` (sólo servicios en la nube): a una URL firmada de 15 minutos.',
   })
   @ApiResponse({
     status: 404,

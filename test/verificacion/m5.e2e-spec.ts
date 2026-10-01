@@ -2,10 +2,27 @@
 import { JwtService } from '@nestjs/jwt';
 import { crearApp, type AppDePrueba } from '../utilidades/crear-app.js';
 import { esperarContrato, esperarError } from '../utilidades/contrato.js';
-import { conSesion, crearAdmin, crearEvento, crearLugar, registrarTelefono, registrarTurista } from '../utilidades/builders.js';
+import {
+  conSesion,
+  crearAdmin,
+  crearEvento,
+  crearLugar,
+  registrarTelefono,
+  registrarTurista,
+} from '../utilidades/builders.js';
 
 const CLAVES_EVENTO = [
-  'coordenadas', 'descripcion', 'direccionLibre', 'estado', 'fin', 'id', 'imagenUrl', 'inicio', 'lugarId', 'precio', 'titulo',
+  'coordenadas',
+  'descripcion',
+  'direccionLibre',
+  'estado',
+  'fin',
+  'id',
+  'imagenUrl',
+  'inicio',
+  'lugarId',
+  'precio',
+  'titulo',
 ];
 let n = 0;
 
@@ -68,7 +85,9 @@ describe('Convenciones — forma del Evento guardado', () => {
     }
     const a = await ctx.http().get('/yo/eventos-guardados').set(conSesion(token)).expect(200);
     const b = await ctx.http().get('/yo/eventos-guardados').set(conSesion(token)).expect(200);
-    expect(a.body.datos.map((e: { id: string }) => e.id)).toEqual(b.body.datos.map((e: { id: string }) => e.id));
+    expect(a.body.datos.map((e: { id: string }) => e.id)).toEqual(
+      b.body.datos.map((e: { id: string }) => e.id),
+    );
     expect(a.body.datos.map((e: { id: string }) => e.id).sort()).toEqual([...ids].sort());
     const pag = [];
     for (let p = 1; p <= 4; p++) {
@@ -174,7 +193,16 @@ describe('R8/R9/R17 — vigencia en los bordes de medianoche', () => {
     ctx.reloj.avanzar(2 * 3600_000); // 02:59
     const l = await ctx.http().get('/yo/eventos-guardados').set(conSesion(token)).expect(200);
     expect(l.body.datos[0].estado).toBe('finalizado');
-    esperarError(await ctx.http().put(`/yo/eventos-guardados/${await crearEvento(ctx, { inicio: new Date('2026-12-31T21:00:00-03:00'), fin: new Date('2027-01-01T02:00:00-03:00') })}`).set(conSesion(token)), 422, 'EVENTO_NO_VIGENTE');
+    esperarError(
+      await ctx
+        .http()
+        .put(
+          `/yo/eventos-guardados/${await crearEvento(ctx, { inicio: new Date('2026-12-31T21:00:00-03:00'), fin: new Date('2027-01-01T02:00:00-03:00') })}`,
+        )
+        .set(conSesion(token)),
+      422,
+      'EVENTO_NO_VIGENTE',
+    );
     ctx.reloj.avanzar(-3 * 3600_000);
   });
 });
@@ -191,7 +219,8 @@ describe('Especificación §7 — Push: casos adversariales', () => {
 
   const cambiar = (id: string, estado: string, token = admin.token) =>
     ctx.http().patch(`/eventos/${id}/estado`).set(conSesion(token)).send({ estado });
-  const guardar = (t: string, id: string) => ctx.http().put(`/yo/eventos-guardados/${id}`).set(conSesion(t)).expect(201);
+  const guardar = (t: string, id: string) =>
+    ctx.http().put(`/yo/eventos-guardados/${id}`).set(conSesion(t)).expect(201);
   async function turista(telefonos = 1) {
     const { token } = await registrarTurista(ctx);
     const tokens: string[] = [];
@@ -315,7 +344,10 @@ describe('Especificación §7 — Push: casos adversariales', () => {
 
   it('un evento finalizado (calculado) que se cambia a suspendido no avisa, aunque el PATCH responda', async () => {
     const u = await turista();
-    const id = await crearEvento(ctx, { inicio: new Date('2026-11-14T13:00:00-03:00'), fin: new Date('2026-11-14T14:00:00-03:00') });
+    const id = await crearEvento(ctx, {
+      inicio: new Date('2026-11-14T13:00:00-03:00'),
+      fin: new Date('2026-11-14T14:00:00-03:00'),
+    });
     // guardar antes de que termine
     await guardar(u.token, id);
     ctx.reloj.avanzar(3 * 3600_000);

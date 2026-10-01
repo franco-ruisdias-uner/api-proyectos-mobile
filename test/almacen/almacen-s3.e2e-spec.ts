@@ -54,7 +54,9 @@ describe.runIf(hayS3)('AGENTS §17.4 — AlmacenS3 contra S3Proxy', () => {
     const a = crearAlmacen('contrato-almacen');
     await a.prepararse();
     const url = await a.urlFirmada('imagenes/2026/11/prueba00001.png');
-    expect(url).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/contrato-almacen\/imagenes\/2026\/11\/prueba00001\.png\?/);
+    expect(url).toMatch(
+      /^http:\/\/127\.0\.0\.1:\d+\/contrato-almacen\/imagenes\/2026\/11\/prueba00001\.png\?/,
+    );
     expect(url).toContain('X-Amz-Signature=');
     a.cerrar();
   });

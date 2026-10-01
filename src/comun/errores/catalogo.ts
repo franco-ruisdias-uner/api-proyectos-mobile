@@ -15,6 +15,10 @@ export const CATALOGO_ERRORES = {
     mensaje: 'Ese tipo de archivo no se puede subir. Probá con una foto, un audio o un video.',
   },
   RANGO_NO_SATISFACIBLE: { estado: 416, mensaje: 'No pudimos leer esa parte del archivo.' },
+  NO_IMPLEMENTADO: {
+    estado: 501,
+    mensaje: 'Esta parte la programan ustedes. Mirá docs/NOTIFICACIONES.md.',
+  },
   ERROR_INTERNO: { estado: 500, mensaje: 'Algo salió mal de nuestro lado. Probá de nuevo en un rato.' },
   ALMACEN_NO_DISPONIBLE: {
     estado: 503,

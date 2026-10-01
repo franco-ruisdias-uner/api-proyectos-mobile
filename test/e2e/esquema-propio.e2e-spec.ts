@@ -48,7 +48,10 @@ describe.runIf(process.env.DB_MOTOR === 'postgres')('AGENTS §18.1 — DB_ESQUEM
     try {
       await consulta.dropTable('public.tabla_ajena', true);
       await consulta.createTable(
-        new Table({ name: 'public.tabla_ajena', columns: [{ name: 'id', type: 'varchar', length: '10', isPrimary: true }] }),
+        new Table({
+          name: 'public.tabla_ajena',
+          columns: [{ name: 'id', type: 'varchar', length: '10', isPrimary: true }],
+        }),
       );
       await ctx.dataSource.synchronize(true);
       expect(await consulta.hasTable('public.tabla_ajena')).toBe(true);

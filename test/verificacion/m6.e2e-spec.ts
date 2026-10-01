@@ -17,7 +17,11 @@ const audio = Buffer.from(Array.from({ length: 1000 }, (_, i) => i % 256));
 audio.set([0, 0, 0, 0x20, ...Buffer.from('ftypM4A ', 'latin1')], 0);
 
 /** Los mismos chequeos de archivos con cualquier proveedor. */
-function pruebasDeArchivos(nombre: string, entorno: () => Record<string, string> | undefined, proveedor: string) {
+function pruebasDeArchivos(
+  nombre: string,
+  entorno: () => Record<string, string> | undefined,
+  proveedor: string,
+) {
   describe(`M6 — ${nombre}: /salud, Range y errores de archivos (AGENTS §17.1)`, () => {
     let ctx: AppDePrueba;
     let token: string;
@@ -79,7 +83,8 @@ function pruebasDeArchivos(nombre: string, entorno: () => Record<string, string>
       async (rango) => {
         const res = await ctx.http().get(ruta).set('Range', rango).responseType('blob');
         expect([200, 206, 416]).toContain(res.status);
-        if (res.status === 416) esperarError({ status: 416, body: JSON.parse(res.body.toString()) }, 416, 'RANGO_NO_SATISFACIBLE');
+        if (res.status === 416)
+          esperarError({ status: 416, body: JSON.parse(res.body.toString()) }, 416, 'RANGO_NO_SATISFACIBLE');
       },
     );
 
@@ -104,7 +109,11 @@ function pruebasDeArchivos(nombre: string, entorno: () => Record<string, string>
     });
 
     it('la clave inexistente devuelve exactamente ARCHIVO_NO_ENCONTRADO', async () => {
-      esperarError(await ctx.http().get('/archivos/imagenes/2026/11/noexiste1234.jpg'), 404, 'ARCHIVO_NO_ENCONTRADO');
+      esperarError(
+        await ctx.http().get('/archivos/imagenes/2026/11/noexiste1234.jpg'),
+        404,
+        'ARCHIVO_NO_ENCONTRADO',
+      );
     });
 
     it('con ARCHIVOS_REDIRIGIR desactivado nunca redirige', async () => {
@@ -113,7 +122,11 @@ function pruebasDeArchivos(nombre: string, entorno: () => Record<string, string>
     });
 
     it('subir sin token → 401; tipo no permitido → 415; el sobre es exacto', async () => {
-      esperarError(await ctx.http().post('/archivos').attach('archivo', MUESTRAS.png(), 'a.png'), 401, 'NO_AUTENTICADO');
+      esperarError(
+        await ctx.http().post('/archivos').attach('archivo', MUESTRAS.png(), 'a.png'),
+        401,
+        'NO_AUTENTICADO',
+      );
       esperarError(
         await ctx.http().post('/archivos').set(conSesion(token)).attach('archivo', MUESTRAS.texto(), 'a.jpg'),
         415,
@@ -293,10 +306,7 @@ describe('M6 / AGENTS §18.2 — ENTORNO=publicado: condiciones que impiden arra
   });
 
   it('JWT_SECRETO de desarrollo', async () => {
-    await debeFallar(
-      { ...valido, JWT_SECRETO: 'solo-para-desarrollo-no-usar-en-produccion' },
-      /JWT_SECRETO/,
-    );
+    await debeFallar({ ...valido, JWT_SECRETO: 'solo-para-desarrollo-no-usar-en-produccion' }, /JWT_SECRETO/);
   });
 
   it('JWT_SECRETO de 31 caracteres (el mínimo es 32)', async () => {
@@ -329,37 +339,40 @@ describe('M6 / AGENTS §18.2 — ENTORNO=publicado: condiciones que impiden arra
   });
 });
 
-describe.runIf(hayS3 && process.env.DB_MOTOR === 'postgres')('M6 — publicado con Postgres + S3Proxy arranca y avisa "publicado"', () => {
-  it('arranca con todo en regla', async () => {
-    const ctx = await crearApp({
-      entorno: {
-        ...entornoS3Prueba('verif-publicado'),
-        ENTORNO: 'publicado',
-        JWT_SECRETO: 'k'.repeat(40),
-        CONFIAR_PROXY: 'true',
-      },
+describe.runIf(hayS3 && process.env.DB_MOTOR === 'postgres')(
+  'M6 — publicado con Postgres + S3Proxy arranca y avisa "publicado"',
+  () => {
+    it('arranca con todo en regla', async () => {
+      const ctx = await crearApp({
+        entorno: {
+          ...entornoS3Prueba('verif-publicado'),
+          ENTORNO: 'publicado',
+          JWT_SECRETO: 'k'.repeat(40),
+          CONFIAR_PROXY: 'true',
+        },
+      });
+      try {
+        const res = await ctx.http().get('/salud').expect(200);
+        expect(res.body.datos.motor).toBe('postgres');
+        expect(res.body.datos.almacen).toBe('s3proxy');
+        const { token } = await registrarTurista(ctx);
+        const r = await ctx
+          .http()
+          .post('/archivos')
+          .set(conSesion(token))
+          .set('X-Forwarded-Proto', 'https')
+          .set('X-Forwarded-Host', 'api.onrender.com')
+          .attach('archivo', MUESTRAS.png(), 'a.png')
+          .expect(201);
+        expect(r.body.datos.url).toMatch(/^https:\/\//);
+        // simulación desactivada: la cabecera no hace nada
+        await ctx.http().get('/salud').set('X-Simular', 'error-500').expect(200);
+      } finally {
+        await ctx.cerrar();
+      }
     });
-    try {
-      const res = await ctx.http().get('/salud').expect(200);
-      expect(res.body.datos.motor).toBe('postgres');
-      expect(res.body.datos.almacen).toBe('s3proxy');
-      const { token } = await registrarTurista(ctx);
-      const r = await ctx
-        .http()
-        .post('/archivos')
-        .set(conSesion(token))
-        .set('X-Forwarded-Proto', 'https')
-        .set('X-Forwarded-Host', 'api.onrender.com')
-        .attach('archivo', MUESTRAS.png(), 'a.png')
-        .expect(201);
-      expect(r.body.datos.url).toMatch(/^https:\/\//);
-      // simulación desactivada: la cabecera no hace nada
-      await ctx.http().get('/salud').set('X-Simular', 'error-500').expect(200);
-    } finally {
-      await ctx.cerrar();
-    }
-  });
-});
+  },
+);
 
 describe('M6 / AGENTS §4.6 y §17.1 — ALMACEN_NO_DISPONIBLE (503) con un almacén que se cae', () => {
   let falso: Server;
@@ -393,7 +406,9 @@ describe('M6 / AGENTS §4.6 y §17.1 — ALMACEN_NO_DISPONIBLE (503) con un alma
           res.writeHead(200, { 'Content-Length': cuerpo.length, 'Content-Type': 'image/png', ETag: '"x"' });
           res.end(req.method === 'HEAD' ? undefined : cuerpo);
         } else {
-          res.writeHead(404, { 'Content-Type': 'application/xml' }).end('<Error><Code>NoSuchKey</Code></Error>');
+          res
+            .writeHead(404, { 'Content-Type': 'application/xml' })
+            .end('<Error><Code>NoSuchKey</Code></Error>');
         }
       });
     });
@@ -428,7 +443,11 @@ describe('M6 / AGENTS §4.6 y §17.1 — ALMACEN_NO_DISPONIBLE (503) con un alma
   }, 60_000);
 
   it('POST /archivos con el almacén caído → 503 ALMACEN_NO_DISPONIBLE', async () => {
-    const res = await ctx.http().post('/archivos').set(conSesion(token)).attach('archivo', MUESTRAS.png(), 'a.png');
+    const res = await ctx
+      .http()
+      .post('/archivos')
+      .set(conSesion(token))
+      .attach('archivo', MUESTRAS.png(), 'a.png');
     esperarError(res, 503, 'ALMACEN_NO_DISPONIBLE');
   }, 60_000);
 
@@ -464,7 +483,14 @@ describe('M6 — el contrato de los demás módulos no cambió con el puerto nue
     esperarContrato(lugar.body, 'Lugar');
     expect(lugar.body.datos.imagenes[0]).toBe(url);
     const vacio = await crearLugar(ctx, { categoriaId: cat.id });
-    esperarContrato(await ctx.http().get(`/lugares/${vacio}`).expect(200).then((r) => r.body), 'Lugar');
+    esperarContrato(
+      await ctx
+        .http()
+        .get(`/lugares/${vacio}`)
+        .expect(200)
+        .then((r) => r.body),
+      'Lugar',
+    );
     esperarContrato((await ctx.http().get('/lugares').expect(200)).body, 'Lugar');
     esperarContrato((await ctx.http().get('/categorias').expect(200)).body, 'Categoria');
     const yo = await ctx.http().get('/yo').set(conSesion(token)).expect(200);
@@ -487,7 +513,10 @@ describe('M6 — el contrato de los demás módulos no cambió con el puerto nue
 
   it('un file:// o una URL ajena sigue siendo ARCHIVO_NO_SUBIDO', async () => {
     const lugarId = await crearLugar(ctx);
-    for (const fotoUri of ['file:///tmp/a.jpg', 'https://otro.com/archivos/imagenes/2026/11/aaaaaaaaaaaa.png']) {
+    for (const fotoUri of [
+      'file:///tmp/a.jpg',
+      'https://otro.com/archivos/imagenes/2026/11/aaaaaaaaaaaa.png',
+    ]) {
       const res = await ctx
         .http()
         .post('/yo/visitas')

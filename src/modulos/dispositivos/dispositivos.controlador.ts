@@ -18,7 +18,7 @@ export class DispositivosControlador {
 
   @Post()
   @ApiOperation({
-    summary: 'Registrar el teléfono para recibir notificaciones',
+    summary: 'Registrar el teléfono para recibir notificaciones (lo completan ustedes)',
     description:
       'Con sesión. Se llama con el token de `expo-notifications`. Es idempotente: 201 si es nuevo, 200 si ya estaba. ' +
       'Si el token era de otra cuenta, pasa a la actual.',
@@ -31,6 +31,11 @@ export class DispositivosControlador {
   })
   @ApiResponse({ status: 400, description: 'VALIDACION_FALLIDA', schema: ejemploError('VALIDACION_FALLIDA') })
   @ApiResponse({ status: 401, description: 'NO_AUTENTICADO', schema: ejemploError('NO_AUTENTICADO') })
+  @ApiResponse({
+    status: 501,
+    description: 'NO_IMPLEMENTADO: esta parte la completan ustedes (docs/NOTIFICACIONES.md).',
+    schema: ejemploError('NO_IMPLEMENTADO'),
+  })
   async registrar(
     @UsuarioActual() usuario: UsuarioAutenticado,
     @Body() dto: RegistrarDispositivoDto,
@@ -44,11 +49,16 @@ export class DispositivosControlador {
   @Post('prueba')
   @HttpCode(200)
   @ApiOperation({
-    summary: 'Mandarme una notificación de prueba',
+    summary: 'Mandarme una notificación de prueba (lo completan ustedes)',
     description: 'Con sesión. Manda una push a todos mis teléfonos registrados y dice a cuántos.',
   })
   @ApiResponse({ status: 200, schema: { example: { datos: { enviadas: 1 }, meta: null } } })
   @ApiResponse({ status: 401, description: 'NO_AUTENTICADO', schema: ejemploError('NO_AUTENTICADO') })
+  @ApiResponse({
+    status: 501,
+    description: 'NO_IMPLEMENTADO: esta parte la completan ustedes (docs/NOTIFICACIONES.md).',
+    schema: ejemploError('NO_IMPLEMENTADO'),
+  })
   async prueba(@UsuarioActual() usuario: UsuarioAutenticado): Promise<RespuestaUno<PruebaNotificacion>> {
     return respuestaUno(await this.dispositivos.prueba(usuario.id));
   }
@@ -57,11 +67,16 @@ export class DispositivosControlador {
   @HttpCode(204)
   @ApiParam({ name: 'tokenExpo', description: 'El token, codificado para URL.' })
   @ApiOperation({
-    summary: 'Dejar de recibir notificaciones en este teléfono',
+    summary: 'Dejar de recibir notificaciones en este teléfono (lo completan ustedes)',
     description: 'Con sesión. 204 siempre, también si el token no estaba (idempotente).',
   })
   @ApiResponse({ status: 204, description: 'Listo.' })
   @ApiResponse({ status: 401, description: 'NO_AUTENTICADO', schema: ejemploError('NO_AUTENTICADO') })
+  @ApiResponse({
+    status: 501,
+    description: 'NO_IMPLEMENTADO: esta parte la completan ustedes (docs/NOTIFICACIONES.md).',
+    schema: ejemploError('NO_IMPLEMENTADO'),
+  })
   async darDeBaja(
     @UsuarioActual() usuario: UsuarioAutenticado,
     @Param('tokenExpo') tokenExpo: string,

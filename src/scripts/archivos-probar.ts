@@ -35,11 +35,15 @@ async function probar(): Promise<void> {
     await almacen.guardar(clave, contenido, 'image/png');
     console.log('  ✓ Se pudo subir un archivo.');
     const entero = await almacen.leer(clave);
-    if (Buffer.compare(await leerTodo(entero.flujo), contenido) !== 0) falla('el archivo que volvió no es igual al que se subió');
+    if (Buffer.compare(await leerTodo(entero.flujo), contenido) !== 0)
+      falla('el archivo que volvió no es igual al que se subió');
     console.log('  ✓ Se pudo leer entero, con los mismos bytes.');
     const parte = await almacen.leer(clave, { inicio: 10, fin: 19 });
     const bytes = await leerTodo(parte.flujo);
-    if (bytes.length !== 10 || bytes[0] !== 10) falla('el servicio no respetó el pedido de un rango de bytes (sin eso, las audioguías no se pueden adelantar)');
+    if (bytes.length !== 10 || bytes[0] !== 10)
+      falla(
+        'el servicio no respetó el pedido de un rango de bytes (sin eso, las audioguías no se pueden adelantar)',
+      );
     console.log('  ✓ Se pudo leer un rango de bytes.');
     await almacen.borrar(clave);
     if (await almacen.existe(clave)) falla('el archivo de prueba no se borró');

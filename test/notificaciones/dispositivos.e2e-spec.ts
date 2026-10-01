@@ -100,7 +100,10 @@ describe('Guardar los tokens: /dispositivos', () => {
 
   describe('DELETE /dispositivos/:tokenExpo: dar de baja (204 siempre)', () => {
     const baja = (token: string, tokenExpo = TOKEN_A) =>
-      ctx.http().delete(`/dispositivos/${encodeURIComponent(tokenExpo)}`).set(conSesion(token));
+      ctx
+        .http()
+        .delete(`/dispositivos/${encodeURIComponent(tokenExpo)}`)
+        .set(conSesion(token));
 
     it('da de baja (204 sin cuerpo) y es idempotente', async () => {
       await registrar(lucia);

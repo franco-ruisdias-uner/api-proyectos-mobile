@@ -231,9 +231,9 @@ Para **mirar** lugares, mapa y agenda no hace falta cuenta. La cuenta es para gu
 | `POST` | `/auth/ingreso` | 🌐 | Ingresar con email y contraseña |
 | `GET` | `/yo` | 🔒 | Mi usuario |
 | `PATCH` | `/yo` | 🔒 | Cambiar mi nombre, mi foto o mis preferencias |
-| `POST` | `/dispositivos` | 🔒 | Registrar el teléfono para recibir notificaciones |
-| `POST` | `/dispositivos/prueba` | 🔒 | Mandarme una notificación de prueba |
-| `DELETE` | `/dispositivos/:tokenExpo` | 🔒 | Dejar de recibir notificaciones en este teléfono |
+| `POST` | `/dispositivos` | 🔒 | Registrar el teléfono para recibir notificaciones (lo completan ustedes) |
+| `POST` | `/dispositivos/prueba` | 🔒 | Mandarme una notificación de prueba (lo completan ustedes) |
+| `DELETE` | `/dispositivos/:tokenExpo` | 🔒 | Dejar de recibir notificaciones en este teléfono (lo completan ustedes) |
 | `GET` | `/categorias` | 🌐 | Categorías de lugares |
 | `GET` | `/lugares` | 🌐 | Lugares |
 | `GET` | `/lugares/qr/:codigo` | 🌐 | Lugar de un código QR |
@@ -282,6 +282,7 @@ según el `codigo`, que no cambia nunca.
 | 422 | `FECHA_EN_EL_FUTURO` | La fecha de la visita no puede ser posterior a este momento. |
 | 422 | `CATEGORIA_NO_ENCONTRADA` | Alguna de las categorías elegidas no existe. |
 | 500 | `ERROR_INTERNO` | Algo salió mal de nuestro lado. Probá de nuevo en un rato. |
+| 501 | `NO_IMPLEMENTADO` | Esta parte la programan ustedes. Mirá docs/NOTIFICACIONES.md. |
 | 503 | `ALMACEN_NO_DISPONIBLE` | No pudimos acceder a los archivos. Probá de nuevo en un rato. |
 <!-- /tabla:errores -->
 

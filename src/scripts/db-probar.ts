@@ -27,7 +27,9 @@ async function probar(): Promise<void> {
     const version = (dataSource.driver as { version?: string }).version ?? 'desconocida';
     console.log(`  ✓ Conexión: motor ${entorno.DB_MOTOR}, versión ${version}.`);
     if (entorno.DB_ESQUEMA) console.log(`  ✓ Esquema de la API: «${entorno.DB_ESQUEMA}».`);
-    console.log(`  ✓ Cifrado: ${{ no: 'no', si: 'sí, verificando el certificado', 'si-sin-verificar': 'sí, sin verificar el certificado' }[entorno.DB_SSL]}.`);
+    console.log(
+      `  ✓ Cifrado: ${{ no: 'no', si: 'sí, verificando el certificado', 'si-sin-verificar': 'sí, sin verificar el certificado' }[entorno.DB_SSL]}.`,
+    );
 
     const nombre = entorno.DB_ESQUEMA ? `${entorno.DB_ESQUEMA}.prueba_conexion` : 'prueba_conexion';
     const consulta = dataSource.createQueryRunner();
@@ -48,7 +50,9 @@ async function probar(): Promise<void> {
     console.log('\nTodo bien: la base está lista para la API.');
   } catch (error) {
     const explicacion = traducirErrorDeConexion(error, entorno.DB_SSL);
-    console.error(`\n  ✗ No se pudo usar la base: ${explicacion ?? (error instanceof Error ? error.message : error)}`);
+    console.error(
+      `\n  ✗ No se pudo usar la base: ${explicacion ?? (error instanceof Error ? error.message : error)}`,
+    );
     process.exitCode = 1;
   } finally {
     if (dataSource.isInitialized) await dataSource.destroy();

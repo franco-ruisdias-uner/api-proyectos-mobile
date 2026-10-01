@@ -3,6 +3,14 @@
 Lo que cambia en la API, escrito para quienes la usan desde la app. Desde la `v1.0.0` no se
 cambia la forma de ninguna respuesta: sólo se agregan cosas.
 
+## 0.9.0 — Notificaciones para completar
+
+- `POST /dispositivos`, `POST /dispositivos/prueba` y `DELETE /dispositivos/:tokenExpo` responden **501
+  `NO_IMPLEMENTADO`** hasta que ustedes programen el guardado de tokens y el envío de push. Mirá
+  `docs/NOTIFICACIONES.md` y corré `pnpm test:notificaciones`.
+- El resto de la API no cambia: cuando se suspende o cancela un evento, la API anota la push pendiente en el log y sigue.
+- Error nuevo: `NO_IMPLEMENTADO` (501).
+
 ## 0.8.0 — Datos de demo y README completos
 
 - Sin cambios en la forma de ninguna respuesta. Se revisaron los datos de demo contra la lista de casos

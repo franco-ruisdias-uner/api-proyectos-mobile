@@ -49,18 +49,30 @@ describe('AGENTS §18.1 — Presets de base de datos', () => {
       });
     });
     it('pisa a DB_MOTOR', () => {
-      expect(ok(configuracionBase({ DB_PROVEEDOR: 'supabase', DB_MOTOR: 'better-sqlite3', DB_URL: SUPABASE })).motor).toBe(
-        'postgres',
-      );
+      expect(
+        ok(configuracionBase({ DB_PROVEEDOR: 'supabase', DB_MOTOR: 'better-sqlite3', DB_URL: SUPABASE }))
+          .motor,
+      ).toBe('postgres');
     });
     it('con DB_SSL_CA pasa a verificar', () => {
-      expect(ok(configuracionBase({ DB_PROVEEDOR: 'supabase', DB_URL: SUPABASE, DB_SSL_CA: '/certs/ca.pem' }))).toMatchObject({
+      expect(
+        ok(configuracionBase({ DB_PROVEEDOR: 'supabase', DB_URL: SUPABASE, DB_SSL_CA: '/certs/ca.pem' })),
+      ).toMatchObject({
         ssl: 'si',
         sslCa: '/certs/ca.pem',
       });
     });
     it('DB_SSL y DB_ESQUEMA pisan al preset', () => {
-      expect(ok(configuracionBase({ DB_PROVEEDOR: 'supabase', DB_URL: SUPABASE, DB_SSL: 'no', DB_ESQUEMA: 'mi_api' }))).toMatchObject({
+      expect(
+        ok(
+          configuracionBase({
+            DB_PROVEEDOR: 'supabase',
+            DB_URL: SUPABASE,
+            DB_SSL: 'no',
+            DB_ESQUEMA: 'mi_api',
+          }),
+        ),
+      ).toMatchObject({
         ssl: 'no',
         esquema: 'mi_api',
       });
@@ -70,7 +82,10 @@ describe('AGENTS §18.1 — Presets de base de datos', () => {
     });
     it('la conexión directa (db.<ref>.supabase.co) se rechaza: sólo IPv6', () => {
       const e = error(
-        configuracionBase({ DB_PROVEEDOR: 'supabase', DB_URL: 'postgres://postgres:clave@db.abcdefghij.supabase.co:5432/postgres' }),
+        configuracionBase({
+          DB_PROVEEDOR: 'supabase',
+          DB_URL: 'postgres://postgres:clave@db.abcdefghij.supabase.co:5432/postgres',
+        }),
       );
       expect(e).toMatch(/IPv6/);
       expect(e).toMatch(/Session pooler/);
@@ -92,12 +107,19 @@ describe('AGENTS §18.1 — Presets de base de datos', () => {
     });
     it('usuario sin el código del proyecto', () => {
       expect(
-        error(configuracionBase({ DB_PROVEEDOR: 'supabase', DB_URL: SUPABASE.replace('postgres.abcdefghij', 'postgres') })),
+        error(
+          configuracionBase({
+            DB_PROVEEDOR: 'supabase',
+            DB_URL: SUPABASE.replace('postgres.abcdefghij', 'postgres'),
+          }),
+        ),
       ).toMatch(/postgres\.<código del proyecto>/);
     });
     it('un host que no es de Supabase', () => {
       expect(
-        error(configuracionBase({ DB_PROVEEDOR: 'supabase', DB_URL: 'postgres://postgres.a:b@localhost:5432/d' })),
+        error(
+          configuracionBase({ DB_PROVEEDOR: 'supabase', DB_URL: 'postgres://postgres.a:b@localhost:5432/d' }),
+        ),
       ).toMatch(/pooler\.supabase\.com/);
     });
   });
@@ -124,54 +146,71 @@ describe('AGENTS §18.1 — Presets de base de datos', () => {
         ssl: 'si-sin-verificar',
         esquema: 'public',
       });
-      expect(ok(configuracionBase({ DB_PROVEEDOR: 'aiven-postgres', DB_URL: url, DB_SSL_CA: 'ca.pem' })).ssl).toBe('si');
+      expect(
+        ok(configuracionBase({ DB_PROVEEDOR: 'aiven-postgres', DB_URL: url, DB_SSL_CA: 'ca.pem' })).ssl,
+      ).toBe('si');
     });
     it('aiven-mysql: motor mysql y sin esquema (ni aunque se pida)', () => {
       const url = 'mysql://avnadmin:clave@mysql-x.a.aivencloud.com:12345/defaultdb';
-      expect(ok(configuracionBase({ DB_PROVEEDOR: 'aiven-mysql', DB_URL: url, DB_ESQUEMA: 'api' }))).toMatchObject({
+      expect(
+        ok(configuracionBase({ DB_PROVEEDOR: 'aiven-mysql', DB_URL: url, DB_ESQUEMA: 'api' })),
+      ).toMatchObject({
         motor: 'mysql',
         ssl: 'si-sin-verificar',
         esquema: null,
       });
     });
     it('host equivocado', () => {
-      expect(error(configuracionBase({ DB_PROVEEDOR: 'aiven-mysql', DB_URL: 'mysql://a:b@localhost:3306/d' }))).toMatch(
-        /\.aivencloud\.com/,
-      );
+      expect(
+        error(configuracionBase({ DB_PROVEEDOR: 'aiven-mysql', DB_URL: 'mysql://a:b@localhost:3306/d' })),
+      ).toMatch(/\.aivencloud\.com/);
     });
   });
 
   describe('errores de configuración', () => {
     it('DB_PROVEEDOR desconocido lista los válidos', () => {
-      expect(error(configuracionBase({ DB_PROVEEDOR: 'heroku' }))).toMatch(/supabase, neon, aiven-postgres, aiven-mysql/);
+      expect(error(configuracionBase({ DB_PROVEEDOR: 'heroku' }))).toMatch(
+        /supabase, neon, aiven-postgres, aiven-mysql/,
+      );
     });
     it('DB_SSL desconocido explica las tres opciones', () => {
-      expect(error(configuracionBase({ DB_MOTOR: 'postgres', DB_URL: 'postgres://a:b@h/d', DB_SSL: 'quizas' }))).toMatch(
-        /no, si, si-sin-verificar/,
-      );
+      expect(
+        error(configuracionBase({ DB_MOTOR: 'postgres', DB_URL: 'postgres://a:b@h/d', DB_SSL: 'quizas' })),
+      ).toMatch(/no, si, si-sin-verificar/);
     });
     it('DB_ESQUEMA con caracteres raros (se usa como identificador)', () => {
-      expect(error(configuracionBase({ DB_MOTOR: 'postgres', DB_URL: 'postgres://a:b@h/d', DB_ESQUEMA: 'x; drop' }))).toMatch(
-        /DB_ESQUEMA/,
-      );
+      expect(
+        error(
+          configuracionBase({ DB_MOTOR: 'postgres', DB_URL: 'postgres://a:b@h/d', DB_ESQUEMA: 'x; drop' }),
+        ),
+      ).toMatch(/DB_ESQUEMA/);
     });
     it('DB_URL que no es una URL explica cómo escribir la contraseña', () => {
       expect(error(configuracionBase({ DB_MOTOR: 'postgres', DB_URL: 'esto no es una url' }))).toMatch(/%40/);
     });
     it('el protocolo tiene que corresponder al motor', () => {
-      expect(error(configuracionBase({ DB_MOTOR: 'postgres', DB_URL: 'mysql://a:b@h/d' }))).toMatch(/postgres:\/\//);
+      expect(error(configuracionBase({ DB_MOTOR: 'postgres', DB_URL: 'mysql://a:b@h/d' }))).toMatch(
+        /postgres:\/\//,
+      );
     });
   });
 
   it('DB_ESQUEMA sólo vale para PostgreSQL', () => {
-    expect(ok(configuracionBase({ DB_MOTOR: 'mysql', DB_URL: 'mysql://a:b@h/d', DB_ESQUEMA: 'api' })).esquema).toBeNull();
-    expect(ok(configuracionBase({ DB_MOTOR: 'postgres', DB_URL: 'postgres://a:b@h/d', DB_ESQUEMA: 'api' })).esquema).toBe('api');
+    expect(
+      ok(configuracionBase({ DB_MOTOR: 'mysql', DB_URL: 'mysql://a:b@h/d', DB_ESQUEMA: 'api' })).esquema,
+    ).toBeNull();
+    expect(
+      ok(configuracionBase({ DB_MOTOR: 'postgres', DB_URL: 'postgres://a:b@h/d', DB_ESQUEMA: 'api' }))
+        .esquema,
+    ).toBe('api');
   });
 });
 
 describe('AGENTS §18.1 — DB_URL se parsea con URL y se decodifica', () => {
   it('contraseña con caracteres raros', () => {
-    expect(conexionDeUrl('postgres://postgres.abc:p%40ss%2Fw%23rd%3A1@host.com:6000/mi_base', 'postgres')).toEqual({
+    expect(
+      conexionDeUrl('postgres://postgres.abc:p%40ss%2Fw%23rd%3A1@host.com:6000/mi_base', 'postgres'),
+    ).toEqual({
       host: 'host.com',
       puerto: 6000,
       usuario: 'postgres.abc',
@@ -199,7 +238,11 @@ describe('AGENTS §18.1 — Errores de conexión en castellano', () => {
     [new Error('unable to verify the first certificate'), 'no', /DB_SSL=si-sin-verificar/],
     [new Error('password authentication failed for user "x"'), 'no', /usuario o la contraseña/],
     [new Error("Access denied for user 'x'@'h'"), 'no', /usuario o la contraseña/],
-    [new Error('bind message supplies 2 parameters, prepared statement "x" does not exist'), 'no', /modo transacción/],
+    [
+      new Error('bind message supplies 2 parameters, prepared statement "x" does not exist'),
+      'no',
+      /modo transacción/,
+    ],
     [new Error('connect ENETUNREACH 2600::1:5432'), 'no', /pooler|Session pooler/],
     [new Error('getaddrinfo ENOTFOUND db.example.com'), 'no', /No se encontró el servidor/],
     [new Error('connect ECONNREFUSED 127.0.0.1:5432'), 'no', /no responde/],

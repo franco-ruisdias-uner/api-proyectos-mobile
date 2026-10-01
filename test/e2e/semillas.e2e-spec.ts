@@ -96,11 +96,7 @@ describe('AGENTS §10.4 — Los datos de demo cumplen el contrato', () => {
       .http()
       .post('/auth/ingreso')
       .send({ email: 'lucia@mail.com', contrasena: 'lucia1234' });
-    const res = await ctx
-      .http()
-      .get('/yo/favoritos')
-      .set(conSesion(ingreso.body.datos.token))
-      .expect(200);
+    const res = await ctx.http().get('/yo/favoritos').set(conSesion(ingreso.body.datos.token)).expect(200);
     esperarContrato(res.body, 'Favorito');
     const favoritos = res.body.datos as Favorito[];
     expect(favoritos).toHaveLength(3);

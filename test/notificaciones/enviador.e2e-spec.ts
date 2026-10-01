@@ -22,7 +22,11 @@ describe('Mandar las push a Expo', () => {
   afterEach(() => ctx.cerrar());
 
   const registrar = (n: number) =>
-    ctx.http().post('/dispositivos').set(conSesion(lucia)).send({ tokenExpo: token(n), plataforma: 'ios' });
+    ctx
+      .http()
+      .post('/dispositivos')
+      .set(conSesion(lucia))
+      .send({ tokenExpo: token(n), plataforma: 'ios' });
   const probar = async () => {
     await ctx.http().post('/dispositivos/prueba').set(conSesion(lucia)).expect(200);
     await ctx.esperarAvisos();

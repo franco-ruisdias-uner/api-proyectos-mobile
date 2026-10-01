@@ -30,8 +30,14 @@ describe.runIf(hayS3)('AGENTS §17 — La API con los archivos en S3', () => {
       .attach('archivo', audio, 'a.m4a')
       .expect(201);
     esperarContrato(res.body, 'ArchivoSubido');
-    expect(res.body.datos.url).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/archivos\/audios\/\d{4}\/\d{2}\/[a-z0-9]{12}\.m4a$/);
-    const bajada = await ctx.http().get(new URL(res.body.datos.url).pathname).responseType('blob').expect(200);
+    expect(res.body.datos.url).toMatch(
+      /^http:\/\/127\.0\.0\.1:\d+\/archivos\/audios\/\d{4}\/\d{2}\/[a-z0-9]{12}\.m4a$/,
+    );
+    const bajada = await ctx
+      .http()
+      .get(new URL(res.body.datos.url).pathname)
+      .responseType('blob')
+      .expect(200);
     expect(Buffer.compare(bajada.body as Buffer, audio)).toBe(0);
     expect(bajada.headers['content-type']).toBe('audio/mp4');
     expect(bajada.headers['accept-ranges']).toBe('bytes');
@@ -78,7 +84,12 @@ describe.runIf(hayS3)('AGENTS §17 — La API con los archivos en S3', () => {
     try {
       const lugar = await sembrada.http().get('/lugares/lug-004').expect(200);
       const url = new URL(lugar.body.datos.audioguia.url);
-      const res = await sembrada.http().get(url.pathname).set('Range', 'bytes=0-99').responseType('blob').expect(206);
+      const res = await sembrada
+        .http()
+        .get(url.pathname)
+        .set('Range', 'bytes=0-99')
+        .responseType('blob')
+        .expect(206);
       expect((res.body as Buffer).length).toBe(100);
       expect(res.headers['content-type']).toBe('audio/mpeg');
     } finally {
@@ -119,7 +130,11 @@ describe.runIf(hayS3)('AGENTS §17.1 — ARCHIVOS_REDIRIGIR: 302 a una URL firma
   });
 
   it('una clave que no existe sigue siendo 404 (no redirige)', async () => {
-    esperarError(await ctx.http().get('/archivos/imagenes/2026/11/noexiste1234.png').redirects(0), 404, 'ARCHIVO_NO_ENCONTRADO');
+    esperarError(
+      await ctx.http().get('/archivos/imagenes/2026/11/noexiste1234.png').redirects(0),
+      404,
+      'ARCHIVO_NO_ENCONTRADO',
+    );
   });
 });
 

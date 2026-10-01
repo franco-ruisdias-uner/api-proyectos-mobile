@@ -1,6 +1,12 @@
 import { crearApp, type AppDePrueba } from '../utilidades/crear-app.js';
 import { esperarContrato, esperarError } from '../utilidades/contrato.js';
-import { conSesion, crearAdmin, crearEvento, registrarTelefono, registrarTurista } from '../utilidades/builders.js';
+import {
+  conSesion,
+  crearAdmin,
+  crearEvento,
+  registrarTelefono,
+  registrarTurista,
+} from '../utilidades/builders.js';
 
 const TOKEN_EXPO = (n: number) => `ExponentPushToken[eventos-guardados-${n}]`;
 

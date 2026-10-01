@@ -88,7 +88,11 @@ describe('AGENTS §11.3 — Configuración validada al arrancar', () => {
 
   it('DB_PROVEEDOR=supabase con la conexión directa no arranca', () => {
     expect(() =>
-      validarEntorno({ ...base, DB_PROVEEDOR: 'supabase', DB_URL: 'postgres://postgres:x@db.abc.supabase.co:5432/postgres' }),
+      validarEntorno({
+        ...base,
+        DB_PROVEEDOR: 'supabase',
+        DB_URL: 'postgres://postgres:x@db.abc.supabase.co:5432/postgres',
+      }),
     ).toThrow(/IPv6/);
   });
 });
@@ -114,13 +118,15 @@ describe('AGENTS §18.2 — ENTORNO=publicado no arranca con una configuración 
   });
 
   it('con SQLite, no', () => {
-    expect(() => validarEntorno({ ...nube, DB_PROVEEDOR: '', DB_URL: '', DB_MOTOR: 'better-sqlite3' })).toThrow(
-      /ENTORNO=publicado no se puede usar SQLite/,
-    );
+    expect(() =>
+      validarEntorno({ ...nube, DB_PROVEEDOR: '', DB_URL: '', DB_MOTOR: 'better-sqlite3' }),
+    ).toThrow(/ENTORNO=publicado no se puede usar SQLite/);
   });
 
   it('con los archivos en disco, no', () => {
-    expect(() => validarEntorno({ ...nube, ARCHIVOS_PROVEEDOR: 'local' })).toThrow(/no se pueden guardar los archivos en disco/);
+    expect(() => validarEntorno({ ...nube, ARCHIVOS_PROVEEDOR: 'local' })).toThrow(
+      /no se pueden guardar los archivos en disco/,
+    );
   });
 
   it('con el JWT_SECRETO de desarrollo, no', () => {
@@ -134,7 +140,9 @@ describe('AGENTS §18.2 — ENTORNO=publicado no arranca con una configuración 
   });
 
   it('con SIMULACION_HABILITADA=true, no', () => {
-    expect(() => validarEntorno({ ...nube, SIMULACION_HABILITADA: 'true' })).toThrow(/SIMULACION_HABILITADA tiene que ser false/);
+    expect(() => validarEntorno({ ...nube, SIMULACION_HABILITADA: 'true' })).toThrow(
+      /SIMULACION_HABILITADA tiene que ser false/,
+    );
   });
 
   it('cuenta todos los problemas juntos', () => {

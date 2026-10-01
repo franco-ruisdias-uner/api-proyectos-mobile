@@ -361,3 +361,14 @@ Decisión: `evt-017` y `vis-311` también llevan los valores del ejemplo del PRD
 sembrar (§8: "todo lo temporal se calcula relativo"), no las absolutas del PRD.
 Descartado: fechas absolutas del PRD (la peña dejaría de ser "de hoy" y el recorrido quedaría viejo).
 Pregunta para la cátedra: si quiere esas tres fechas literales, es un cambio de una línea en el sembrador.
+
+### M8-1 — Qué queda en `main` y dónde está la solución
+Estado: PROVISORIA (autónomo)
+Hueco: la especificación (§19.3) no dice cómo se traduce el 501 cuando las piezas están vacías, ni qué pasa
+con la entidad `dispositivos`.
+Decisión: las piezas de los alumnos tiran `PendienteDeImplementar`; `DispositivosServicio` lo convierte en
+`NO_IMPLEMENTADO` (501) y `Avisos` lo anota en el log. La entidad y la tabla `dispositivos` se borraron de
+`main` (los alumnos crean la suya). La solución completa (TypeORM + `fetch` a Expo) está en la rama
+`solucion-notificaciones`. `test/notificaciones/` queda fuera de `pnpm test:e2e`. Se conservan las variables
+`NOTIFICACIONES` y `EXPO_PUSH_URL`, que la consigna usa.
+Descartado: dejar la entidad en `main` (les regalaría el diseño de la tabla).

@@ -7,6 +7,8 @@ export default defineConfig({
     globals: true,
     root: './',
     include: ['test/**/*.e2e-spec.ts'],
+    // La consigna de los alumnos corre aparte (pnpm test:notificaciones, AGENTS §19.3).
+    exclude: ['test/notificaciones/**', '**/node_modules/**'],
     setupFiles: ['test/utilidades/entorno-test.ts'],
     testTimeout: 30_000,
     hookTimeout: 60_000,

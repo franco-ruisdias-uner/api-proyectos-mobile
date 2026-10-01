@@ -35,27 +35,37 @@ export const PRESETS_S3: Record<ProveedorS3, PresetS3> = {
     region: null,
     forcePathStyle: false,
     ayudaBucket: 'Se crea en la consola de AWS → S3 → «Crear bucket».',
-    ayudaClaves: 'Se crean en la consola de AWS → IAM → Usuarios → «Credenciales de seguridad» → «Crear clave de acceso».',
+    ayudaClaves:
+      'Se crean en la consola de AWS → IAM → Usuarios → «Credenciales de seguridad» → «Crear clave de acceso».',
   },
   supabase: {
     variables: [
-      { nombre: 'SUPABASE_PROYECTO', donde: 'el código del proyecto: está en la URL del panel (https://supabase.com/dashboard/project/<código>)' },
+      {
+        nombre: 'SUPABASE_PROYECTO',
+        donde:
+          'el código del proyecto: está en la URL del panel (https://supabase.com/dashboard/project/<código>)',
+      },
     ],
     endpoint: (e) => `https://${e.SUPABASE_PROYECTO?.trim()}.storage.supabase.co/storage/v1/s3`,
     region: null,
     forcePathStyle: true,
     ayudaBucket: 'Se crea en Supabase → Storage → «New bucket».',
-    ayudaClaves: 'Se generan en Supabase → Storage → Settings → «S3 Connection» → «New access key». Sólo del lado del servidor: saltean las políticas de seguridad.',
+    ayudaClaves:
+      'Se generan en Supabase → Storage → Settings → «S3 Connection» → «New access key». Sólo del lado del servidor: saltean las políticas de seguridad.',
   },
   r2: {
     variables: [
-      { nombre: 'R2_CUENTA', donde: 'el ID de cuenta de Cloudflare: está en el panel de R2, arriba a la derecha' },
+      {
+        nombre: 'R2_CUENTA',
+        donde: 'el ID de cuenta de Cloudflare: está en el panel de R2, arriba a la derecha',
+      },
     ],
     endpoint: (e) => `https://${e.R2_CUENTA?.trim()}.r2.cloudflarestorage.com`,
     region: 'auto',
     forcePathStyle: false,
     ayudaBucket: 'Se crea en Cloudflare → R2 → «Create bucket».',
-    ayudaClaves: 'Se crean en Cloudflare → R2 → «Manage API tokens» → «Create API token» (permiso de lectura y escritura).',
+    ayudaClaves:
+      'Se crean en Cloudflare → R2 → «Manage API tokens» → «Create API token» (permiso de lectura y escritura).',
   },
   b2: {
     variables: [],
@@ -63,7 +73,8 @@ export const PRESETS_S3: Record<ProveedorS3, PresetS3> = {
     region: null,
     forcePathStyle: false,
     ayudaBucket: 'Se crea en Backblaze → B2 Cloud Storage → «Create a Bucket».',
-    ayudaClaves: 'Se crean en Backblaze → Application Keys → «Add a New Application Key» (keyID es la clave de acceso y applicationKey el secreto).',
+    ayudaClaves:
+      'Se crean en Backblaze → Application Keys → «Add a New Application Key» (keyID es la clave de acceso y applicationKey el secreto).',
   },
   s3proxy: {
     variables: [],
@@ -146,7 +157,11 @@ export function configuracionS3(proveedor: ProveedorS3, e: Crudo): ResultadoS3 {
   if (!region) {
     problemas.push(
       `Falta S3_REGION: ${REGION_AYUDA(
-        proveedor === 'aws' ? 'p. ej. us-east-1' : proveedor === 'b2' ? 'p. ej. us-west-004; está en el endpoint del bucket' : 'la que figura en el panel del proyecto',
+        proveedor === 'aws'
+          ? 'p. ej. us-east-1'
+          : proveedor === 'b2'
+            ? 'p. ej. us-west-004; está en el endpoint del bucket'
+            : 'la que figura en el panel del proyecto',
       )}`,
     );
   }
@@ -168,7 +183,9 @@ export function configuracionS3(proveedor: ProveedorS3, e: Crudo): ResultadoS3 {
       const url = new URL(endpointPropio);
       if (url.protocol !== 'http:' && url.protocol !== 'https:') throw new Error('protocolo');
     } catch {
-      problemas.push(`S3_ENDPOINT tiene que ser una dirección como https://s3.ejemplo.com (dice "${endpointPropio}").`);
+      problemas.push(
+        `S3_ENDPOINT tiene que ser una dirección como https://s3.ejemplo.com (dice "${endpointPropio}").`,
+      );
       endpoint = undefined;
     }
   }

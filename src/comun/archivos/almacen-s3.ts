@@ -92,7 +92,11 @@ export class AlmacenS3 extends AlmacenArchivos {
     const nombre = nombreDe(error);
     const codigo = String((error as { code?: unknown }).code ?? '');
     const inicio = `No se pudo usar el almacén de archivos (${proveedor}, bucket «${bucket}»)`;
-    if (estado === 403 || estado === 401 || /InvalidAccessKeyId|SignatureDoesNotMatch|AccessDenied|InvalidToken/.test(nombre)) {
+    if (
+      estado === 403 ||
+      estado === 401 ||
+      /InvalidAccessKeyId|SignatureDoesNotMatch|AccessDenied|InvalidToken/.test(nombre)
+    ) {
       return `${inicio}: el servicio rechazó las credenciales. Revisá S3_ACCESS_KEY_ID y S3_SECRET_ACCESS_KEY, y que tengan permiso sobre el bucket.`;
     }
     if (estado === 404 || nombre === 'NoSuchBucket') {
@@ -126,10 +130,15 @@ export class AlmacenS3 extends AlmacenArchivos {
 
   async describir(clave: string): Promise<{ bytesTotales: number; tipoMime: string }> {
     try {
-      const cabeza = await this.cliente.send(new HeadObjectCommand({ Bucket: this.config.bucket, Key: clave }));
+      const cabeza = await this.cliente.send(
+        new HeadObjectCommand({ Bucket: this.config.bucket, Key: clave }),
+      );
       return {
         bytesTotales: cabeza.ContentLength ?? 0,
-        tipoMime: cabeza.ContentType && cabeza.ContentType !== 'binary/octet-stream' ? cabeza.ContentType : mimeDeClave(clave),
+        tipoMime:
+          cabeza.ContentType && cabeza.ContentType !== 'binary/octet-stream'
+            ? cabeza.ContentType
+            : mimeDeClave(clave),
       };
     } catch (error) {
       if (esNoExiste(error)) throw new ArchivoNoEncontrado(clave);
@@ -175,9 +184,13 @@ export class AlmacenS3 extends AlmacenArchivos {
 
   override async urlFirmada(clave: string, segundos = 15 * 60): Promise<string> {
     try {
-      return await getSignedUrl(this.cliente, new GetObjectCommand({ Bucket: this.config.bucket, Key: clave }), {
-        expiresIn: segundos,
-      });
+      return await getSignedUrl(
+        this.cliente,
+        new GetObjectCommand({ Bucket: this.config.bucket, Key: clave }),
+        {
+          expiresIn: segundos,
+        },
+      );
     } catch (error) {
       throw new AlmacenNoDisponible(this.explicar(error), { cause: error });
     }

@@ -1,27 +1,18 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ALMACEN_TOKENS_PUSH, ENVIADOR_PUSH, type EnviadorPush } from '../comun/notificaciones/puertos.js';
-import { ENTORNO } from '../config/entorno.modulo.js';
-import type { Entorno } from '../config/entorno.js';
-import { AlmacenTokensTypeorm } from './almacen-tokens-typeorm.js';
-import { DispositivoEntidad } from './dispositivo.entidad.js';
-import { EnviadorExpo } from './enviador-expo.js';
-import { EnviadorRegistro } from './enviador-registro.js';
+import { ALMACEN_TOKENS_PUSH, ENVIADOR_PUSH } from '../comun/notificaciones/puertos.js';
+import { AlmacenTokensPorHacer } from './almacen-tokens-por-hacer.js';
+import { EnviadorPorHacer } from './enviador-por-hacer.js';
 
-/** Las dos piezas de las push que programan los alumnos (AGENTS §19). */
+/**
+ * Las dos piezas de las push que programan los alumnos (AGENTS §19). Si usan una tabla nueva,
+ * agreguen acá `imports: [TypeOrmModule.forFeature([...])]`.
+ */
 @Module({
-  imports: [TypeOrmModule.forFeature([DispositivoEntidad])],
   providers: [
-    AlmacenTokensTypeorm,
-    EnviadorExpo,
-    EnviadorRegistro,
-    { provide: ALMACEN_TOKENS_PUSH, useExisting: AlmacenTokensTypeorm },
-    {
-      provide: ENVIADOR_PUSH,
-      inject: [ENTORNO, EnviadorExpo, EnviadorRegistro],
-      useFactory: (e: Entorno, expo: EnviadorExpo, registro: EnviadorRegistro): EnviadorPush =>
-        e.NOTIFICACIONES === 'expo' ? expo : registro,
-    },
+    AlmacenTokensPorHacer,
+    EnviadorPorHacer,
+    { provide: ALMACEN_TOKENS_PUSH, useExisting: AlmacenTokensPorHacer },
+    { provide: ENVIADOR_PUSH, useExisting: EnviadorPorHacer },
   ],
   exports: [ALMACEN_TOKENS_PUSH, ENVIADOR_PUSH],
 })

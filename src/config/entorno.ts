@@ -4,12 +4,7 @@ import {
   type ProveedorArchivosElegido,
   configuracionS3,
 } from '../comun/archivos/proveedores.js';
-import {
-  type ModoSsl,
-  type Motor,
-  type ProveedorBase,
-  configuracionBase,
-} from '../comun/db/proveedores.js';
+import { type ModoSsl, type Motor, type ProveedorBase, configuracionBase } from '../comun/db/proveedores.js';
 import { leerInstante } from '../comun/fechas/fechas.js';
 
 export { MOTORES, type Motor } from '../comun/db/proveedores.js';
@@ -210,7 +205,7 @@ function problemasDePublicacion(entorno: Entorno): string[] {
   if (entorno.JWT_SECRETO.length < 32 || /desarrollo/i.test(entorno.JWT_SECRETO)) {
     problemas.push(
       'Con ENTORNO=publicado, JWT_SECRETO tiene que ser propio, de al menos 32 caracteres, y no el de ' +
-        'desarrollo. Generá uno con: node -e "console.log(require(\'node:crypto\').randomBytes(48).toString(\'base64url\'))"',
+        "desarrollo. Generá uno con: node -e \"console.log(require('node:crypto').randomBytes(48).toString('base64url'))\"",
     );
   }
   if (entorno.SIMULACION_HABILITADA) {
