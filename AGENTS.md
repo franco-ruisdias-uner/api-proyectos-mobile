@@ -114,7 +114,7 @@ decidís vos sin preguntar.
 | Configuración | `@nestjs/config` con validación al arrancar | |
 | Autenticación | `@nestjs/jwt` + guard propio | Contraseñas con `node:crypto` (`scrypt`), sin dependencias nativas. |
 | Fechas | `date-fns` 4 + `@date-fns/tz` | |
-| Push | `expo-server-sdk` | Detrás de un puerto (sección 9). |
+| Push | `fetch` nativo a la API de Expo | Sin SDK: detrás de dos puertos (secciones 9 y 19). |
 | Archivos | disco o `@aws-sdk/client-s3` | Detrás de un puerto; el proveedor se elige por configuración (sección 17). |
 | Contrato | `ts-json-schema-generator` + `ajv` | Sección 10.3. |
 
@@ -174,7 +174,7 @@ resumen: un módulo con dependencias nuevas y cero consultas se nota.
 
 - **Cuándo sí**: la primera vez que usás una API de una librería en el módulo; al configurar
   algo (`TypeOrmModule`, `DataSource`, Vitest, Swagger, `ConfigModule`, `ValidationPipe`,
-  `expo-server-sdk`, `@date-fns/tz`, `ajv`); cuando un error de una librería no se entiende; y
+  la API de push de Expo, `@date-fns/tz`, `ajv`); cuando un error de una librería no se entiende; y
   cada vez que dudes entre dos formas de hacer algo.
 - **Cuándo no**: para lo que ya dice este archivo, ni para el código propio del repo.
 - **Orden de confianza**: (1) lo instalado: los tipos `.d.ts` de `node_modules/<paquete>` y su
@@ -528,15 +528,20 @@ preguntá.
   (idempotente por token; si otro usuario lo tenía, pasa al actual). `DELETE
   /dispositivos/:tokenExpo` lo da de baja. `POST /dispositivos/prueba` le manda una push de
   prueba a los dispositivos del usuario: sirve para que los alumnos depuren.
-- El envío pasa por un puerto `Notificador` con dos implementaciones: `NotificadorExpo`
-  (`expo-server-sdk`) y `NotificadorMemoria` (tests; guarda lo que "se mandó" para que el test
-  lo verifique). `NOTIFICACIONES=expo|registro` elige; `registro` sólo escribe en el log.
+- Los tokens y el envío pasan por dos puertos, `AlmacenTokensPush` y `EnviadorPush`
+  (sección 19.2), y el dominio sólo usa el servicio `Avisos`. Enviadores: `EnviadorExpo`
+  (`fetch` a la API de Expo, sin `expo-server-sdk`), `EnviadorMemoria` (tests; guarda lo que
+  "se mandó") y `EnviadorRegistro` (sólo escribe en el log). `NOTIFICACIONES=expo|registro`
+  elige.
 - Se notifica **después de confirmar la transacción**, sin bloquear la respuesta. Un error de
   Expo se loguea y no rompe el pedido. Los tokens que Expo informa como inválidos se borran.
 - Se respeta siempre el interruptor de avisos del usuario (`avisosActivos` o equivalente).
 - Los recordatorios que dependen sólo del usuario ("avisame 10 minutos antes", "dos horas
   antes del turno", avisos de proximidad) son **notificaciones locales del teléfono**: la API
   no los manda. `ESPECIFICACION.md` lista cuáles son del servidor.
+- **El guardado de tokens y el envío los terminan programando los alumnos** (sección 19): se
+  construyen completos módulo a módulo y en el último módulo del plan se vacían. Por eso, desde
+  M0, el código de dominio **nunca** toca tokens ni Expo: llama a `Avisos.avisar(…)` y nada más.
 
 ---
 
@@ -688,7 +693,9 @@ para pasar de mock a `fetch`.
 
 - Commits chicos, uno por paso en verde, en castellano con Conventional Commits:
   `feat(reservas): rechaza turnos pasados`, `test(reservas): …`, `fix(…)`.
-- Una rama por módulo (`modulo/m3-reservas`).
+- Todo en `main`, un commit por paso en verde: no se abren ramas por módulo (la única rama
+  aparte es `solucion-notificaciones`, sección 19). Cada módulo cerrado queda con la etiqueta
+  `modulo-Mx`, que pone el orquestador.
 - `pnpm verificar` en verde antes de cada commit. Nunca `--no-verify`.
 
 ### 11.7 Congelamiento del contrato
@@ -819,6 +826,8 @@ las secciones 1 y 14 dicen de preguntar y esperar.
   compara esos archivos con la versión inicial y rechaza el módulo si cambiaron.
 - Si te lanzan de nuevo sobre un módulo que no pasó, puede haber trabajo a medias: empezá por
   `git status`, `git log` y el informe anterior, y seguí desde ahí.
+- Trabajás en `main` (sección 11.6). Si terminás en otra rama, el orquestador intenta llevar
+  `main` hasta ahí y rechaza el módulo si no puede.
 - Nada de `git push`, y nada fuera de la carpeta del repo.
 
 ---
@@ -1215,4 +1224,102 @@ un tiempo sin uso (avisa por mail) y, en MySQL, suele exigir clave primaria en t
 ### 18.4 Cuándo se hace
 
 En el módulo «Nube», junto con el almacenamiento (sección 17.5).
+
+---
+
+## 19. Notificaciones: la parte que programan los alumnos
+
+La cátedra quiere que los alumnos programen **el guardado de los tokens de Expo y el envío de
+las push**. La API se construye completa (así todo lo demás se prueba de verdad) y en el último
+módulo del plan, «Notificaciones para completar», se vacían esas dos piezas. La solución queda
+en una rama aparte.
+
+### 19.1 Qué decide la API y qué programan los alumnos
+
+| Lo sigue haciendo la API | Lo programan los alumnos |
+|---|---|
+| **Cuándo** y **a quién** se avisa: las reglas de la sección 7 de cada especificación, el interruptor `avisosActivos`, que el autor no se avise a sí mismo, etc. | **Guardar** los tokens de Expo de cada usuario, darlos de baja, buscarlos y descartar los inválidos. |
+| El **texto** de cada aviso y los `datos` (por ejemplo, a qué pantalla lleva). | **Enviar** las push a Expo y leer su respuesta. |
+| Los endpoints `/dispositivos` (misma ruta y mismo contrato que hoy). | |
+
+### 19.2 El diseño (desde M0)
+
+En `src/comun/notificaciones/`:
+
+```ts
+export interface MensajePush {
+  tokens: string[];
+  titulo: string;
+  cuerpo: string;
+  datos: Record<string, string>;
+}
+
+// Lo que completan los alumnos (1): dónde viven los tokens.
+export interface AlmacenTokensPush {
+  guardar(usuarioId: string, tokenExpo: string, plataforma: 'ios' | 'android'): Promise<void>;
+  borrar(tokenExpo: string): Promise<void>;
+  tokensDe(usuarioIds: string[]): Promise<string[]>;
+  descartar(tokens: string[]): Promise<void>;
+}
+
+// Lo que completan los alumnos (2): cómo se mandan.
+export interface EnviadorPush {
+  enviar(mensajes: MensajePush[]): Promise<{ tokensInvalidos: string[] }>;
+}
+```
+
+- El servicio `Avisos` (de la API, no se vacía) es lo único que usa el dominio:
+  `avisar(usuarioIds, { titulo, cuerpo, datos })` filtra por `avisosActivos`, busca los tokens
+  en el almacén, llama al enviador **después** de confirmar la transacción, y descarta los
+  inválidos. Un error del almacén o del enviador se loguea y **nunca** rompe el pedido.
+- El enviador hace `fetch` a `EXPO_PUSH_URL` (default `https://exp.host/--/api/v2/push/send`),
+  en tandas de 100 mensajes, y marca como inválidos los tokens que Expo responde con
+  `DeviceNotRegistered`. Confirmá el formato de la respuesta de Expo con Context7. Con
+  `EXPO_PUSH_URL` configurable, los tests usan un servidor HTTP falso y no salen a internet.
+- Los tests de dominio verifican **qué decidió `Avisos`** (a quién y con qué texto) con dobles
+  en memoria de los dos puertos (están en `test/utilidades/`), no lo que llegó a Expo. Así
+  siguen en verde cuando el almacén y el enviador quedan vacíos.
+
+**Repos que ya estaban construidos con otro diseño** (un puerto `Notificador`,
+`expo-server-sdk`, el servicio de avisos mezclado con el de dispositivos): el primer paso del
+último módulo es llevarlos a este diseño **sin cambiar el contrato**, con `pnpm verificar` en
+verde y un commit propio (`refactor: notificaciones en dos puertos`). Recién después se vacía.
+
+### 19.3 El último módulo: vaciar
+
+1. Con todo en verde, se escribe la **consigna ejecutable**: `test/notificaciones/`, con su
+   propia configuración de Vitest y el script `pnpm test:notificaciones` (**afuera** de
+   `pnpm verificar`). Prueba los endpoints `/dispositivos` (alta 201, idempotente, el token pasa
+   al usuario actual, baja 204, `prueba`) y el enviador contra el servidor falso de Expo (forma
+   de cada mensaje, tandas de 100, `DeviceNotRegistered` → descartado). Cada `describe` dice en
+   castellano qué tiene que lograr el alumno.
+2. Con la solución completa y esa consigna en verde, se crea la rama
+   **`solucion-notificaciones`** en ese commit.
+3. En `main`, las dos implementaciones se reemplazan por `AlmacenTokensPorHacer` y
+   `EnviadorPorHacer`, en `src/notificaciones-alumnos/`, con comentarios
+   `// TODO(alumnos):` que explican qué hace cada método **sin darles el código**. Mientras
+   estén vacías:
+   - `POST /dispositivos`, `DELETE /dispositivos/:tokenExpo` y `POST /dispositivos/prueba`
+     responden **501 `NO_IMPLEMENTADO`**: "Esta parte la programan ustedes. Mirá
+     docs/NOTIFICACIONES.md.";
+   - `Avisos.avisar` escribe en el log `Push pendiente de implementar: <título> → <n> usuarios`
+     y sigue: los flujos de la app nunca se rompen.
+   - Los tests de `/dispositivos` y del enviador que estaban en `test/e2e/`, `test/integracion/`
+     o `test/verificacion/` **se mudan** a `test/notificaciones/` (no se borran: son parte de
+     la consigna). En `main` queda un test e2e que comprueba los 501 con el sobre de error.
+     Al cerrar el módulo, el verificador comprueba eso mismo: los 501, y que los demás flujos
+     que avisan sigan respondiendo bien.
+4. Se borra lo que ya no se usa en `main` (`expo-server-sdk` si había, el modelo de dispositivos si
+   quedó, variables de entorno sin uso), salvo lo que la consigna necesita.
+5. **`docs/NOTIFICACIONES.md`**, para los alumnos, en castellano rioplatense: qué decide la
+   API y qué les toca a ellos, qué archivos tocar, qué entidad y qué tabla les conviene crear,
+   cómo correr `pnpm test:notificaciones`, cómo probar con Expo Go y
+   `POST /dispositivos/prueba`, y enlaces a la documentación de Expo. Pistas, no solución.
+6. Swagger y el README marcan los tres endpoints como "los completan ustedes".
+7. Resultado: en `main`, `pnpm verificar` en **verde** y `pnpm test:notificaciones` en
+   **rojo**; en `solucion-notificaciones`, los dos en **verde**. El orquestador controla las
+   tres cosas y que el repo quede en `main`.
+
+La cátedra decide cuándo mostrar la rama. Si el repo se sube a GitHub para los alumnos, se
+sube **sólo `main`** (`git push origin main`).
 

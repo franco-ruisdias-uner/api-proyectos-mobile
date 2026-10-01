@@ -52,6 +52,7 @@ avisos y reportes se ven sin cuenta.
 | **M5 — Reportes de demora** | Crear (offline), ver los de una parada, confirmar, resumen para la Dirección. |
 | **M6 — Nube** | Archivos en cualquier servicio compatible con S3 (AGENTS §17), presets de bases administradas y publicación en Render con Supabase (AGENTS §18). |
 | **M7 — Semillas completas y README** | Red de demo, horarios, feriados, casos feos, README. |
+| **M8 — Notificaciones para completar** | Vaciar el guardado de tokens de Expo y el envío de push para que los alumnos los programen; la solución queda en la rama `solucion-notificaciones` (AGENTS §19). |
 
 ---
 
