@@ -420,6 +420,41 @@
       ],
       "type": "object"
     },
+    "ResumenDemoras": {
+      "additionalProperties": false,
+      "description": "Un renglón del resumen de reportes de demora para la Dirección (decisión D8). GET /reportes-demora/resumen. No es parte de la app de los alumnos.",
+      "properties": {
+        "cantidad": {
+          "type": "number"
+        },
+        "confirmaciones": {
+          "description": "Suma de las confirmaciones de los reportes del grupo.",
+          "type": "number"
+        },
+        "lineaId": {
+          "type": "string"
+        },
+        "paradaId": {
+          "description": "`null` cuando se agrupa por línea.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ultimo": {
+          "description": "Instante del reporte más reciente del grupo (\"AAAA-MM-DDTHH:MM:SS-03:00\").",
+          "type": "string"
+        }
+      },
+      "required": [
+        "lineaId",
+        "paradaId",
+        "cantidad",
+        "confirmaciones",
+        "ultimo"
+      ],
+      "type": "object"
+    },
     "Salud": {
       "additionalProperties": false,
       "description": "Respuesta de GET /salud.",

@@ -20,6 +20,8 @@ const DEVUELTAS = [
   'Horario',
   'Feriado',
   'Aviso',
+  'ReporteDeDemora',
+  'ResumenDemoras',
 ];
 
 /** Piezas que no se devuelven solas: van dentro de otras o son el sobre. */
@@ -36,9 +38,7 @@ const AUXILIARES = [
 ];
 
 /** Entidades del PRD que llegan en módulos siguientes (espec. §3). */
-const PENDIENTES: Record<string, string> = {
-  ReporteDeDemora: 'M5',
-};
+const PENDIENTES: Record<string, string> = {};
 
 function archivosDe(carpeta: string): string[] {
   return readdirSync(carpeta).flatMap((nombre) => {

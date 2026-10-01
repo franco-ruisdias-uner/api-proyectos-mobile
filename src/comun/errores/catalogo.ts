@@ -37,6 +37,21 @@ export const CATALOGO = {
   AVISO_NO_ENCONTRADO: { estado: 404, mensaje: 'No existe ese aviso.' },
   ARCHIVO_NO_SUBIDO: { estado: 422, mensaje: 'Primero hay que subir la foto o el video.' },
 
+  // Reportes de demora (M5)
+  REPORTE_NO_ENCONTRADO: { estado: 404, mensaje: 'No encontramos ese reporte.' },
+  LINEA_NO_PARA_EN_PARADA: { estado: 422, mensaje: 'Esa línea no para en esta parada.' },
+  REPORTE_YA_ENVIADO: {
+    estado: 409,
+    mensaje: 'Ya avisaste de esta línea en esta parada hace un rato.',
+  },
+  REPORTE_VENCIDO: { estado: 422, mensaje: 'Ese reporte ya es viejo para confirmarlo.' },
+  CONFIRMACION_PROPIA: { estado: 422, mensaje: 'No podés confirmar tu propio reporte.' },
+  FECHA_EN_EL_FUTURO: {
+    estado: 422,
+    mensaje: 'La fecha del reporte no puede ser posterior a este momento.',
+  },
+  ID_EN_USO: { estado: 409, mensaje: 'Ese identificador ya está en uso.' },
+
   // Archivos
   ARCHIVO_NO_ENCONTRADO: { estado: 404, mensaje: 'No encontramos ese archivo.' },
 } as const satisfies Record<string, EntradaDeCatalogo>;

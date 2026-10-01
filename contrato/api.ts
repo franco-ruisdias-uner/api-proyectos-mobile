@@ -68,3 +68,15 @@ export interface Feriado {
   fecha: string;
   nombre: string;
 }
+
+/** Un renglón del resumen de reportes de demora para la Dirección (decisión D8). GET /reportes-demora/resumen. No es parte de la app de los alumnos. */
+export interface ResumenDemoras {
+  lineaId: string;
+  /** `null` cuando se agrupa por línea. */
+  paradaId: string | null;
+  cantidad: number;
+  /** Suma de las confirmaciones de los reportes del grupo. */
+  confirmaciones: number;
+  /** Instante del reporte más reciente del grupo ("AAAA-MM-DDTHH:MM:SS-03:00"). */
+  ultimo: string;
+}

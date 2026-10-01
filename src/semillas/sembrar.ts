@@ -17,6 +17,9 @@ import { FeriadoEntidad } from '../modulos/horarios/feriado.entidad.js';
 import { HorarioEntidad } from '../modulos/horarios/horario.entidad.js';
 import { AvisoLineaEntidad } from '../modulos/avisos/aviso-linea.entidad.js';
 import { AvisoEntidad } from '../modulos/avisos/aviso.entidad.js';
+import { ConfirmacionDemoraEntidad } from '../modulos/reportes/confirmacion-demora.entidad.js';
+import { ReporteDemoraEntidad } from '../modulos/reportes/reporte-demora.entidad.js';
+import { reportesDeDemo } from './datos/reportes.js';
 import { avisosDeDemo } from './datos/avisos.js';
 import { CLAVE_DEL_VIDEO_DE_DEMO, videoDeDemo } from './medios/video-de-demo.js';
 import { FERIADOS } from './datos/feriados.js';
@@ -52,6 +55,7 @@ export async function sembrar(
     await sembrarHorarios(manejador);
     await sembrarFavoritas(manejador);
     await sembrarAvisos(manejador, reloj.ahora());
+    await sembrarReportes(manejador, reloj.ahora());
   });
 }
 
@@ -124,5 +128,21 @@ async function sembrarAvisos(manejador: EntityManager, ahora: Date): Promise<voi
     await manejador
       .getRepository(AvisoLineaEntidad)
       .insert(lineaIds.map((lineaId, orden) => ({ avisoId: aviso.id, lineaId, orden })));
+  }
+}
+
+/** M5: reportes de demora de demo y sus confirmaciones (después de la red y los usuarios). */
+async function sembrarReportes(manejador: EntityManager, ahora: Date): Promise<void> {
+  for (const { confirmaronIds, ...reporte } of reportesDeDemo(ahora)) {
+    await manejador
+      .getRepository(ReporteDemoraEntidad)
+      .insert({ ...reporte, confirmaciones: confirmaronIds.length });
+    for (const usuarioId of confirmaronIds) {
+      await manejador.getRepository(ConfirmacionDemoraEntidad).insert({
+        reporteId: reporte.id,
+        usuarioId,
+        creadaEn: new Date(Math.floor(ahora.getTime() / 1000) * 1000),
+      });
+    }
   }
 }

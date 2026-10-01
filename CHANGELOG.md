@@ -5,6 +5,23 @@ cambia la forma de ninguna respuesta: sólo se agregan cosas.
 
 ## Sin publicar
 
+### M5 — Reportes de demora
+
+- **Reportar:** `POST /reportes-demora` (con sesión) con `{ id?, lineaId, paradaId, motivo, comentario?, fotoUri?, fechaHora }`.
+  201 si es nuevo; **200 con el mismo reporte si reenviás el mismo `id`** (cola offline). Si ese `id` es de otra
+  persona, 409 `ID_EN_USO`. Si mandás el reporte entero de tu cola, `usuarioId`, `confirmaciones` y
+  `sincronizado` se ignoran; la respuesta siempre trae `sincronizado: true`.
+- **Ver:** `GET /reportes-demora?paradaId=…&lineaId=…` (sin cuenta; hace falta uno de los dos). Sólo los de los
+  últimos 90 minutos, el más nuevo primero.
+- **Confirmar:** `POST /reportes-demora/:id/confirmaciones` (201 con el reporte actualizado; 200 si ya habías
+  confirmado). No se confirma el propio ni uno de más de 90 minutos.
+- **Dirección:** `GET /reportes-demora/resumen?desde&hasta&agrupar=linea|parada` devuelve `ResumenDemoras[]`
+  (tipo nuevo en `contrato/api.ts`; la app de los alumnos no lo necesita).
+- **Errores nuevos:** `REPORTE_NO_ENCONTRADO` (404), `LINEA_NO_PARA_EN_PARADA`, `REPORTE_VENCIDO`,
+  `CONFIRMACION_PROPIA`, `FECHA_EN_EL_FUTURO` (422), `REPORTE_YA_ENVIADO` e `ID_EN_USO` (409).
+- **Datos de demo:** `rep-3390` (de Julián, línea 5, `par-101`, con dos confirmaciones), dos reportes más
+  recientes en `par-101` (uno sin confirmar, para probar) y uno viejo. Las fechas son relativas a "hoy".
+
 ### M4 — Avisos
 
 - **Ver avisos (sin cuenta):** `GET /avisos?estado=vigentes|proximos|todos&lineaId=…` (por defecto, los

@@ -396,3 +396,56 @@ reemplazan las filas de `aviso_lineas` y dos a la vez daban `500` en PostgreSQL 
 deadlock). Con varias instancias de la API habría que pasarlo a un bloqueo de la base.
 La especificación no excluye al autor de la push: si la Dirección tiene la línea como favorita, la recibe.
 Consecuencia en el contrato: ninguna.
+
+### A34 — Contenido de `rep-3390` y de los reportes de demo
+Estado: PROVISORIA (autónomo)
+Hueco: el texto del PRD no se pudo leer en esta sesión (PDF sin extractor de texto), así que no se conoce el
+cuerpo exacto del ejemplo `rep-3390`.
+Decisión: `rep-3390` es de `usr-320` (Julián), línea 5, `par-101`, motivo `demorado`, con dos confirmaciones
+(`usr-nuevo` y `usr-direccion`). Además `rep-3391` (línea 14, con una confirmación), `rep-3392` (de `usr-nuevo`,
+sin confirmaciones: Julián lo puede confirmar) y `rep-3393`, viejo (5 horas). Sin foto de demo.
+Pendiente para M7: cotejar `rep-3390` con el PRD y, si se quiere, agregar un reporte con foto.
+Consecuencia en el contrato: ninguna.
+
+### A35 — Ventanas de R13 y R14, y fecha del hecho
+Estado: PROVISORIA (autónomo)
+Decisión: "reciente" (R14) = `ahora - fechaHora ≤ 90 min` (el borde entra, tanto para listar como para
+confirmar). R13: dos reportes de la misma persona sobre la misma línea y parada chocan si sus `fechaHora` están a
+**menos** de 15 minutos (en cualquier sentido, por si la cola offline sube fuera de orden); a los 15 justos pasa.
+Se compara la fecha del hecho, no la de llegada. `fechaHora` no puede pasar de `ahora + 5 min` (AGENTS §10.5); una
+fecha vieja se acepta (no se mostrará).
+Consecuencia en el contrato: ninguna.
+
+### A36 — Orden de los controles al reportar y exclusión en el proceso
+Estado: PROVISORIA (autónomo)
+Decisión: 400 de forma → reenvío por `id` (200 / `ID_EN_USO`) → 404 de línea y parada → `LINEA_NO_PARA_EN_PARADA` →
+`FECHA_EN_EL_FUTURO` → `ARCHIVO_NO_SUBIDO` → `REPORTE_YA_ENVIADO`. El reenvío se resuelve primero para que un
+reintento devuelva siempre el original. R13 no se puede expresar como índice único (la ventana se mueve), así que
+los pedidos de una misma persona sobre una misma línea y parada se serializan en el proceso (`ExclusionPorClave`,
+como A33); la clave primaria frena un `id` repetido a la vez (el perdedor recibe 200 o `ID_EN_USO`). Con varias
+instancias de la API habría que pasarlo a un bloqueo de la base.
+Consecuencia en el contrato: ninguna.
+
+### A37 — Confirmaciones
+Estado: PROVISORIA (autónomo)
+Decisión: orden de controles: 404 → `CONFIRMACION_PROPIA` → ya confirmado (200, idempotente, aunque el reporte ya
+esté vencido) → `REPORTE_VENCIDO` → alta. La clave primaria `(reporteId, usuarioId)` garantiza una por persona; el
+contador `confirmaciones` se recalcula contando la tabla dentro de la transacción, con las confirmaciones de un
+mismo reporte serializadas en el proceso. Un `id` de reporte mal formado da 404, no 400.
+Consecuencia en el contrato: ninguna.
+
+### A38 — Resumen para la Dirección (D8)
+Estado: PROVISORIA (autónomo)
+Decisión: `GET /reportes-demora/resumen`, rol `direccion`. `agrupar=linea` (default) deja `paradaId: null`;
+`agrupar=parada` agrupa por línea **y** parada. `desde` y `hasta` son instantes ISO con zona, incluidos ambos; sin
+ellos cuenta todo. `cantidad` = reportes, `confirmaciones` = suma, `ultimo` = el `fechaHora` más nuevo. Orden:
+cantidad descendente, línea, parada; paginado como el resto. `hasta < desde` → 400. Tipo `ResumenDemoras` en
+`contrato/api.ts`, que hay que publicar a los alumnos junto con el resto.
+Consecuencia en el contrato: tipo nuevo en `api.ts` (no toca `tipos.ts`).
+
+### A39 — Campos de la cola offline y comentarios vacíos
+Estado: PROVISORIA (autónomo)
+Decisión: `POST /reportes-demora` acepta y descarta `usuarioId`, `confirmaciones` y `sincronizado` (el teléfono puede
+mandar el reporte entero; AGENTS §4.4). Cualquier otro campo → 400. Un `comentario` vacío o de espacios se guarda
+como `null`. No hay push por reportes (la espec. §7 no la pide).
+Consecuencia en el contrato: ninguna.
