@@ -3,11 +3,13 @@
 // Con MATRIZ_SIN_DOCKER=1 usa bases ya levantadas (la CI las da como service containers).
 import { spawnSync } from 'node:child_process';
 
+const ALMACEN_S3 = 'almacen-s3'; // los tests de archivos contra S3Proxy (AGENTS §17.4)
 const MOTORES = [
   { motor: 'better-sqlite3' },
   { motor: 'postgres', url: 'postgres://api:api@127.0.0.1:55432/api' },
   { motor: 'mysql', url: 'mysql://api:api@127.0.0.1:53306/api' },
   { motor: 'mariadb', url: 'mysql://api:api@127.0.0.1:53307/api' },
+  { motor: ALMACEN_S3, servicio: 's3' },
 ];
 
 const pedidos = process.argv.slice(2);
@@ -19,7 +21,7 @@ const correr = (comando, argumentos, env = process.env) =>
   spawnSync(comando, argumentos, { stdio: 'inherit', env, shell: process.platform === 'win32' })
     .status ?? 1;
 
-const servidores = elegidos.filter((m) => m.url).map((m) => m.motor);
+const servidores = elegidos.filter((m) => m.url || m.servicio).map((m) => m.servicio ?? m.motor);
 if (conDocker && servidores.length) {
   if (correr('docker', [...compose, 'up', '-d', '--wait', ...servidores]) !== 0) {
     console.error('No se pudieron levantar las bases con Docker.');
@@ -30,6 +32,12 @@ if (conDocker && servidores.length) {
 const resultados = [];
 try {
   for (const { motor, url } of elegidos) {
+    if (motor === ALMACEN_S3) {
+      console.log(`\n━━━ archivos contra S3Proxy ━━━`);
+      const env = { ...process.env, S3_PRUEBA_ENDPOINT: process.env.S3_PRUEBA_ENDPOINT ?? 'http://127.0.0.1:58080' };
+      resultados.push({ motor, ok: correr('pnpm', ['exec', 'vitest', 'run', '--config', './vitest.config.s3.ts'], env) === 0 });
+      continue;
+    }
     console.log(`\n━━━ e2e contra ${motor} ━━━`);
     const env = { ...process.env, DB_MOTOR: motor };
     if (url) env.DB_URL = url;

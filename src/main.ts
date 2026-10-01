@@ -29,7 +29,14 @@ async function arrancar(): Promise<void> {
 
   const { AppModule } = await import('./app.module.js');
   const { configurarAplicacion } = await import('./aplicacion.js');
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  let app: NestExpressApplication;
+  try {
+    app = await NestFactory.create<NestExpressApplication>(AppModule, { abortOnError: false });
+  } catch (error) {
+    // Un almacén o una base mal configurados: se explica en castellano, sin el stack.
+    console.error(`\n${error instanceof Error ? error.message : String(error)}\n`);
+    process.exit(1);
+  }
   configurarAplicacion(app);
   app.enableShutdownHooks();
   await app.listen(configuracion.puerto, '0.0.0.0');

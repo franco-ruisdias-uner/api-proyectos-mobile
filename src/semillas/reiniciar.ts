@@ -10,7 +10,18 @@ async function reiniciar(): Promise<void> {
   if (existsSync('.env')) process.loadEnvFile('.env');
   let motor: string;
   try {
-    motor = leerConfiguracion(process.env).db.motor;
+    const { db } = leerConfiguracion(process.env);
+    motor = db.motor;
+    // Contra una base en la nube se pide confirmación y se avisa qué se va a borrar (AGENTS §5.2).
+    if (db.proveedor && !process.argv.includes('--confirmar')) {
+      const que = db.esquema ? `el esquema «${db.esquema}»` : 'todas las tablas de la base';
+      console.error(
+        `\nEsto borra ${que} de tu base en ${db.proveedor} y carga de nuevo los datos de demo.\n` +
+          'Si es lo que querés, repetí el comando con --confirmar:\n  pnpm db:reiniciar --confirmar\n',
+      );
+      process.exit(1);
+    }
+    if (db.esquema) console.log(`Se usa el esquema «${db.esquema}»; los demás no se tocan.`);
   } catch (error) {
     if (error instanceof ErrorDeConfiguracion) {
       console.error(`\n${error.message}\n`);

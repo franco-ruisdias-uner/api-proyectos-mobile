@@ -20,9 +20,14 @@
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
     "test:e2e:matriz": "node scripts/matriz.mjs",
     "verificar": "tsc --noEmit -p tsconfig.json && pnpm lint && pnpm test && pnpm test:e2e",
-    "docker:probar": "node scripts/probar-docker.mjs"
+    "docker:probar": "node scripts/probar-docker.mjs",
+    "archivos:probar": "pnpm build && node dist/src/herramientas/probar-archivos.js",
+    "db:probar": "pnpm build && node dist/src/herramientas/probar-base.js",
+    "publicado:probar": "node scripts/publicado-probar.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1144.0",
+    "@aws-sdk/s3-request-presigner": "^3.1144.0",
     "@date-fns/tz": "^1.5.0",
     "@nestjs/common": "^12.0.1",
     "@nestjs/config": "^12.0.1",

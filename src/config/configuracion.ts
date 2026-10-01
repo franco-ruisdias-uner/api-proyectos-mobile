@@ -2,8 +2,20 @@
 // devuelve la configuración tipada, o tira un ErrorDeConfiguracion con todo lo que falta
 // explicado en castellano. Si la configuración está mal, la API no arranca.
 
-export const MOTORES = ['better-sqlite3', 'postgres', 'mysql', 'mariadb'] as const;
-export type MotorDb = (typeof MOTORES)[number];
+import {
+  esProveedorS3,
+  type ConfiguracionS3,
+  configuracionS3,
+} from '../comun/archivos/proveedores.js';
+import {
+  configuracionBase,
+  type ConfiguracionBase,
+  MOTORES,
+  type MotorDb,
+} from '../comun/db/proveedores.js';
+
+export { MOTORES };
+export type { MotorDb };
 
 export const PROVEEDORES_ARCHIVOS = [
   'local',
@@ -26,16 +38,15 @@ export interface Configuracion {
   entorno: NombreEntorno;
   confiarProxy: boolean;
   urlPublica: string | null;
-  db: {
-    motor: MotorDb;
-    url: string | null;
-    archivo: string;
-    sincronizar: boolean;
-  };
+  db: ConfiguracionBase;
   jwtSecreto: string;
   archivos: {
     proveedor: ProveedorArchivos;
     directorio: string;
+    /** Sólo con un proveedor S3 (AGENTS §17.2). */
+    s3: ConfiguracionS3 | null;
+    /** 302 a una URL firmada en vez de pasar el archivo por la API (AGENTS §17.1). */
+    redirigir: boolean;
   };
   notificaciones: ModoNotificaciones;
   relojFijo: Date | null;
@@ -97,33 +108,9 @@ export function leerConfiguracion(entrada: Record<string, unknown>): Configuraci
   }
 
   const entorno = entre('ENTORNO', ENTORNOS, 'desarrollo');
-  const motor = entre('DB_MOTOR', MOTORES, 'better-sqlite3');
 
-  const url = env.DB_URL ?? null;
-  if (motor !== 'better-sqlite3') {
-    if (url === null) {
-      problemas.push(
-        `Falta DB_URL: con DB_MOTOR=${motor} hay que decir cómo conectarse, por ejemplo ` +
-          (motor === 'postgres'
-            ? 'postgres://usuario:contraseña@localhost:5432/api'
-            : 'mysql://usuario:contraseña@localhost:3306/api') +
-          '.',
-      );
-    } else {
-      let protocolo = '';
-      try {
-        protocolo = new URL(url).protocol;
-      } catch {
-        problemas.push('DB_URL no es una dirección válida.');
-      }
-      const esperado = motor === 'postgres' ? ['postgres:', 'postgresql:'] : ['mysql:', 'mariadb:'];
-      if (protocolo && !esperado.includes(protocolo)) {
-        problemas.push(
-          `DB_URL empieza con "${protocolo}//", pero con DB_MOTOR=${motor} tiene que empezar con "${esperado[0]}//".`,
-        );
-      }
-    }
-  }
+  const base = configuracionBase(env);
+  if (!base.ok) problemas.push(...base.problemas);
 
   const jwtSecreto = env.JWT_SECRETO ?? '';
   if (jwtSecreto === '') {
@@ -134,9 +121,16 @@ export function leerConfiguracion(entrada: Record<string, unknown>): Configuraci
   }
 
   const proveedor = entre('ARCHIVOS_PROVEEDOR', PROVEEDORES_ARCHIVOS, 'local');
-  if (proveedor !== 'local') {
+  let s3: ConfiguracionS3 | null = null;
+  if (esProveedorS3(proveedor)) {
+    const resultado = configuracionS3(proveedor, env);
+    if (resultado.ok) s3 = resultado.config;
+    else problemas.push(...resultado.problemas);
+  }
+  const redirigir = booleano('ARCHIVOS_REDIRIGIR', false);
+  if (redirigir && proveedor === 'local') {
     problemas.push(
-      `ARCHIVOS_PROVEEDOR=${proveedor} todavía no está disponible en esta versión de la API; por ahora usá "local".`,
+      'ARCHIVOS_REDIRIGIR=true sólo sirve con un proveedor en la nube (ARCHIVOS_PROVEEDOR distinto de "local").',
     );
   }
 
@@ -170,16 +164,13 @@ export function leerConfiguracion(entrada: Record<string, unknown>): Configuraci
     entorno,
     confiarProxy: booleano('CONFIAR_PROXY', false),
     urlPublica,
-    db: {
-      motor,
-      url,
-      archivo: env.DB_ARCHIVO ?? 'datos/api.sqlite',
-      sincronizar: booleano('DB_SINCRONIZAR', true),
-    },
+    db: base.ok ? base.config : ({} as ConfiguracionBase),
     jwtSecreto,
     archivos: {
       proveedor,
       directorio: env.DIRECTORIO_ARCHIVOS ?? './archivos',
+      s3,
+      redirigir,
     },
     notificaciones: entre('NOTIFICACIONES', ['expo', 'registro'] as const, 'expo'),
     relojFijo,
@@ -187,6 +178,40 @@ export function leerConfiguracion(entrada: Record<string, unknown>): Configuraci
     sembrarSiVacia: booleano('SEMBRAR_SI_VACIA', false),
   };
 
+  if (entorno === 'publicado') problemas.push(...problemasDePublicacion(configuracion));
   if (problemas.length > 0) throw new ErrorDeConfiguracion(problemas);
   return configuracion;
+}
+
+export const JWT_SECRETO_DE_DESARROLLO = 'solo-para-desarrollo-no-usar-en-produccion';
+
+/** ENTORNO=publicado: lo que no puede estar así en una API que corre en un host (AGENTS §18.2). */
+function problemasDePublicacion(c: Configuracion): string[] {
+  const problemas: string[] = [];
+  if (c.db.motor === 'better-sqlite3') {
+    problemas.push(
+      'ENTORNO=publicado no se puede usar con SQLite: el disco del host se borra en cada reinicio. ' +
+        'Usá una base administrada: DB_PROVEEDOR=supabase (o neon, aiven-postgres, aiven-mysql) y su DB_URL.',
+    );
+  }
+  if (c.archivos.proveedor === 'local') {
+    problemas.push(
+      'ENTORNO=publicado no se puede usar con ARCHIVOS_PROVEEDOR=local: el disco del host se borra en cada reinicio. ' +
+        'Usá ARCHIVOS_PROVEEDOR=supabase (o aws, r2, b2) y sus variables.',
+    );
+  }
+  if (c.jwtSecreto === JWT_SECRETO_DE_DESARROLLO || c.jwtSecreto.includes('desarrollo')) {
+    problemas.push(
+      'ENTORNO=publicado no se puede usar con el JWT_SECRETO de desarrollo. Generá uno propio: ' +
+        "node -e \"console.log(require('node:crypto').randomBytes(48).toString('base64url'))\"",
+    );
+  } else if (c.jwtSecreto.length < 32) {
+    problemas.push('JWT_SECRETO tiene que tener al menos 32 caracteres cuando ENTORNO=publicado.');
+  }
+  if (c.simulacionHabilitada) {
+    problemas.push(
+      'ENTORNO=publicado no admite SIMULACION_HABILITADA=true: cualquiera podría tirar la API.',
+    );
+  }
+  return problemas;
 }

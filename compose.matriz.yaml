@@ -1,5 +1,5 @@
 # Sólo las bases, en tmpfs, para `pnpm test:e2e:matriz` (AGENTS §10.4).
-# S3Proxy se suma con el módulo «Nube», junto con el adaptador S3.
+# S3Proxy (sin volumen) sirve para los tests del adaptador S3 (AGENTS §17.4).
 name: api-transporte-publico-matriz
 services:
   postgres:
@@ -34,3 +34,15 @@ services:
       interval: 2s
       timeout: 3s
       retries: 90
+  s3:
+    image: andrewgaul/s3proxy:sha-9a9b1ee
+    environment:
+      S3PROXY_ENDPOINT: http://0.0.0.0:8080
+      S3PROXY_AUTHORIZATION: none
+      JCLOUDS_PROVIDER: transient
+    ports: ["58080:8080"]
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080"]
+      interval: 2s
+      timeout: 3s
+      retries: 60

@@ -17,11 +17,12 @@ describe('AGENTS §11.3 — la configuración se valida al arrancar', () => {
     const c = leerConfiguracion(minimo);
     expect(c.puerto).toBe(3000);
     expect(c.entorno).toBe('desarrollo');
-    expect(c.db).toEqual({
+    expect(c.db).toMatchObject({
       motor: 'better-sqlite3',
       url: null,
       archivo: 'datos/api.sqlite',
       sincronizar: true,
+      proveedor: null,
     });
     expect(c.archivos.proveedor).toBe('local');
     expect(c.simulacionHabilitada).toBe(true);
@@ -95,10 +96,36 @@ describe('AGENTS §11.3 — la configuración se valida al arrancar', () => {
     expect(problemasDe({ ...minimo, URL_PUBLICA: 'ftp://x' })[0]).toMatch(/URL_PUBLICA/);
   });
 
-  it('un proveedor de archivos en la nube todavía no está disponible', () => {
-    expect(problemasDe({ ...minimo, ARCHIVOS_PROVEEDOR: 'supabase' })[0]).toMatch(
-      /todavía no está disponible/,
+  it('un proveedor de archivos en la nube pide sus variables', () => {
+    expect(problemasDe({ ...minimo, ARCHIVOS_PROVEEDOR: 'supabase' }).join(' ')).toMatch(
+      /SUPABASE_PROYECTO.*S3_BUCKET.*S3_REGION.*S3_ACCESS_KEY_ID/,
     );
+  });
+
+  it('con un emulador de S3 no pide nada y deja la config S3 lista', () => {
+    const c = leerConfiguracion({ ...minimo, ARCHIVOS_PROVEEDOR: 's3proxy' });
+    expect(c.archivos.s3).toMatchObject({ endpoint: 'http://s3:8080', crearBucket: true });
+  });
+
+  it('ARCHIVOS_REDIRIGIR sólo con proveedores en la nube', () => {
+    expect(problemasDe({ ...minimo, ARCHIVOS_REDIRIGIR: 'true' })[0]).toMatch(/ARCHIVOS_REDIRIGIR/);
+    expect(
+      leerConfiguracion({ ...minimo, ARCHIVOS_PROVEEDOR: 's3proxy', ARCHIVOS_REDIRIGIR: 'true' })
+        .archivos.redirigir,
+    ).toBe(true);
+  });
+
+  it('DB_PROVEEDOR completa motor, SSL y esquema', () => {
+    const c = leerConfiguracion({
+      ...minimo,
+      DB_PROVEEDOR: 'supabase',
+      DB_URL: 'postgres://postgres.abc:x@aws-0-sa-east-1.pooler.supabase.com:5432/postgres',
+    });
+    expect(c.db).toMatchObject({ motor: 'postgres', ssl: 'si-sin-verificar', esquema: 'api' });
+  });
+
+  it('los problemas de la base se suman a los demás', () => {
+    expect(problemasDe({ DB_PROVEEDOR: 'neon' })).toHaveLength(2); // JWT_SECRETO y DB_URL
   });
 
   it('junta todos los problemas en un solo mensaje', () => {
@@ -109,5 +136,61 @@ describe('AGENTS §11.3 — la configuración se valida al arrancar', () => {
     expect(leerConfiguracion({ ...minimo, URL_PUBLICA: '', RELOJ_FIJO: '  ' }).urlPublica).toBe(
       null,
     );
+  });
+});
+
+describe('AGENTS §18.2 — ENTORNO=publicado', () => {
+  const buena = {
+    ENTORNO: 'publicado',
+    JWT_SECRETO: 'x'.repeat(40),
+    DB_PROVEEDOR: 'supabase',
+    DB_URL: 'postgres://postgres.abc:x@aws-0-sa-east-1.pooler.supabase.com:5432/postgres',
+    ARCHIVOS_PROVEEDOR: 'supabase',
+    SUPABASE_PROYECTO: 'abc',
+    S3_BUCKET: 'archivos',
+    S3_REGION: 'sa-east-1',
+    S3_ACCESS_KEY_ID: 'a',
+    S3_SECRET_ACCESS_KEY: 'b',
+  };
+
+  it('una configuración completa arranca, sin simulación', () => {
+    const c = leerConfiguracion(buena);
+    expect(c.entorno).toBe('publicado');
+    expect(c.simulacionHabilitada).toBe(false);
+  });
+
+  it('no arranca con SQLite', () => {
+    const { DB_PROVEEDOR: _p, DB_URL: _u, ...sinBase } = buena;
+    const p = problemasDe(sinBase);
+    expect(p).toHaveLength(1);
+    expect(p[0]).toMatch(/no se puede usar con SQLite.*DB_PROVEEDOR=supabase/);
+  });
+
+  it('no arranca con archivos locales', () => {
+    const p = problemasDe({ ...buena, ARCHIVOS_PROVEEDOR: 'local' });
+    expect(p).toHaveLength(1);
+    expect(p[0]).toMatch(/ARCHIVOS_PROVEEDOR=local.*ARCHIVOS_PROVEEDOR=supabase/);
+  });
+
+  it('no arranca con el JWT_SECRETO de desarrollo', () => {
+    const p = problemasDe({ ...buena, JWT_SECRETO: 'solo-para-desarrollo-no-usar-en-produccion' });
+    expect(p).toHaveLength(1);
+    expect(p[0]).toMatch(/JWT_SECRETO de desarrollo/);
+  });
+
+  it('no arranca con un JWT_SECRETO corto', () => {
+    expect(problemasDe({ ...buena, JWT_SECRETO: 'corto' })[0]).toMatch(/al menos 32 caracteres/);
+  });
+
+  it('no arranca con la simulación habilitada', () => {
+    expect(problemasDe({ ...buena, SIMULACION_HABILITADA: 'true' })[0]).toMatch(
+      /SIMULACION_HABILITADA/,
+    );
+  });
+
+  it('junta todos los motivos', () => {
+    expect(
+      problemasDe({ ENTORNO: 'publicado', JWT_SECRETO: 'corto', SIMULACION_HABILITADA: 'true' }),
+    ).toHaveLength(4);
   });
 });
