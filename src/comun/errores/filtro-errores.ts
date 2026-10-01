@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { Response } from 'express';
+import { PuertoSinImplementar } from '../notificaciones/puertos.js';
 import { CATALOGO, ErrorApi, type CodigoError } from './catalogo.js';
 
 export interface CuerpoError {
@@ -23,6 +24,8 @@ export function cuerpoError(
 /** Traduce cualquier cosa que se haya tirado a un ErrorApi. Lo desconocido es ERROR_INTERNO. */
 export function traducirError(excepcion: unknown): ErrorApi {
   if (excepcion instanceof ErrorApi) return excepcion;
+  if (excepcion instanceof PuertoSinImplementar)
+    return new ErrorApi('NO_IMPLEMENTADO');
 
   if (excepcion instanceof HttpException) {
     const estado = excepcion.getStatus();

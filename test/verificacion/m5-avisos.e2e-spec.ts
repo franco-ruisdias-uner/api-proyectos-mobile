@@ -38,16 +38,9 @@ let n = 0;
 const nuevoToken = () =>
   `ExponentPushToken[ver5-${++n}-${Math.random().toString(36).slice(2, 8)}]`;
 
-/** Registra un dispositivo por la API pública (como lo hace la app). */
-async function dispositivo(u: UsuarioDePrueba): Promise<string> {
-  const t = nuevoToken();
-  const r = await ctx
-    .http()
-    .post('/dispositivos')
-    .set(...u.auth)
-    .send({ tokenExpo: t, plataforma: 'android' });
-  expect([200, 201]).toContain(r.status);
-  return t;
+/** Le registra un dispositivo al usuario (en el almacén en memoria: no depende de /dispositivos). */
+function dispositivo(u: UsuarioDePrueba): Promise<string> {
+  return ctx.registrarDispositivo(u.usuario.id, nuevoToken());
 }
 
 async function rep(

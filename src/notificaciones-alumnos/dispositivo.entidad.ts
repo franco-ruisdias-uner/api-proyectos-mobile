@@ -1,11 +1,11 @@
 import { Entity, Index } from 'typeorm';
-import type { Plataforma } from '../../../contrato/api.js';
+import type { Plataforma } from '../../contrato/api.js';
 import {
   ColumnaClave,
   ColumnaEnum,
   ColumnaInstante,
   ColumnaRef,
-} from '../../comun/db/columnas.js';
+} from '../comun/db/columnas.js';
 
 /** Token de push de un teléfono. Es clave primaria: un token es de un solo usuario a la vez. */
 @Entity('dispositivos')

@@ -50,12 +50,9 @@ export class ControladorDispositivos {
     @Body() dto: RegistrarDispositivoDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<RespuestaUno<Dispositivo>> {
-    const { dispositivo, creado } = await this.dispositivos.registrar(
-      usuario,
-      dto,
-    );
+    const { creado } = await this.dispositivos.registrar(usuario, dto);
     res.status(creado ? 201 : 200);
-    return respuestaUno(aDispositivo(dispositivo));
+    return respuestaUno(aDispositivo(dto));
   }
 
   @Post('prueba')

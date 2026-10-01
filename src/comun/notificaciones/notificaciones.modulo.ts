@@ -2,31 +2,37 @@ import { Global, Module, type OnApplicationShutdown } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ENTORNO } from '../../config/entorno.modulo.js';
 import type { Entorno } from '../../config/entorno.js';
-import { Dispositivo } from '../../modulos/dispositivos/dispositivo.entidad.js';
+import { AlmacenTokensTypeOrm } from '../../notificaciones-alumnos/almacen-tokens.js';
+import { Dispositivo } from '../../notificaciones-alumnos/dispositivo.entidad.js';
+import { EnviadorExpo } from '../../notificaciones-alumnos/enviador-expo.js';
 import { Usuario } from '../../modulos/usuarios/usuario.entidad.js';
-import { ServicioAvisos } from './avisos.servicio.js';
-import { Notificador } from './notificador.js';
-import { NotificadorExpo } from './notificador-expo.js';
-import { NotificadorRegistro } from './notificador-registro.js';
+import { Avisos } from './avisos.servicio.js';
+import { EnviadorRegistro } from './enviador-registro.js';
+import {
+  ALMACEN_TOKENS_PUSH,
+  ENVIADOR_PUSH,
+  type EnviadorPush,
+} from './puertos.js';
 
 @Global()
 @Module({
   imports: [TypeOrmModule.forFeature([Dispositivo, Usuario])],
   providers: [
+    { provide: ALMACEN_TOKENS_PUSH, useClass: AlmacenTokensTypeOrm },
     {
-      provide: Notificador,
+      provide: ENVIADOR_PUSH,
       inject: [ENTORNO],
-      useFactory: (entorno: Entorno): Notificador =>
+      useFactory: (entorno: Entorno): EnviadorPush =>
         entorno.NOTIFICACIONES === 'expo'
-          ? new NotificadorExpo()
-          : new NotificadorRegistro(),
+          ? new EnviadorExpo(entorno.EXPO_PUSH_URL)
+          : new EnviadorRegistro(),
     },
-    ServicioAvisos,
+    Avisos,
   ],
-  exports: [ServicioAvisos],
+  exports: [Avisos, ALMACEN_TOKENS_PUSH],
 })
 export class NotificacionesModulo implements OnApplicationShutdown {
-  constructor(private readonly avisos: ServicioAvisos) {}
+  constructor(private readonly avisos: Avisos) {}
 
   async onApplicationShutdown(): Promise<void> {
     await this.avisos.esperarEnvios();

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import type { EstadoReporte } from '../../../contrato/tipos.js';
-import { ServicioAvisos } from '../../comun/notificaciones/avisos.servicio.js';
+import { Avisos } from '../../comun/notificaciones/avisos.servicio.js';
 import {
   avisoDeAdhesion,
   avisoDeEstado,
@@ -21,7 +21,7 @@ export interface ReporteAvisado {
 export class AvisosDeReportes {
   private readonly logger = new Logger('AvisosDeReportes');
 
-  constructor(private readonly avisos: ServicioAvisos) {}
+  constructor(private readonly avisos: Avisos) {}
 
   cambioDeEstado(
     reporte: ReporteAvisado,

@@ -110,6 +110,10 @@ export const CATALOGO = {
     mensaje:
       'La foto del arreglo se sube cuando el reporte está asignado o resuelto.',
   },
+  NO_IMPLEMENTADO: {
+    estado: 501,
+    mensaje: 'Esta parte la programan ustedes. Mirá docs/NOTIFICACIONES.md.',
+  },
   ERROR_INTERNO: {
     estado: 500,
     mensaje: 'Algo salió mal de nuestro lado. Probá de nuevo en un rato.',

@@ -46,6 +46,8 @@ export interface Entorno {
   /** Base de datos: proveedor, esquema y SSL ya resueltos. */
   BASE: ConfiguracionBase;
   NOTIFICACIONES: (typeof NOTIFICACIONES)[number];
+  /** Dirección del servicio push de Expo (los tests apuntan a uno falso). */
+  EXPO_PUSH_URL: string;
   RELOJ_FIJO: Date | null;
   SIMULACION_HABILITADA: boolean;
   SEMBRAR_SI_VACIA: boolean;
@@ -253,6 +255,8 @@ export function validarEntorno(crudo: Crudo): Entorno {
           conexion: null,
         },
     NOTIFICACIONES: opcion('NOTIFICACIONES', NOTIFICACIONES, 'expo'),
+    EXPO_PUSH_URL:
+      texto('EXPO_PUSH_URL') ?? 'https://exp.host/--/api/v2/push/send',
     RELOJ_FIJO,
     SIMULACION_HABILITADA,
     SEMBRAR_SI_VACIA: booleano('SEMBRAR_SI_VACIA', false),

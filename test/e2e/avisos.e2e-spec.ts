@@ -11,7 +11,6 @@ import {
   type UsuarioDePrueba,
 } from '../utilidades/usuarios.js';
 import { crearCambio, crearReporte } from '../utilidades/reportes.js';
-import { Dispositivo } from '../../src/modulos/dispositivos/dispositivo.entidad.js';
 import type { EstadoReporte } from '../../contrato/tipos.js';
 
 let ctx: AppDePrueba;
@@ -23,15 +22,8 @@ let cuadrilla: string;
 let seq = 0;
 const token = () => `ExponentPushToken[aviso-${++seq}]`;
 
-async function conDispositivo(u: UsuarioDePrueba): Promise<string> {
-  const t = token();
-  await ctx.dataSource.getRepository(Dispositivo).insert({
-    tokenExpo: t,
-    usuarioId: u.usuario.id,
-    plataforma: 'android',
-    creadoEn: ctx.reloj.ahora(),
-  } as Dispositivo);
-  return t;
+function conDispositivo(u: UsuarioDePrueba): Promise<string> {
+  return ctx.registrarDispositivo(u.usuario.id, token());
 }
 
 async function reporteDe(
@@ -141,7 +133,7 @@ describe('Especificación §7 — push por cambio de estado', () => {
   });
 
   it('D13 — los adherentes no reciben los cambios de estado', async () => {
-    await conDispositivo(ana);
+    const tAna = await conDispositivo(ana);
     const r = await reporteDe(autor);
     await ctx
       .http()
@@ -152,13 +144,7 @@ describe('Especificación §7 — push por cambio de estado', () => {
     await estado(r.id, { estado: 'en_revision' });
     await ctx.esperarAvisos();
     expect(ctx.notificador.enviadas).toHaveLength(1);
-    expect(ctx.notificador.enviadas[0]!.tokenExpo).not.toBe(
-      (
-        await ctx.dataSource.getRepository(Dispositivo).findOneByOrFail({
-          usuarioId: ana.usuario.id,
-        })
-      ).tokenExpo,
-    );
+    expect(ctx.notificador.enviadas[0]!.tokenExpo).not.toBe(tAna);
   });
 
   it('un error del proveedor no rompe el pedido', async () => {

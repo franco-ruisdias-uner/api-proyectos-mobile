@@ -10,6 +10,8 @@ export default defineConfig({
     globals: true,
     root: './',
     include: ['**/*.e2e-spec.ts'],
+    // La consigna de notificaciones tiene su propia configuración.
+    exclude: ['**/node_modules/**', 'test/notificaciones/**'],
     fileParallelism: !baseCompartida,
     testTimeout: 20_000,
     hookTimeout: 60_000,

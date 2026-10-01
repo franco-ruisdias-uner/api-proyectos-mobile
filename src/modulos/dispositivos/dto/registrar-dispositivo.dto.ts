@@ -6,8 +6,11 @@ import {
   MaxLength,
   ValidateBy,
 } from 'class-validator';
-import { Expo } from 'expo-server-sdk';
 import type { Plataforma } from '../../../../contrato/api.js';
+
+/** Formatos de token que da expo-notifications: ExponentPushToken[…] y ExpoPushToken[…]. */
+const esTokenExpo = (v: unknown): boolean =>
+  typeof v === 'string' && /^Expo(nent)?PushToken\[[^\]\s]+\]$/.test(v);
 
 export const PLATAFORMAS: Plataforma[] = ['ios', 'android'];
 
@@ -23,7 +26,7 @@ export class RegistrarDispositivoDto {
   @ValidateBy(
     {
       name: 'esTokenExpo',
-      validator: { validate: (v: unknown) => Expo.isExpoPushToken(v) },
+      validator: { validate: esTokenExpo },
     },
     {
       context: {
