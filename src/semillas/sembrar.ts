@@ -1,6 +1,10 @@
 import type { DataSource, EntityManager } from 'typeorm';
 import { hashearContrasena } from '../comun/auth/contrasenas.js';
 import type { Reloj } from '../comun/reloj/reloj.js';
+import {
+  LineaFavoritaEntidad,
+  ParadaFavoritaEntidad,
+} from '../modulos/usuarios/favorita.entidad.js';
 import { UsuarioEntidad } from '../modulos/usuarios/usuario.entidad.js';
 import { LineaEntidad } from '../modulos/red/linea.entidad.js';
 import { ParadaEntidad } from '../modulos/red/parada.entidad.js';
@@ -13,7 +17,7 @@ import { HorarioEntidad } from '../modulos/horarios/horario.entidad.js';
 import { FERIADOS } from './datos/feriados.js';
 import { generarHorarios } from './datos/horarios.js';
 import { LINEAS, PARADAS } from './datos/red.js';
-import { USUARIOS } from './datos/usuarios.js';
+import { FAVORITAS_DE_DEMO, USUARIOS } from './datos/usuarios.js';
 
 /** Carga los datos de demo en una base vacía (con el esquema ya creado). */
 export async function sembrar(dataSource: DataSource, reloj: Reloj): Promise<void> {
@@ -33,6 +37,7 @@ export async function sembrar(dataSource: DataSource, reloj: Reloj): Promise<voi
     }
     await sembrarRed(manejador);
     await sembrarHorarios(manejador);
+    await sembrarFavoritas(manejador);
   });
 }
 
@@ -83,5 +88,17 @@ async function sembrarHorarios(manejador: EntityManager): Promise<void> {
   const horarios = generarHorarios();
   for (let desde = 0; desde < horarios.length; desde += 500) {
     await manejador.getRepository(HorarioEntidad).insert(horarios.slice(desde, desde + 500));
+  }
+}
+
+/** M3: líneas y paradas favoritas de las cuentas de demo (después de la red). */
+async function sembrarFavoritas(manejador: EntityManager): Promise<void> {
+  for (const [usuarioId, { lineas, paradas }] of Object.entries(FAVORITAS_DE_DEMO)) {
+    for (const [orden, lineaId] of lineas.entries()) {
+      await manejador.getRepository(LineaFavoritaEntidad).insert({ usuarioId, lineaId, orden });
+    }
+    for (const [orden, paradaId] of paradas.entries()) {
+      await manejador.getRepository(ParadaFavoritaEntidad).insert({ usuarioId, paradaId, orden });
+    }
   }
 }

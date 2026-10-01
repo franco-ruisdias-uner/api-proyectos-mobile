@@ -450,18 +450,11 @@ describe('AGENTS §7.1 y DECISIONES A5 — /yo', () => {
     expect(r.body).toEqual({ datos: s.usuario, meta: null });
   });
 
-  it('A5 — PATCH /yo todavía no existe: 404 RUTA_NO_ENCONTRADA (con y sin sesión)', async () => {
+  it('A5 — PATCH /yo existe desde M3: con sesión 200, sin sesión 401', async () => {
     const u = await crearUsuario(ctx);
-    esperarErrorLimpio(
-      await ctx.http.patch('/yo').set(u.auth).send({ nombre: 'Otro' }),
-      404,
-      'RUTA_NO_ENCONTRADA',
-    );
-    esperarErrorLimpio(
-      await ctx.http.patch('/yo').send({ nombre: 'Otro' }),
-      404,
-      'RUTA_NO_ENCONTRADA',
-    );
+    const r = await ctx.http.patch('/yo').set(u.auth).send({ nombre: 'Otro' }).expect(200);
+    esperarContrato(r.body, 'Usuario');
+    esperarErrorLimpio(await ctx.http.patch('/yo').send({ nombre: 'Otro' }), 401, 'NO_AUTENTICADO');
   });
 
   it('otros métodos sobre rutas de M0 → 404 RUTA_NO_ENCONTRADA', async () => {

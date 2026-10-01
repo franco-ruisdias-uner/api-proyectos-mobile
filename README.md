@@ -181,6 +181,11 @@ volver a ingresar.
 | `POST` | `/auth/registro` | 🌐 público | Crear una cuenta de pasajero |
 | `POST` | `/auth/ingreso` | 🌐 público | Ingresar con email y contraseña |
 | `GET` | `/yo` | 🔒 con sesión | Mi cuenta |
+| `PATCH` | `/yo` | 🔒 con sesión | Cambiar mi nombre, los avisos o el tema |
+| `PUT` | `/yo/lineas-favoritas/:lineaId` | 🔒 con sesión | Agregar una línea a favoritas |
+| `DELETE` | `/yo/lineas-favoritas/:lineaId` | 🔒 con sesión | Quitar una línea de favoritas |
+| `PUT` | `/yo/paradas-favoritas/:paradaId` | 🔒 con sesión | Agregar una parada a favoritas |
+| `DELETE` | `/yo/paradas-favoritas/:paradaId` | 🔒 con sesión | Quitar una parada de favoritas |
 | `POST` | `/dispositivos` | 🔒 con sesión | Registrar el token de push del teléfono |
 | `POST` | `/dispositivos/prueba` | 🔒 con sesión | Mandarme una push de prueba |
 | `DELETE` | `/dispositivos/:tokenExpo` | 🔒 con sesión | Dar de baja el token de push del teléfono |

@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { esIdDe } from '../../comun/ids/ids.js';
+import { LineaEntidad } from '../red/linea.entidad.js';
+import { ParadaEntidad } from '../red/parada.entidad.js';
+import type { ActualizarYoDto } from './dto/actualizar-yo.dto.js';
+import { siguienteOrden } from './reglas/orden-favoritos.js';
 import type { Sesion } from '../../../contrato/api.js';
 import type { Usuario } from '../../../contrato/tipos.js';
 import { hashearContrasena, verificarContrasena } from '../../comun/auth/contrasenas.js';
@@ -29,6 +34,8 @@ export class UsuariosServicio {
     private readonly lineasFavoritas: Repository<LineaFavoritaEntidad>,
     @InjectRepository(ParadaFavoritaEntidad)
     private readonly paradasFavoritas: Repository<ParadaFavoritaEntidad>,
+    @InjectRepository(LineaEntidad) private readonly lineas: Repository<LineaEntidad>,
+    @InjectRepository(ParadaEntidad) private readonly paradas: Repository<ParadaEntidad>,
     private readonly sesiones: Sesiones,
     private readonly reloj: Reloj,
   ) {}
@@ -73,6 +80,61 @@ export class UsuariosServicio {
     const usuario = await this.usuarios.findOneBy({ id });
     if (!usuario) throw new ErrorDeApi('NO_AUTENTICADO');
     return this.aContrato(usuario);
+  }
+
+  /** `PATCH /yo`: sólo nombre, avisos y tema. Lo que no viene no se toca. */
+  async actualizar(id: string, cambios: ActualizarYoDto): Promise<Usuario> {
+    const datos: Partial<UsuarioEntidad> = {};
+    if (cambios.nombre !== undefined) datos.nombre = cambios.nombre;
+    if (cambios.avisosActivos !== undefined) datos.avisosActivos = cambios.avisosActivos;
+    if (cambios.tema !== undefined) datos.tema = cambios.tema;
+    if (Object.keys(datos).length > 0) await this.usuarios.update({ id }, datos);
+    return this.obtener(id);
+  }
+
+  /** Idempotente: si ya era favorita no cambia nada ni su lugar en el orden (R16). */
+  async agregarLineaFavorita(usuarioId: string, lineaId: string): Promise<Usuario> {
+    // Se compara el id devuelto: MySQL y MariaDB no distinguen mayúsculas al buscar.
+    const linea = esIdDe('lin', lineaId) ? await this.lineas.findOneBy({ id: lineaId }) : null;
+    if (!linea || linea.id !== lineaId) throw new ErrorDeApi('LINEA_NO_ENCONTRADA');
+    const actuales = await this.lineasFavoritas.findBy({ usuarioId });
+    if (!actuales.some((f) => f.lineaId === lineaId)) {
+      const orden = siguienteOrden(actuales.map((f) => f.orden));
+      await this.insertarIgnorandoRepetido(() =>
+        this.lineasFavoritas.insert({ usuarioId, lineaId, orden }),
+      );
+    }
+    return this.obtener(usuarioId);
+  }
+
+  async quitarLineaFavorita(usuarioId: string, lineaId: string): Promise<void> {
+    await this.lineasFavoritas.delete({ usuarioId, lineaId });
+  }
+
+  async agregarParadaFavorita(usuarioId: string, paradaId: string): Promise<Usuario> {
+    const parada = esIdDe('par', paradaId) ? await this.paradas.findOneBy({ id: paradaId }) : null;
+    if (!parada || parada.id !== paradaId) throw new ErrorDeApi('PARADA_NO_ENCONTRADA');
+    const actuales = await this.paradasFavoritas.findBy({ usuarioId });
+    if (!actuales.some((f) => f.paradaId === paradaId)) {
+      const orden = siguienteOrden(actuales.map((f) => f.orden));
+      await this.insertarIgnorandoRepetido(() =>
+        this.paradasFavoritas.insert({ usuarioId, paradaId, orden }),
+      );
+    }
+    return this.obtener(usuarioId);
+  }
+
+  async quitarParadaFavorita(usuarioId: string, paradaId: string): Promise<void> {
+    await this.paradasFavoritas.delete({ usuarioId, paradaId });
+  }
+
+  /** Dos altas simultáneas: la clave primaria decide y la perdedora ya es "agregado". */
+  private async insertarIgnorandoRepetido(insertar: () => Promise<unknown>): Promise<void> {
+    try {
+      await insertar();
+    } catch (error) {
+      if (!esViolacionDeUnicidad(error)) throw error;
+    }
   }
 
   private async sesionDe(usuario: UsuarioEntidad): Promise<Sesion> {
