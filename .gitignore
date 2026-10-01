@@ -1,8 +1,8 @@
 node_modules/
 dist/
 coverage/
-datos/
-archivos/
+/datos/
+/archivos/
 *.sqlite
 *.sqlite-journal
 .env
