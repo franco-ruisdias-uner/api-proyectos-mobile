@@ -1,6 +1,6 @@
 import { crearApp, type AppDePrueba } from '../utilidades/crear-app.js';
 import { esperarContrato, esperarError } from '../utilidades/contrato.js';
-import { conSesion, crearAdmin, crearEvento, registrarTurista } from '../utilidades/builders.js';
+import { conSesion, crearAdmin, crearEvento, registrarTelefono, registrarTurista } from '../utilidades/builders.js';
 
 const TOKEN_EXPO = (n: number) => `ExponentPushToken[eventos-guardados-${n}]`;
 
@@ -205,7 +205,7 @@ describe('Especificación §7 — Push a quienes guardaron un evento', () => {
     admin = await crearAdmin(ctx);
   });
   afterAll(() => ctx.cerrar());
-  beforeEach(() => ctx.notificador.limpiar());
+  beforeEach(() => ctx.enviador.limpiar());
 
   const cambiar = (id: string, estado: string) =>
     ctx.http().patch(`/eventos/${id}/estado`).set(conSesion(admin.token)).send({ estado });
@@ -213,12 +213,7 @@ describe('Especificación §7 — Push a quienes guardaron un evento', () => {
   async function turistaConTelefono(): Promise<{ token: string; tokenExpo: string }> {
     const { token } = await registrarTurista(ctx);
     const tokenExpo = TOKEN_EXPO(++n);
-    await ctx
-      .http()
-      .post('/dispositivos')
-      .set(conSesion(token))
-      .send({ tokenExpo, plataforma: 'android' })
-      .expect(201);
+    await registrarTelefono(ctx, token, tokenExpo, 'android');
     return { token, tokenExpo };
   }
 
@@ -232,14 +227,14 @@ describe('Especificación §7 — Push a quienes guardaron un evento', () => {
     await guardar(quien.token, id);
     await cambiar(id, 'suspendido').expect(200);
     await ctx.esperarAvisos();
-    expect(ctx.notificador.enviadas).toHaveLength(1);
-    expect(ctx.notificador.enviadas[0]).toMatchObject({
+    expect(ctx.enviador.enviadas).toHaveLength(1);
+    expect(ctx.enviador.enviadas[0]).toMatchObject({
       tokens: [quien.tokenExpo],
       titulo: 'Evento suspendido',
       datos: { tipo: 'evento-estado', eventoId: id, estado: 'suspendido' },
     });
-    expect(ctx.notificador.enviadas[0].cuerpo).toContain('Peña en el anfiteatro');
-    expect(ctx.notificador.enviadas[0].tokens).not.toContain(otro.tokenExpo);
+    expect(ctx.enviador.enviadas[0].cuerpo).toContain('Peña en el anfiteatro');
+    expect(ctx.enviador.enviadas[0].tokens).not.toContain(otro.tokenExpo);
   });
 
   it('al cancelar: push a todos los que lo guardaron, en un mismo envío', async () => {
@@ -250,9 +245,9 @@ describe('Especificación §7 — Push a quienes guardaron un evento', () => {
     await guardar(b.token, id);
     await cambiar(id, 'cancelado').expect(200);
     await ctx.esperarAvisos();
-    const tokens = ctx.notificador.enviadas.flatMap((m) => m.tokens).sort();
+    const tokens = ctx.enviador.enviadas.flatMap((m) => m.tokens).sort();
     expect(tokens).toEqual([a.tokenExpo, b.tokenExpo].sort());
-    expect(ctx.notificador.enviadas.every((m) => m.titulo === 'Evento cancelado')).toBe(true);
+    expect(ctx.enviador.enviadas.every((m) => m.titulo === 'Evento cancelado')).toBe(true);
   });
 
   it('un suspendido que vuelve a programado avisa que se hace', async () => {
@@ -261,8 +256,8 @@ describe('Especificación §7 — Push a quienes guardaron un evento', () => {
     await guardar(quien.token, id);
     await cambiar(id, 'programado').expect(200);
     await ctx.esperarAvisos();
-    expect(ctx.notificador.enviadas).toHaveLength(1);
-    expect(ctx.notificador.enviadas[0]).toMatchObject({
+    expect(ctx.enviador.enviadas).toHaveLength(1);
+    expect(ctx.enviador.enviadas[0]).toMatchObject({
       tokens: [quien.tokenExpo],
       datos: { estado: 'programado' },
     });
@@ -274,10 +269,10 @@ describe('Especificación §7 — Push a quienes guardaron un evento', () => {
     await guardar(quien.token, id);
     await cambiar(id, 'cancelado').expect(200);
     await ctx.esperarAvisos();
-    ctx.notificador.limpiar();
+    ctx.enviador.limpiar();
     await cambiar(id, 'programado').expect(200);
     await ctx.esperarAvisos();
-    expect(ctx.notificador.enviadas).toEqual([]);
+    expect(ctx.enviador.enviadas).toEqual([]);
   });
 
   it('R10 — el mismo estado no avisa', async () => {
@@ -286,7 +281,7 @@ describe('Especificación §7 — Push a quienes guardaron un evento', () => {
     await guardar(quien.token, id);
     await cambiar(id, 'suspendido').expect(200);
     await ctx.esperarAvisos();
-    expect(ctx.notificador.enviadas).toEqual([]);
+    expect(ctx.enviador.enviadas).toEqual([]);
   });
 
   it('quien dejó de guardarlo (D9) no recibe nada', async () => {
@@ -296,7 +291,7 @@ describe('Especificación §7 — Push a quienes guardaron un evento', () => {
     await ctx.http().delete(`/yo/eventos-guardados/${id}`).set(conSesion(quien.token)).expect(204);
     await cambiar(id, 'cancelado').expect(200);
     await ctx.esperarAvisos();
-    expect(ctx.notificador.enviadas).toEqual([]);
+    expect(ctx.enviador.enviadas).toEqual([]);
   });
 
   it('quien no guardó el evento no recibe nada, aunque tenga teléfono registrado', async () => {
@@ -304,7 +299,7 @@ describe('Especificación §7 — Push a quienes guardaron un evento', () => {
     const id = await crearEvento(ctx);
     await cambiar(id, 'cancelado').expect(200);
     await ctx.esperarAvisos();
-    expect(ctx.notificador.enviadas).toEqual([]);
+    expect(ctx.enviador.enviadas).toEqual([]);
   });
 
   it('quien guardó sin teléfono registrado: el cambio anda y no hay push', async () => {
@@ -313,7 +308,7 @@ describe('Especificación §7 — Push a quienes guardaron un evento', () => {
     await guardar(token, id);
     await cambiar(id, 'cancelado').expect(200);
     await ctx.esperarAvisos();
-    expect(ctx.notificador.enviadas).toEqual([]);
+    expect(ctx.enviador.enviadas).toEqual([]);
   });
 
   it('un evento que ya terminó no avisa', async () => {
@@ -324,21 +319,21 @@ describe('Especificación §7 — Push a quienes guardaron un evento', () => {
     await cambiar(id, 'cancelado').expect(200);
     await ctx.esperarAvisos();
     ctx.reloj.avanzar(-24 * 3600_000);
-    expect(ctx.notificador.enviadas).toEqual([]);
+    expect(ctx.enviador.enviadas).toEqual([]);
   });
 
   it('AGENTS §9 — si Expo falla, el cambio de estado igual responde 200', async () => {
     const quien = await turistaConTelefono();
     const id = await crearEvento(ctx);
     await guardar(quien.token, id);
-    const original = ctx.notificador.enviar.bind(ctx.notificador);
-    ctx.notificador.enviar = () => Promise.reject(new Error('Expo caído'));
+    const original = ctx.enviador.enviar.bind(ctx.enviador);
+    ctx.enviador.enviar = () => Promise.reject(new Error('Expo caído'));
     try {
       const res = await cambiar(id, 'cancelado').expect(200);
       expect(res.body.datos.estado).toBe('cancelado');
       await ctx.esperarAvisos();
     } finally {
-      ctx.notificador.enviar = original;
+      ctx.enviador.enviar = original;
     }
   });
 
@@ -346,15 +341,15 @@ describe('Especificación §7 — Push a quienes guardaron un evento', () => {
     const quien = await turistaConTelefono();
     const id = await crearEvento(ctx);
     await guardar(quien.token, id);
-    ctx.notificador.invalidos.add(quien.tokenExpo);
+    ctx.enviador.invalidos.add(quien.tokenExpo);
     await cambiar(id, 'cancelado').expect(200);
     await ctx.esperarAvisos();
-    ctx.notificador.limpiar();
+    ctx.enviador.limpiar();
     const otroEvento = await crearEvento(ctx);
     await guardar(quien.token, otroEvento);
     await cambiar(otroEvento, 'cancelado').expect(200);
     await ctx.esperarAvisos();
-    expect(ctx.notificador.enviadas).toEqual([]);
-    ctx.notificador.invalidos.clear();
+    expect(ctx.enviador.enviadas).toEqual([]);
+    ctx.enviador.invalidos.clear();
   });
 });

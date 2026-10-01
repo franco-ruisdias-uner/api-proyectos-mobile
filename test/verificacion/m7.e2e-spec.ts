@@ -5,7 +5,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { esperarContrato, esperarError } from '../utilidades/contrato.js';
 import { crearApp, type AppDePrueba } from '../utilidades/crear-app.js';
-import { conSesion } from '../utilidades/builders.js';
+import { conSesion, registrarTelefono } from '../utilidades/builders.js';
 import { Sembrador } from '../../src/semillas/sembrador.js';
 import type { Categoria, Evento, Favorito, Lugar, Usuario, Visita } from '../../contrato/tipos.js';
 
@@ -1084,12 +1084,7 @@ describe('AGENTS §13 — el README dice cosas ciertas', () => {
       await ctx.app.get(Sembrador).sembrar();
       const lucia = (await ingresar(ctx, 'lucia@mail.com', 'lucia1234')).body.datos.token;
       const admin = (await ingresar(ctx, 'turismo@colon.demo.ar', 'turismo1234')).body.datos.token;
-      await ctx
-        .http()
-        .post('/dispositivos')
-        .set(conSesion(lucia))
-        .send({ tokenExpo: 'ExponentPushToken[abcdefghijklmnopqrstuv]', plataforma: 'android' })
-        .expect(201);
+      await registrarTelefono(ctx, lucia, 'ExponentPushToken[abcdefghijklmnopqrstuv]', 'android');
       const res = await ctx
         .http()
         .patch('/eventos/evt-017/estado')
@@ -1098,15 +1093,10 @@ describe('AGENTS §13 — el README dice cosas ciertas', () => {
         .expect(200);
       esperarContrato(res.body, 'Evento');
       await ctx.esperarAvisos();
-      expect(ctx.notificador.enviadas).toHaveLength(1);
+      expect(ctx.enviador.enviadas).toHaveLength(1);
       // Un turista que no lo guardó, no recibe nada.
       const nuevo = (await ingresar(ctx, 'nuevo@demo.ar', 'nuevo1234')).body.datos.token;
-      await ctx
-        .http()
-        .post('/dispositivos')
-        .set(conSesion(nuevo))
-        .send({ tokenExpo: 'ExponentPushToken[zzzzzzzzzzzzzzzzzzzzzz]', plataforma: 'ios' })
-        .expect(201);
+      await registrarTelefono(ctx, nuevo, 'ExponentPushToken[zzzzzzzzzzzzzzzzzzzzzz]');
       await ctx
         .http()
         .patch('/eventos/evt-017/estado')
@@ -1114,7 +1104,7 @@ describe('AGENTS §13 — el README dice cosas ciertas', () => {
         .send({ estado: 'programado' })
         .expect(200);
       await ctx.esperarAvisos();
-      expect(ctx.notificador.enviadas).toHaveLength(2);
+      expect(ctx.enviador.enviadas).toHaveLength(2);
     } finally {
       await ctx.cerrar();
     }

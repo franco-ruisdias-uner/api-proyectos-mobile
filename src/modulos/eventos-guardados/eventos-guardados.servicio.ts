@@ -9,7 +9,7 @@ import { esIdConPrefijo, nuevoId } from '../../comun/ids/ids.js';
 import { Reloj } from '../../comun/reloj/reloj.js';
 import { calcularPaginacion } from '../../comun/respuesta/paginacion.js';
 import type { PaginacionDto } from '../../comun/respuesta/paginacion.dto.js';
-import { AvisosServicio } from '../dispositivos/avisos.servicio.js';
+import { AvisosServicio } from '../../comun/notificaciones/avisos.servicio.js';
 import { EventoEntidad } from '../eventos/evento.entidad.js';
 import { aContrato } from '../eventos/eventos.mapeador.js';
 import { estadoVisible, type EstadoGuardado } from '../eventos/reglas/agenda.js';
@@ -77,7 +77,7 @@ export class EventosGuardadosServicio {
     const aviso = avisoPorCambioDeEstado(evento, antes, evento.estado, yaTermino);
     if (!aviso) return;
     const guardados = await this.repo.findBy({ eventoId: evento.id });
-    await this.avisos.avisar(
+    this.avisos.avisar(
       guardados.map((g) => g.usuarioId),
       aviso,
     );

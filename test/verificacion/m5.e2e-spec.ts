@@ -2,7 +2,7 @@
 import { JwtService } from '@nestjs/jwt';
 import { crearApp, type AppDePrueba } from '../utilidades/crear-app.js';
 import { esperarContrato, esperarError } from '../utilidades/contrato.js';
-import { conSesion, crearAdmin, crearEvento, crearLugar, registrarTurista } from '../utilidades/builders.js';
+import { conSesion, crearAdmin, crearEvento, crearLugar, registrarTelefono, registrarTurista } from '../utilidades/builders.js';
 
 const CLAVES_EVENTO = [
   'coordenadas', 'descripcion', 'direccionLibre', 'estado', 'fin', 'id', 'imagenUrl', 'inicio', 'lugarId', 'precio', 'titulo',
@@ -187,7 +187,7 @@ describe('Especificación §7 — Push: casos adversariales', () => {
     admin = await crearAdmin(ctx);
   });
   afterAll(() => ctx.cerrar());
-  beforeEach(() => ctx.notificador.limpiar());
+  beforeEach(() => ctx.enviador.limpiar());
 
   const cambiar = (id: string, estado: string, token = admin.token) =>
     ctx.http().patch(`/eventos/${id}/estado`).set(conSesion(token)).send({ estado });
@@ -198,7 +198,7 @@ describe('Especificación §7 — Push: casos adversariales', () => {
     for (let i = 0; i < telefonos; i++) {
       const t = `ExponentPushToken[m5-ver-${++n}]`;
       tokens.push(t);
-      await ctx.http().post('/dispositivos').set(conSesion(token)).send({ tokenExpo: t, plataforma: 'ios' }).expect(201);
+      await registrarTelefono(ctx, token, t);
     }
     return { token, tokens };
   }
@@ -209,29 +209,29 @@ describe('Especificación §7 — Push: casos adversariales', () => {
     await guardar(u.token, id);
     await cambiar(id, 'cancelado').expect(200);
     await ctx.esperarAvisos();
-    expect(ctx.notificador.enviadas.flatMap((m) => m.tokens).sort()).toEqual([...u.tokens].sort());
+    expect(ctx.enviador.enviadas.flatMap((m) => m.tokens).sort()).toEqual([...u.tokens].sort());
   });
 
   it('el mismo teléfono que pasó a otro usuario avisa sólo al usuario actual', async () => {
     const a = await turista();
     const b = await registrarTurista(ctx);
     // b toma el token de a
-    await ctx.http().post('/dispositivos').set(conSesion(b.token)).send({ tokenExpo: a.tokens[0], plataforma: 'ios' });
+    await registrarTelefono(ctx, b.token, a.tokens[0]);
     const id = await crearEvento(ctx);
     await guardar(a.token, id);
     await cambiar(id, 'cancelado').expect(200);
     await ctx.esperarAvisos();
-    expect(ctx.notificador.enviadas).toEqual([]); // a ya no tiene teléfono; b no guardó
+    expect(ctx.enviador.enviadas).toEqual([]); // a ya no tiene teléfono; b no guardó
   });
 
   it('baja del dispositivo (DELETE /dispositivos) => no recibe', async () => {
     const u = await turista();
     const id = await crearEvento(ctx);
     await guardar(u.token, id);
-    await ctx.http().delete(`/dispositivos/${encodeURIComponent(u.tokens[0])}`).set(conSesion(u.token)).expect(204);
+    await ctx.tokens.borrar(u.tokens[0]);
     await cambiar(id, 'suspendido').expect(200);
     await ctx.esperarAvisos();
-    expect(ctx.notificador.enviadas).toEqual([]);
+    expect(ctx.enviador.enviadas).toEqual([]);
   });
 
   it('suspendido -> cancelado avisa "cancelado"; programado -> suspendido -> programado avisa dos veces', async () => {
@@ -242,17 +242,17 @@ describe('Especificación §7 — Push: casos adversariales', () => {
     await ctx.esperarAvisos();
     await cambiar(id, 'programado').expect(200);
     await ctx.esperarAvisos();
-    expect(ctx.notificador.enviadas.map((m) => (m.datos as { estado: string }).estado)).toEqual([
+    expect(ctx.enviador.enviadas.map((m) => (m.datos as { estado: string }).estado)).toEqual([
       'suspendido',
       'programado',
     ]);
-    ctx.notificador.limpiar();
+    ctx.enviador.limpiar();
     await cambiar(id, 'suspendido').expect(200);
     await cambiar(id, 'cancelado').expect(200);
     await ctx.esperarAvisos();
-    const ultimo = ctx.notificador.enviadas.at(-1)!;
+    const ultimo = ctx.enviador.enviadas.at(-1)!;
     expect(ultimo.titulo).toBe('Evento cancelado');
-    expect(ctx.notificador.enviadas).toHaveLength(2);
+    expect(ctx.enviador.enviadas).toHaveLength(2);
   });
 
   it('un PATCH rechazado (finalizado, enum inválido, sin ser admin) no avisa a nadie', async () => {
@@ -264,7 +264,7 @@ describe('Especificación §7 — Push: casos adversariales', () => {
     esperarError(await cambiar(id, 'cancelado', u.token), 403, 'SIN_PERMISO');
     esperarError(await cambiar('evt-noexiste', 'cancelado'), 404, 'EVENTO_NO_ENCONTRADO');
     await ctx.esperarAvisos();
-    expect(ctx.notificador.enviadas).toEqual([]);
+    expect(ctx.enviador.enviadas).toEqual([]);
     const e = await ctx.http().get(`/eventos/${id}`).expect(200);
     expect(e.body.datos.estado).toBe('programado');
   });
@@ -276,7 +276,7 @@ describe('Especificación §7 — Push: casos adversariales', () => {
     const [a, b] = await Promise.all([cambiar(id, 'cancelado'), cambiar(id, 'cancelado')]);
     expect([a.status, b.status]).toEqual([200, 200]);
     await ctx.esperarAvisos();
-    const cuenta = ctx.notificador.enviadas.flatMap((m) => m.tokens).filter((t) => t === u.tokens[0]).length;
+    const cuenta = ctx.enviador.enviadas.flatMap((m) => m.tokens).filter((t) => t === u.tokens[0]).length;
     expect(cuenta).toBe(1);
   });
 
@@ -286,7 +286,7 @@ describe('Especificación §7 — Push: casos adversariales', () => {
     await guardar(u.token, id);
     await cambiar(id, 'cancelado').expect(200);
     await ctx.esperarAvisos();
-    const m = ctx.notificador.enviadas[0];
+    const m = ctx.enviador.enviadas[0];
     expect(m.cuerpo).toContain('Fiesta de la Playa');
     expect(`${m.titulo} ${m.cuerpo}`).not.toMatch(/evt-|undefined|null|cancelado_|error/i);
   });
@@ -298,7 +298,7 @@ describe('Especificación §7 — Push: casos adversariales', () => {
     await ctx.http().put(`/yo/eventos-guardados/${id}`).set(conSesion(admin.token)).expect(201);
     await cambiar(id, 'cancelado').expect(200);
     await ctx.esperarAvisos();
-    const tokens = ctx.notificador.enviadas.flatMap((m) => m.tokens);
+    const tokens = ctx.enviador.enviadas.flatMap((m) => m.tokens);
     expect(tokens).toContain(u.tokens[0]);
   });
 
@@ -310,7 +310,7 @@ describe('Especificación §7 — Push: casos adversariales', () => {
     await guardar(u.token, e1);
     await cambiar(e2, 'cancelado').expect(200);
     await ctx.esperarAvisos();
-    expect(ctx.notificador.enviadas).toEqual([]);
+    expect(ctx.enviador.enviadas).toEqual([]);
   });
 
   it('un evento finalizado (calculado) que se cambia a suspendido no avisa, aunque el PATCH responda', async () => {
@@ -322,6 +322,6 @@ describe('Especificación §7 — Push: casos adversariales', () => {
     const r = await cambiar(id, 'suspendido');
     expect([200, 422, 409]).toContain(r.status);
     await ctx.esperarAvisos();
-    expect(ctx.notificador.enviadas).toEqual([]);
+    expect(ctx.enviador.enviadas).toEqual([]);
   });
 });

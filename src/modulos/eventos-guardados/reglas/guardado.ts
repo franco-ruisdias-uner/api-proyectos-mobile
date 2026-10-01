@@ -1,4 +1,4 @@
-import type { Aviso } from '../../dispositivos/avisos.servicio.js';
+import type { Aviso } from '../../../comun/notificaciones/avisos.servicio.js';
 import type { EstadoEventoContrato, EstadoGuardado } from '../../eventos/reglas/agenda.js';
 
 /** R17: sólo se guardan los eventos que todavía pueden pasar (programados o suspendidos). */

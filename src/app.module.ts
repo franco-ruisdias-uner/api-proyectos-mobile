@@ -11,6 +11,7 @@ import { ENTORNO, EntornoModulo } from './config/entorno.modulo.js';
 import type { Entorno } from './config/entorno.js';
 import { ArchivosModulo } from './modulos/archivos/archivos.modulo.js';
 import { CategoriasModulo } from './modulos/categorias/categorias.modulo.js';
+import { NotificacionesModulo } from './comun/notificaciones/notificaciones.modulo.js';
 import { DispositivosModulo } from './modulos/dispositivos/dispositivos.modulo.js';
 import { EventosModulo } from './modulos/eventos/eventos.modulo.js';
 import { EventosGuardadosModulo } from './modulos/eventos-guardados/eventos-guardados.modulo.js';
@@ -49,6 +50,7 @@ export class AppModule {
         ArchivosModulo,
         UsuariosModulo,
         DispositivosModulo,
+        NotificacionesModulo,
         CategoriasModulo,
         LugaresModulo,
         EventosModulo,

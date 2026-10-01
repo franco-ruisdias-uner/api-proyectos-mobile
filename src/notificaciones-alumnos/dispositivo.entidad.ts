@@ -1,6 +1,6 @@
 import { Entity, Index } from 'typeorm';
-import type { Dispositivo } from '../../../contrato/api.js';
-import { ColumnaEnum, ColumnaInstante, ColumnaTexto } from '../../comun/db/columnas.js';
+import type { Dispositivo } from '../../contrato/api.js';
+import { ColumnaEnum, ColumnaInstante, ColumnaTexto } from '../comun/db/columnas.js';
 import { PrimaryColumn } from 'typeorm';
 
 @Entity('dispositivos')

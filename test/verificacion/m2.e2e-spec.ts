@@ -538,7 +538,7 @@ describe('PATCH /eventos/:id/estado — permisos, entrada y errores', () => {
     const res = await patch(id, { estado: 'programado' }).expect(200);
     expect(res.body.datos.estado).toBe('finalizado');
     await ctx.esperarAvisos();
-    expect(ctx.notificador.enviadas).toHaveLength(0);
+    expect(ctx.enviador.enviadas).toHaveLength(0);
   });
 
   it('20 cambios simultáneos: todos 200 y un estado final válido', async () => {
@@ -554,7 +554,7 @@ describe('PATCH /eventos/:id/estado — permisos, entrada y errores', () => {
     const id = await crearEvento(ctx);
     await patch(id, { estado: 'cancelado' }).expect(200);
     await ctx.esperarAvisos();
-    expect(ctx.notificador.enviadas).toHaveLength(0);
+    expect(ctx.enviador.enviadas).toHaveLength(0);
   });
 });
 

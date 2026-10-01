@@ -39,6 +39,8 @@ export interface Entorno {
   ALMACEN_S3: ConfiguracionS3 | null;
   DIRECTORIO_ARCHIVOS: string;
   NOTIFICACIONES: 'expo' | 'registro';
+  /** Dirección de la API de push de Expo (los tests apuntan a un servidor falso). */
+  EXPO_PUSH_URL: string;
   RELOJ_FIJO: Date | null;
   SIMULACION_HABILITADA: boolean;
   SEMBRAR_SI_VACIA: boolean;
@@ -167,6 +169,7 @@ export function validarEntorno(e: Crudo): Entorno {
       () => opcion(e, 'NOTIFICACIONES', ['expo', 'registro'] as const, 'expo'),
       'expo',
     ),
+    EXPO_PUSH_URL: texto(e, 'EXPO_PUSH_URL') ?? 'https://exp.host/--/api/v2/push/send',
     RELOJ_FIJO,
     SIMULACION_HABILITADA: intentar(
       () => booleano(e, 'SIMULACION_HABILITADA', ENTORNO === 'desarrollo'),

@@ -152,3 +152,17 @@ export async function crearEvento(ctx: AppDePrueba, datos: Partial<EventoACargar
     lugarId,
   });
 }
+
+/**
+ * Da de alta un teléfono para recibir push directo en el almacén de tokens de prueba (no por
+ * `POST /dispositivos`, que lo programan los alumnos: AGENTS §19).
+ */
+export async function registrarTelefono(
+  ctx: AppDePrueba,
+  token: string,
+  tokenExpo: string,
+  plataforma: 'ios' | 'android' = 'ios',
+): Promise<void> {
+  const yo = await ctx.http().get('/yo').set(conSesion(token));
+  await ctx.tokens.guardar((yo.body as { datos: { id: string } }).datos.id, tokenExpo, plataforma);
+}

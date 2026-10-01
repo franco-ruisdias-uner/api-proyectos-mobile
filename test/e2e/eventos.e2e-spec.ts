@@ -283,7 +283,7 @@ describe('PRD §3 — PATCH /eventos/:id/estado', () => {
     const res = await patch(id, { estado: 'suspendido' }).expect(200);
     expect(res.body.datos.estado).toBe('suspendido');
     await ctx.esperarAvisos();
-    expect(ctx.notificador.enviadas).toHaveLength(0);
+    expect(ctx.enviador.enviadas).toHaveLength(0);
   });
 
   it('R10 — «finalizado» y estados raros: VALIDACION_FALLIDA', async () => {

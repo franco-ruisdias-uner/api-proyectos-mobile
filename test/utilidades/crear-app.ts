@@ -7,11 +7,12 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../../src/app.module.js';
-import { Notificador } from '../../src/comun/notificaciones/notificador.js';
-import { NotificadorMemoria } from '../../src/comun/notificaciones/notificador-memoria.js';
+import { AvisosServicio } from '../../src/comun/notificaciones/avisos.servicio.js';
+import { ALMACEN_TOKENS_PUSH, ENVIADOR_PUSH } from '../../src/comun/notificaciones/puertos.js';
 import { Reloj, RelojFijo } from '../../src/comun/reloj/reloj.js';
 import { configurarApp } from '../../src/configurar-app.js';
-import { AvisosServicio } from '../../src/modulos/dispositivos/avisos.servicio.js';
+import { AlmacenTokensMemoria } from './almacen-tokens-memoria.js';
+import { EnviadorMemoria } from './enviador-memoria.js';
 
 export const AHORA_POR_DEFECTO = '2026-11-14T12:00:00-03:00';
 
@@ -20,7 +21,10 @@ export interface AppDePrueba {
   /** Cliente HTTP (supertest) contra la app. */
   http: () => ReturnType<typeof request>;
   reloj: RelojFijo;
-  notificador: NotificadorMemoria;
+  /** Doble del enviador de push (siempre presente; sólo recibe algo si la app lo usa). */
+  enviador: EnviadorMemoria;
+  /** Doble del almacén de tokens: `ctx.tokens.guardar(usuarioId, token, 'ios')` para dar de alta un teléfono. */
+  tokens: AlmacenTokensMemoria;
   dataSource: DataSource;
   /** Espera a que terminen las push que se mandan en segundo plano. */
   esperarAvisos: () => Promise<void>;
@@ -29,23 +33,29 @@ export interface AppDePrueba {
 
 /**
  * Levanta la app completa contra una base limpia del motor elegido (SQLite en memoria por
- * defecto), con `RelojFijo` y `NotificadorMemoria`. Nada de mocks de repositorios.
+ * defecto), con `RelojFijo` y dobles en memoria de los dos puertos de push (con `reales`, la app usa los suyos). Nada de mocks de repositorios.
  */
 export async function crearApp(
-  opciones: { entorno?: Record<string, string>; ahora?: string } = {},
+  opciones: { entorno?: Record<string, string>; ahora?: string; reales?: boolean } = {},
 ): Promise<AppDePrueba> {
   const directorio = await mkdtemp(join(tmpdir(), 'api-mi-ciudad-'));
   const reloj = new RelojFijo(opciones.ahora ?? AHORA_POR_DEFECTO);
-  const notificador = new NotificadorMemoria();
+  const enviador = new EnviadorMemoria();
+  const tokens = new AlmacenTokensMemoria();
 
-  const modulo = await Test.createTestingModule({
+  const constructor = Test.createTestingModule({
     imports: [AppModule.registrar({ DIRECTORIO_ARCHIVOS: directorio, ...opciones.entorno })],
   })
     .overrideProvider(Reloj)
-    .useValue(reloj)
-    .overrideProvider(Notificador)
-    .useValue(notificador)
-    .compile();
+    .useValue(reloj);
+  if (!opciones.reales) {
+    constructor
+      .overrideProvider(ALMACEN_TOKENS_PUSH)
+      .useValue(tokens)
+      .overrideProvider(ENVIADOR_PUSH)
+      .useValue(enviador);
+  }
+  const modulo = await constructor.compile();
 
   const app = modulo.createNestApplication<NestExpressApplication>({ logger: ['error', 'warn'] });
   configurarApp(app);
@@ -58,7 +68,8 @@ export async function crearApp(
     app,
     http: () => request(direccion),
     reloj,
-    notificador,
+    enviador,
+    tokens,
     dataSource: app.get(DataSource),
     esperarAvisos: () => app.get(AvisosServicio).esperarPendientes(),
     cerrar: async () => {

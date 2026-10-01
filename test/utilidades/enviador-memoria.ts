@@ -1,12 +1,12 @@
-import { Notificador, type MensajePush, type ResultadoEnvio } from './notificador.js';
+import type { EnviadorPush, MensajePush } from '../../src/comun/notificaciones/puertos.js';
 
-/** Para tests: guarda lo que "se mandó" para que el test lo verifique. */
-export class NotificadorMemoria extends Notificador {
+/** Doble del enviador para tests: guarda lo que "se mandó" y no sale a internet. */
+export class EnviadorMemoria implements EnviadorPush {
   readonly enviadas: MensajePush[] = [];
   /** Tokens que el test quiere que "Expo" informe como inválidos. */
   readonly invalidos = new Set<string>();
 
-  enviar(mensajes: MensajePush[]): Promise<ResultadoEnvio> {
+  enviar(mensajes: MensajePush[]): Promise<{ tokensInvalidos: string[] }> {
     this.enviadas.push(...mensajes);
     const tokensInvalidos = mensajes.flatMap((m) => m.tokens).filter((t) => this.invalidos.has(t));
     return Promise.resolve({ tokensInvalidos });
