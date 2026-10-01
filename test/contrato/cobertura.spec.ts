@@ -19,6 +19,7 @@ const DEVUELTAS = [
   'Parada',
   'Horario',
   'Feriado',
+  'Aviso',
 ];
 
 /** Piezas que no se devuelven solas: van dentro de otras o son el sobre. */
@@ -36,7 +37,6 @@ const AUXILIARES = [
 
 /** Entidades del PRD que llegan en módulos siguientes (espec. §3). */
 const PENDIENTES: Record<string, string> = {
-  Aviso: 'M4',
   ReporteDeDemora: 'M5',
 };
 

@@ -7,6 +7,7 @@ import { NotificacionesModulo } from './comun/notificaciones/notificaciones.modu
 import { RelojModulo } from './comun/reloj/reloj.modulo.js';
 import { CONFIGURACION, type Configuracion } from './config/configuracion.js';
 import { ConfiguracionModulo } from './config/configuracion.modulo.js';
+import { AvisosModulo } from './modulos/avisos/avisos.modulo.js';
 import { DispositivosModulo } from './modulos/dispositivos/dispositivos.modulo.js';
 import { HorariosModulo } from './modulos/horarios/horarios.modulo.js';
 import { RedModulo } from './modulos/red/red.modulo.js';
@@ -28,6 +29,7 @@ import { SemillasModulo } from './semillas/semillas.modulo.js';
     SaludModulo,
     RedModulo,
     HorariosModulo,
+    AvisosModulo,
     UsuariosModulo,
     DispositivosModulo,
     SemillasModulo,

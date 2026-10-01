@@ -333,3 +333,58 @@ más → `400 VALIDACION_FALLIDA`. Las claves `__proto__` y `constructor` se ign
 nada). Sin dar nunca `500`.
 Consecuencia en el contrato: ninguna. Se actualizó el test del verificador de M0 que fijaba
 que `PATCH /yo` daba 404 «hasta M3» (A5): ya no aplica.
+
+### A26 — Reglas de fechas del alta y la edición de avisos
+Estado: PROVISORIA (autónomo)
+Hueco: R11 pide `hasta` posterior a `desde`, pero no da un código de error; `desde` no dice si es obligatorio.
+Decisión: `desde` y `gravedad` son obligatorios. `hasta` igual o anterior a `desde` → `400 VALIDACION_FALLIDA`
+(mensaje en castellano), no un código nuevo. En `PATCH` la ventana se revisa sólo si el pedido trae `desde` o `hasta`
+(así un aviso cancelado se puede retitular). Las fechas se aceptan con offset o `Z` y se guardan sin milisegundos.
+Alternativa descartada: `422` con un código propio (inventaría un código fuera de la especificación).
+Consecuencia en el contrato: ninguna.
+
+### A27 — `POST /avisos/:id/finalizar`
+Estado: PROVISORIA (autónomo)
+Hueco: qué hacer con un aviso que ya terminó o que todavía no empezó.
+Decisión: responde `200` con el aviso. Vigente → `hasta` = ahora. Ya terminado → queda igual (idempotente).
+Próximo → se lo cancela: `desde` y `hasta` = ahora (único caso en que `hasta` = `desde`). No manda push.
+Consecuencia en el contrato: ninguna.
+
+### A28 — `PATCH /avisos/:id`
+Estado: PROVISORIA (autónomo)
+Decisión: parcial. `{}` → `200` sin cambios. `hasta`, `trazadoAlternativo` y `videoUrl` aceptan `null` para borrar;
+`titulo`, `detalle`, `lineaIds`, `desde` y `gravedad` no. `lineaIds` reemplaza la lista entera. `id` y cualquier
+campo de más → `400`. Los cambios y la lista de líneas se guardan en una transacción.
+Consecuencia en el contrato: ninguna.
+
+### A29 — Video del aviso y orden de `lineaIds`
+Estado: PROVISORIA (autónomo)
+Decisión: en la base se guarda la **clave** del video (AGENTS §8) y el mapeador arma la URL con el origen del pedido.
+Una URL que no es de esta API, un archivo que no existe o que no es video → `422 ARCHIVO_NO_SUBIDO`
+(código nuevo de la sección 6 de la espec.). `lineaIds` conserva el orden en que se cargó, sin repetidos.
+Consecuencia en el contrato: ninguna.
+
+### A30 — Listado de avisos resuelto con las reglas puras
+Estado: PROVISORIA (autónomo)
+Decisión: `GET /avisos` trae los avisos (filtrados por línea) y aplica en TypeScript la vigencia (R10) y el orden
+(gravedad, `desde` desc, id), y recién ahí pagina. Así la comparación de fechas es idéntica en los cuatro motores y
+hay una sola definición de "vigente". Es razonable mientras haya decenas o cientos de avisos; si crecieran a
+miles habría que pasar el filtro de estado a la consulta. Un `lineaId` inexistente da lista vacía, no `404`.
+Consecuencia en el contrato: ninguna.
+
+### A31 — Push de un aviso
+Estado: PROVISORIA (autónomo)
+Decisión: al crear, se notifica a quienes tienen alguna de las líneas como favorita (una vez por teléfono, aunque
+tengan varias líneas) y `avisosActivos`. Título = `titulo`; cuerpo = `detalle` recortado a 200 caracteres;
+`datos: { tipo: 'aviso', avisoId }`. Un error de Expo se loguea y no deshace el aviso (D9).
+Consecuencia en el contrato: ninguna.
+
+### A32 — Video de demo
+Estado: PROVISORIA (autónomo)
+Hueco: la semilla `avi-088` pide video y no hay `ffmpeg` ni clips con derechos libres en el repo.
+Decisión: el video de demo es un contenedor MP4 mínimo generado en código (`src/semillas/medios/video-de-demo.ts`).
+Pasa el chequeo de firma, se sube por el puerto de archivos y se sirve con `Range`, pero **no tiene imagen**.
+Pendiente para M7: reemplazarlo por un clip real. El trazado alternativo de `avi-088` son puntos aproximados
+cerca de Corrientes y Urquiza, no un recorrido medido. `avi-090` (unidad rota en Almafuerte y Newbery) va sobre
+`lin-08`, la única que para en `par-102` en las semillas.
+Consecuencia en el contrato: ninguna.

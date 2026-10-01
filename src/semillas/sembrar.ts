@@ -1,4 +1,5 @@
 import type { DataSource, EntityManager } from 'typeorm';
+import type { ArchivosServicio } from '../comun/archivos/archivos.servicio.js';
 import { hashearContrasena } from '../comun/auth/contrasenas.js';
 import type { Reloj } from '../comun/reloj/reloj.js';
 import {
@@ -14,13 +15,25 @@ import { ordenDeNumero } from '../modulos/red/reglas/numero-de-linea.js';
 import { normalizarParaBusqueda } from '../comun/texto/texto.js';
 import { FeriadoEntidad } from '../modulos/horarios/feriado.entidad.js';
 import { HorarioEntidad } from '../modulos/horarios/horario.entidad.js';
+import { AvisoLineaEntidad } from '../modulos/avisos/aviso-linea.entidad.js';
+import { AvisoEntidad } from '../modulos/avisos/aviso.entidad.js';
+import { avisosDeDemo } from './datos/avisos.js';
+import { CLAVE_DEL_VIDEO_DE_DEMO, videoDeDemo } from './medios/video-de-demo.js';
 import { FERIADOS } from './datos/feriados.js';
 import { generarHorarios } from './datos/horarios.js';
 import { LINEAS, PARADAS } from './datos/red.js';
 import { FAVORITAS_DE_DEMO, USUARIOS } from './datos/usuarios.js';
 
-/** Carga los datos de demo en una base vacía (con el esquema ya creado). */
-export async function sembrar(dataSource: DataSource, reloj: Reloj): Promise<void> {
+/**
+ * Carga los datos de demo en una base vacía (con el esquema ya creado). Los medios de muestra se
+ * suben por el puerto de archivos (AGENTS §17.4); sin `archivos` no se suben.
+ */
+export async function sembrar(
+  dataSource: DataSource,
+  reloj: Reloj,
+  archivos?: ArchivosServicio,
+): Promise<void> {
+  await archivos?.guardarConClave(CLAVE_DEL_VIDEO_DE_DEMO, videoDeDemo(), 'video/mp4');
   await dataSource.transaction(async (manejador) => {
     const usuarios = manejador.getRepository(UsuarioEntidad);
     for (const u of USUARIOS) {
@@ -38,6 +51,7 @@ export async function sembrar(dataSource: DataSource, reloj: Reloj): Promise<voi
     await sembrarRed(manejador);
     await sembrarHorarios(manejador);
     await sembrarFavoritas(manejador);
+    await sembrarAvisos(manejador, reloj.ahora());
   });
 }
 
@@ -100,5 +114,15 @@ async function sembrarFavoritas(manejador: EntityManager): Promise<void> {
     for (const [orden, paradaId] of paradas.entries()) {
       await manejador.getRepository(ParadaFavoritaEntidad).insert({ usuarioId, paradaId, orden });
     }
+  }
+}
+
+/** M4: avisos de demo, con las líneas que afectan en orden (después de la red). */
+async function sembrarAvisos(manejador: EntityManager, ahora: Date): Promise<void> {
+  for (const { lineaIds, ...aviso } of avisosDeDemo(ahora)) {
+    await manejador.getRepository(AvisoEntidad).insert(aviso);
+    await manejador
+      .getRepository(AvisoLineaEntidad)
+      .insert(lineaIds.map((lineaId, orden) => ({ avisoId: aviso.id, lineaId, orden })));
   }
 }

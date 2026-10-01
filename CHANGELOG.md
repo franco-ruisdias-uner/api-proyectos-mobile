@@ -5,6 +5,21 @@ cambia la forma de ninguna respuesta: sólo se agregan cosas.
 
 ## Sin publicar
 
+### M4 — Avisos
+
+- **Ver avisos (sin cuenta):** `GET /avisos?estado=vigentes|proximos|todos&lineaId=…` (por defecto, los
+  vigentes) y `GET /avisos/:id`. Orden: suspensión, desvío, informativo; dentro de cada uno, el que empezó
+  más tarde primero. `videoUrl` sale como URL absoluta de `/archivos/…`; `hasta`, `trazadoAlternativo` y
+  `videoUrl` vienen `null` cuando no hay valor.
+- **Dirección (rol interno `direccion`):** `POST /avisos` (201), `PATCH /avisos/:id` (parcial; `null`
+  borra `hasta`, `trazadoAlternativo` y `videoUrl`) y `POST /avisos/:id/finalizar` (200, `hasta` = ahora).
+- **Push:** al publicar un aviso, reciben una notificación quienes tienen alguna de sus líneas como favorita
+  y los avisos activos, aunque empiece más adelante. Editar o finalizar no notifica.
+- **Errores nuevos:** `AVISO_NO_ENCONTRADO` (404) y `ARCHIVO_NO_SUBIDO` (422: el video no es un archivo
+  subido a esta API).
+- **Datos de demo:** `avi-088` (desvío en Corrientes, con trazado y video), uno sin video, una suspensión
+  (línea 8, Almafuerte y Newbery), uno próximo y uno terminado. Las fechas son relativas a "hoy".
+
 ### M3 — Cuenta y favoritos
 
 - **Favoritos:** `PUT /yo/lineas-favoritas/:lineaId` y `PUT /yo/paradas-favoritas/:paradaId`

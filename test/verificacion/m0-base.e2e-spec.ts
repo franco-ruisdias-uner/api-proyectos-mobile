@@ -465,7 +465,8 @@ describe('AGENTS §7.1 y DECISIONES A5 — /yo', () => {
   });
 
   it('las rutas de módulos futuros no existen todavía (sin adelantar trabajo)', async () => {
-    esperarErrorLimpio(await ctx.http.get('/avisos'), 404, 'RUTA_NO_ENCONTRADA');
+    // /avisos llegó con M4; la siguiente ruta futura es la de reportes (M5).
+    esperarErrorLimpio(await ctx.http.get('/reportes-demora'), 404, 'RUTA_NO_ENCONTRADA');
   });
 });
 

@@ -33,6 +33,10 @@ export const CATALOGO = {
   PARADA_NO_ENCONTRADA: { estado: 404, mensaje: 'No existe esa parada.' },
   QR_NO_RECONOCIDO: { estado: 404, mensaje: 'Ese código no es de una parada de Paraná.' },
 
+  // Avisos (M4)
+  AVISO_NO_ENCONTRADO: { estado: 404, mensaje: 'No existe ese aviso.' },
+  ARCHIVO_NO_SUBIDO: { estado: 422, mensaje: 'Primero hay que subir la foto o el video.' },
+
   // Archivos
   ARCHIVO_NO_ENCONTRADO: { estado: 404, mensaje: 'No encontramos ese archivo.' },
 } as const satisfies Record<string, EntradaDeCatalogo>;

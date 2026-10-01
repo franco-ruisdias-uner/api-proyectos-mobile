@@ -21,6 +21,7 @@ async function reiniciar(): Promise<void> {
 
   const { AppModule } = await import('../app.module.js');
   const { Reloj } = await import('../comun/reloj/reloj.js');
+  const { ArchivosServicio } = await import('../comun/archivos/archivos.servicio.js');
   const { sembrar } = await import('./sembrar.js');
   const app = await NestFactory.createApplicationContext(AppModule, { logger: ['error', 'warn'] });
   try {
@@ -28,7 +29,7 @@ async function reiniciar(): Promise<void> {
     console.log(`Borrando y creando el esquema en ${motor}…`);
     await dataSource.synchronize(true);
     console.log('Cargando los datos de demo…');
-    await sembrar(dataSource, app.get(Reloj));
+    await sembrar(dataSource, app.get(Reloj), app.get(ArchivosServicio));
     console.log('Listo: la base quedó en el estado inicial.');
   } finally {
     await app.close();

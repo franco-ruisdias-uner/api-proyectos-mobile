@@ -178,6 +178,14 @@ volver a ingresar.
 | `GET` | `/horarios` | 🌐 público | Tabla de horarios de una línea o de una parada |
 | `GET` | `/paradas/:id/proximos` | 🌐 público | Próximos pasos de las líneas por una parada |
 | `GET` | `/feriados` | 🌐 público | Feriados de un año |
+| `GET` | `/avisos` | 🌐 público | Avisos de la Dirección de Transporte |
+| `POST` | `/avisos` | 🛠 direccion | Publicar un aviso |
+| `GET` | `/avisos/:id` | 🌐 público | Detalle de un aviso |
+| `PATCH` | `/avisos/:id` | 🛠 direccion | Editar un aviso |
+| `POST` | `/avisos/:id/finalizar` | 🛠 direccion | Terminar un aviso ahora |
+| `POST` | `/dispositivos` | 🔒 con sesión | Registrar el token de push del teléfono |
+| `POST` | `/dispositivos/prueba` | 🔒 con sesión | Mandarme una push de prueba |
+| `DELETE` | `/dispositivos/:tokenExpo` | 🔒 con sesión | Dar de baja el token de push del teléfono |
 | `POST` | `/auth/registro` | 🌐 público | Crear una cuenta de pasajero |
 | `POST` | `/auth/ingreso` | 🌐 público | Ingresar con email y contraseña |
 | `GET` | `/yo` | 🔒 con sesión | Mi cuenta |
@@ -186,9 +194,6 @@ volver a ingresar.
 | `DELETE` | `/yo/lineas-favoritas/:lineaId` | 🔒 con sesión | Quitar una línea de favoritas |
 | `PUT` | `/yo/paradas-favoritas/:paradaId` | 🔒 con sesión | Agregar una parada a favoritas |
 | `DELETE` | `/yo/paradas-favoritas/:paradaId` | 🔒 con sesión | Quitar una parada de favoritas |
-| `POST` | `/dispositivos` | 🔒 con sesión | Registrar el token de push del teléfono |
-| `POST` | `/dispositivos/prueba` | 🔒 con sesión | Mandarme una push de prueba |
-| `DELETE` | `/dispositivos/:tokenExpo` | 🔒 con sesión | Dar de baja el token de push del teléfono |
 <!-- endpoints:fin -->
 
 ### Subir fotos, audios y videos
@@ -249,6 +254,7 @@ usalo para decidir qué hacer. El **mensaje** está en castellano y se puede mos
 | `NO_AUTENTICADO` | 401 | Tenés que ingresar con tu cuenta. |
 | `SIN_PERMISO` | 403 | No tenés permiso para hacer esto. |
 | `ARCHIVO_NO_ENCONTRADO` | 404 | No encontramos ese archivo. |
+| `AVISO_NO_ENCONTRADO` | 404 | No existe ese aviso. |
 | `LINEA_NO_ENCONTRADA` | 404 | No existe esa línea. |
 | `PARADA_NO_ENCONTRADA` | 404 | No existe esa parada. |
 | `QR_NO_RECONOCIDO` | 404 | Ese código no es de una parada de Paraná. |
@@ -257,6 +263,7 @@ usalo para decidir qué hacer. El **mensaje** está en castellano y se puede mos
 | `ARCHIVO_DEMASIADO_GRANDE` | 413 | El archivo es demasiado grande. |
 | `TIPO_DE_ARCHIVO_NO_PERMITIDO` | 415 | Ese tipo de archivo no está permitido. Mandá una foto, un audio o un video. |
 | `RANGO_NO_VALIDO` | 416 | No se puede enviar esa parte del archivo. |
+| `ARCHIVO_NO_SUBIDO` | 422 | Primero hay que subir la foto o el video. |
 | `ERROR_INTERNO` | 500 | Algo salió mal. Probá de nuevo en un rato. |
 | `ALMACEN_NO_DISPONIBLE` | 503 | No pudimos acceder a los archivos. Probá de nuevo en un rato. |
 <!-- errores:fin -->
