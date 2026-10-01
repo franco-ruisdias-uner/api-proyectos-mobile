@@ -179,7 +179,9 @@ export function configuracionBase(entrada: Entorno): ResultadoBase {
       try {
         analizada = new URL(url);
       } catch {
-        problemas.push('DB_URL no es una dirección válida.');
+        problemas.push(
+          'DB_URL no es una dirección válida. Si la contraseña tiene caracteres raros, escribilos con %: @ → %40, # → %23, / → %2F.',
+        );
       }
       if (analizada) {
         const esperado =
