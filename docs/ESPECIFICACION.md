@@ -55,6 +55,7 @@ Se hacen en este orden, uno por vez, con OK entre cada uno (AGENTS §1).
 | **M5 — Eventos guardados y avisos** | Guardar eventos y push por suspensión o cancelación. | PRD §3; necesita M2 y M0 (dispositivos). |
 | **M6 — Nube** | Archivos en cualquier servicio compatible con S3 (AGENTS §17), presets de bases administradas y publicación en Render con Supabase (AGENTS §18). | Cambia dónde se guardan los archivos sin tocar ningún módulo: todos pasan por el puerto desde M0. |
 | **M7 — Semillas completas y README** | Datos de demo completos, casos feos, medios, README para alumnos. | Cierra la entrega. Cada módulo anterior ya siembra lo suyo; acá se completa y se revisa. |
+| **M8 — Notificaciones para completar** | Vaciar el guardado de tokens de Expo y el envío de push para que los alumnos los programen; la solución queda en la rama `solucion-notificaciones` (AGENTS §19). | Va al final: el resto de la API ya está probado con la versión completa. |
 
 ---
 
