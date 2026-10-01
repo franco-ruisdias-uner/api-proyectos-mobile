@@ -61,3 +61,10 @@ export interface Dispositivo {
 export interface PruebaDePush {
   enviadas: number;
 }
+
+/** Un feriado nacional. Respuesta de GET /feriados (decisión D2): el teléfono lo guarda para saber, sin señal, qué tabla de horarios usar. */
+export interface Feriado {
+  /** "AAAA-MM-DD" */
+  fecha: string;
+  nombre: string;
+}

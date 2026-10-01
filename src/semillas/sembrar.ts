@@ -8,6 +8,10 @@ import { RecorridoParadaEntidad } from '../modulos/red/recorrido-parada.entidad.
 import { RecorridoEntidad } from '../modulos/red/recorrido.entidad.js';
 import { ordenDeNumero } from '../modulos/red/reglas/numero-de-linea.js';
 import { normalizarParaBusqueda } from '../comun/texto/texto.js';
+import { FeriadoEntidad } from '../modulos/horarios/feriado.entidad.js';
+import { HorarioEntidad } from '../modulos/horarios/horario.entidad.js';
+import { FERIADOS } from './datos/feriados.js';
+import { generarHorarios } from './datos/horarios.js';
 import { LINEAS, PARADAS } from './datos/red.js';
 import { USUARIOS } from './datos/usuarios.js';
 
@@ -28,6 +32,7 @@ export async function sembrar(dataSource: DataSource, reloj: Reloj): Promise<voi
       });
     }
     await sembrarRed(manejador);
+    await sembrarHorarios(manejador);
   });
 }
 
@@ -69,5 +74,14 @@ async function sembrarRed(manejador: EntityManager): Promise<void> {
         })),
       );
     }
+  }
+}
+
+/** M2: la tabla de horarios y los feriados. Se inserta de a tandas por el límite de variables. */
+async function sembrarHorarios(manejador: EntityManager): Promise<void> {
+  await manejador.getRepository(FeriadoEntidad).insert(FERIADOS);
+  const horarios = generarHorarios();
+  for (let desde = 0; desde < horarios.length; desde += 500) {
+    await manejador.getRepository(HorarioEntidad).insert(horarios.slice(desde, desde + 500));
   }
 }

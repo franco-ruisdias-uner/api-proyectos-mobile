@@ -5,6 +5,22 @@ cambia la forma de ninguna respuesta: sólo se agregan cosas.
 
 ## Sin publicar
 
+### M2 — Horarios
+
+- **Tabla:** `GET /horarios`, con los filtros `lineaId`, `paradaId`, `sentido` y `tipoDeDia`.
+  Hay que mandar `lineaId` o `paradaId` (si no, `400`). `porPagina` llega a **5000** para que
+  guardes la tabla en el teléfono. Orden: `hora`, `lineaId`, `paradaId`.
+- **Próximos:** `GET /paradas/:id/proximos?cantidad=3&lineaId=…`: los pasos siguientes de cada
+  línea según la tabla de hoy; si no alcanzan, los de mañana **con la tabla de mañana** (su
+  `hora` es menor que la actual). Sólo devuelve horas de tabla, nunca inventa minutos.
+- **Feriados:** `GET /feriados?anio=2026`. Devuelve el tipo nuevo `Feriado { fecha, nombre }`
+  (en `contrato/api.ts`: **copialo a tu proyecto**). Un feriado usa la tabla `feriado` aunque
+  caiga sábado o domingo.
+- **Datos de demo:** la tabla de horarios de las líneas activas (la 5 y la 14 con ida y
+  vuelta; `hor-4410` es el del PRD), la línea 13 que termina a las 21:00, y los feriados de
+  2026 y 2027.
+- No hay errores nuevos.
+
 ### M1 — Red
 
 - **Líneas:** `GET /lineas` (las catorce, con sus recorridos, ordenadas por número: "2" antes

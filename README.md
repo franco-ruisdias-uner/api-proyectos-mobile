@@ -10,8 +10,9 @@ cambies tus mocks por `fetch`, los datos encajan sin tocar los tipos. Los tipos 
 API (el sobre de las respuestas, la sesión, los archivos) están en
 [`contrato/api.ts`](contrato/api.ts): copialos a tu proyecto.
 
-> **Estado:** están listas la base (cuenta, sesión, archivos, notificaciones) y la red (líneas
-> y paradas, con búsqueda, cercanas y QR). Los horarios, avisos y reportes se van sumando:
+> **Estado:** están listas la base (cuenta, sesión, archivos, notificaciones), la red (líneas
+> y paradas, con búsqueda, cercanas y QR) y los horarios (tabla, próximos y feriados). Los
+> avisos y reportes se van sumando:
 > mirá el [CHANGELOG](CHANGELOG.md).
 
 Toda respuesta viene en un sobre:
@@ -174,6 +175,9 @@ volver a ingresar.
 | `GET` | `/paradas` | 🌐 público | Paradas: búsqueda, por línea y cercanas |
 | `GET` | `/paradas/qr/:codigo` | 🌐 público | Resolver el QR de una parada |
 | `GET` | `/paradas/:id` | 🌐 público | Detalle de una parada |
+| `GET` | `/horarios` | 🌐 público | Tabla de horarios de una línea o de una parada |
+| `GET` | `/paradas/:id/proximos` | 🌐 público | Próximos pasos de las líneas por una parada |
+| `GET` | `/feriados` | 🌐 público | Feriados de un año |
 | `POST` | `/auth/registro` | 🌐 público | Crear una cuenta de pasajero |
 | `POST` | `/auth/ingreso` | 🌐 público | Ingresar con email y contraseña |
 | `GET` | `/yo` | 🔒 con sesión | Mi cuenta |
@@ -214,6 +218,18 @@ La API manda push sólo cuando pasa algo en el servidor (por ejemplo, un aviso n
 línea favorita) y sólo si la persona tiene `avisosActivos: true`. Los recordatorios del
 tipo "avisame 10 minutos antes del de las 7:15" son **notificaciones locales** que programa
 la app: la API no las manda.
+
+### Horarios y feriados
+
+- `GET /horarios` necesita `lineaId` o `paradaId`. Bajá la tabla entera con `porPagina=5000` y
+  guardala en el teléfono: tiene que servir sin señal.
+- Para elegir la tabla (`habil`, `sabado`, `domingo` o `feriado`) sin conexión, guardá también
+  `GET /feriados?anio=2026` y `?anio=2027`. **`Feriado` no está en el PRD:** está en
+  [`contrato/api.ts`](contrato/api.ts). Un feriado gana sobre el sábado y el domingo.
+- `GET /paradas/:id/proximos` te da los siguientes pasos de cada línea. Si ya no hay más
+  servicio hoy, vienen los de mañana a primera hora, con el `tipoDeDia` de mañana: se
+  reconocen porque su `hora` es menor que la hora de ahora.
+- La API no sabe dónde está cada colectivo: son horas de tabla.
 
 ## 7. Errores
 

@@ -17,6 +17,8 @@ const DEVUELTAS = [
   'PruebaDePush',
   'Linea',
   'Parada',
+  'Horario',
+  'Feriado',
 ];
 
 /** Piezas que no se devuelven solas: van dentro de otras o son el sobre. */
@@ -34,7 +36,6 @@ const AUXILIARES = [
 
 /** Entidades del PRD que llegan en módulos siguientes (espec. §3). */
 const PENDIENTES: Record<string, string> = {
-  Horario: 'M2',
   Aviso: 'M4',
   ReporteDeDemora: 'M5',
 };

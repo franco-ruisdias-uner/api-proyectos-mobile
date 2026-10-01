@@ -127,6 +127,24 @@
       ],
       "type": "object"
     },
+    "Feriado": {
+      "additionalProperties": false,
+      "description": "Un feriado nacional. Respuesta de GET /feriados (decisión D2): el teléfono lo guarda para saber, sin señal, qué tabla de horarios usar.",
+      "properties": {
+        "fecha": {
+          "description": "\"AAAA-MM-DD\"",
+          "type": "string"
+        },
+        "nombre": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "fecha",
+        "nombre"
+      ],
+      "type": "object"
+    },
     "Gravedad": {
       "enum": [
         "informativo",

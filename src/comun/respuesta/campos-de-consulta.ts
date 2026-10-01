@@ -58,3 +58,22 @@ export const CampoNumero = (
     Max(maximo, { message: mensaje }),
   );
 };
+
+/** Número entero entre `minimo` y `maximo`, que viene en la consulta. */
+export const CampoEntero = (
+  nombre: string,
+  etiqueta: string,
+  minimo: number,
+  maximo: number,
+  descripcion?: string,
+) => {
+  const mensaje = `${etiqueta} (${nombre}) tiene que ser un número entero de ${minimo} a ${maximo}.`;
+  return applyDecorators(
+    ApiPropertyOptional({ minimum: minimo, maximum: maximo, description: descripcion }),
+    IsOptional(),
+    aNumero,
+    IsInt({ message: mensaje }),
+    Min(minimo, { message: mensaje }),
+    Max(maximo, { message: mensaje }),
+  );
+};

@@ -70,6 +70,29 @@ una respuesta. El registro público crea siempre `pasajero`; la cuenta de la Dir
 Consecuencia en el contrato: ninguna en la forma. Los endpoints 🛠 devuelven `403 SIN_PERMISO`
 a un pasajero.
 
+### D2 — Cómo sabe el teléfono qué tabla de horarios usar (feriados)
+Estado: PROVISORIA (autónomo) — era PENDIENTE en `ESPECIFICACION.md`; se implementó su default.
+Hueco: el PRD no tiene una entidad de feriados, pero el teléfono tiene que decidir sin
+conexión entre las tablas hábil, sábado, domingo y feriado (PRD §3).
+Opciones: A) `GET /feriados` con un tipo nuevo `Feriado`. B) que la app lleve su propia lista.
+C) devolver el tipo de día de hoy en cada respuesta (agrega campos: prohibido).
+Decisión: A. `GET /feriados?anio=` devuelve `Feriado[]` = `{ fecha: "AAAA-MM-DD", nombre }`
+(definido en `contrato/api.ts`) y acepta `pagina`/`porPagina`. **Es un tipo que los alumnos no
+tienen: hay que publicarlo junto con la API.**
+Consecuencia en el contrato: un endpoint y un tipo nuevos; los tipos del PRD no cambian.
+
+### D3 — Cómo se reconoce un próximo horario "de mañana"
+Estado: PROVISORIA
+Decisión: orden cronológico desde ahora (primero lo de hoy, después lo de mañana); los de hora
+menor que la actual son de mañana. Cada fila trae su `tipoDeDia` real (el de mañana). Límite
+conocido: si hoy la tabla termina a media mañana y mañana hay un servicio más tarde que la
+hora actual, esa fila no se distingue por la hora (en las semillas no pasa).
+
+### D4 — Servicios después de medianoche
+Estado: PROVISORIA
+Decisión: un horario pertenece al día calendario de su hora. Las semillas no tienen servicio
+entre las 00:00 y las 05:20.
+
 ---
 
 ## Decisiones tomadas en modo autónomo (M0)
@@ -228,4 +251,56 @@ Decisión: `normalizarParaBusqueda` reemplaza los caracteres de control (incluid
 `numero` no empieza con dígito vale 2147483647 (cabe en `int` en los cuatro motores); antes
 valía `MAX_SAFE_INTEGER` y no entraba en PostgreSQL, MySQL ni MariaDB. Alternativa descartada:
 prohibir números de línea alfabéticos.
+Consecuencia en el contrato: ninguna.
+
+---
+
+## Decisiones tomadas en modo autónomo (M2)
+
+### A18 — Un servicio del minuto actual todavía cuenta
+Estado: PROVISORIA (autónomo)
+Hueco: R8 dice "los pasos siguientes a ahora"; la tabla tiene minutos, no segundos.
+Opciones: A) `hora >= minuto actual`. B) `hora > minuto actual`.
+Decisión: A. A las 10:30:45 el de las 10:30 cuenta como próximo: la tabla no dice a qué
+segundo sale y es mejor que la persona llegue de más que de menos.
+Consecuencia en el contrato: ninguna nueva.
+
+### A19 — Filtros de `/horarios` y `/paradas/:id/proximos` que no encuentran nada
+Estado: PROVISORIA (autónomo)
+Decisión: igual que en A10. Un `lineaId` o `paradaId` bien formado pero inexistente en
+`/horarios` da lista vacía; un `lineaId` inexistente o que no para en la parada en `/proximos`
+también. Mal formado → `400 VALIDACION_FALLIDA`. `/paradas/:id/proximos` con una parada que no
+existe → `404 PARADA_NO_ENCONTRADA`. R7: sin `lineaId` ni `paradaId` → `400` con un mensaje que
+dice cuáles faltan.
+Consecuencia en el contrato: ninguna nueva (no hay códigos de error nuevos en M2).
+
+### A20 — `meta` de los próximos
+Estado: PROVISORIA (autónomo)
+Hueco: `/paradas/:id/proximos` es una lista sin páginas.
+Decisión: `meta = { total: <cuántos devolvió>, pagina: 1, porPagina: <ese mismo total, mínimo 1> }`.
+No acepta `pagina` ni `porPagina` (`400`): `cantidad` ya la acota.
+Consecuencia en el contrato: ninguna nueva.
+
+### A21 — Qué feriados se siembran
+Estado: PROVISORIA (autónomo)
+Hueco: "feriados nacionales de 2026 y 2027 de la fuente oficial": los "puentes turísticos"
+(23/3, 10/7 y 7/12 de 2026) son días no laborables, no feriados.
+Decisión: se siembran sólo feriados (inamovibles y trasladables, con la fecha ya trasladada:
+15/6, 17/8, 12/10 y 23/11 de 2026). Los puentes quedan afuera: el transporte suele correr con
+la tabla común. Fuente: el calendario oficial de feriados nacionales, consultado a través de
+argentinadatos.com. Conviene que la cátedra confirme los de 2027, que todavía pueden cambiar
+por decreto. El jueves santo no es feriado nacional.
+Consecuencia en el contrato: ninguna.
+
+### A22 — Forma de los horarios de demo
+Estado: PROVISORIA (autónomo)
+Hueco: la espec. pide horarios "por frecuencia y tiempo de viaje", sin números.
+Decisión: la cabecera de cada recorrido arranca a las 05:20 (sábado 05:50, domingo y feriado
+07:00) y los últimos pasos son alrededor de las 23:00. Frecuencia hábil: 14 min en `lin-05`,
+15 en `lin-14` y 20 a 35 en el resto; sábado ×1,5; domingo y feriado ×2,2. El tiempo entre
+paradas sale de la distancia a ~18 km/h (mínimo 2 minutos). La línea inactiva (`lin-11`) no
+tiene filas. `lin-13` termina a las 21:00 (caso feo del PRD). La grilla de `lin-05` ida hábil se
+alinea para que exista `hor-4410` (10:42 en `par-101`); por eso su primer servicio no es
+exactamente a las 05:20. Los ids generados son `hor-10000` en adelante. Son datos de demo: no
+representan las tablas reales de las empresas.
 Consecuencia en el contrato: ninguna.
