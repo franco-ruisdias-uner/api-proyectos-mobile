@@ -5,6 +5,23 @@ cambia la forma de ninguna respuesta: sólo se agregan cosas.
 
 ## Sin publicar
 
+### M6 — Nube
+
+No cambia ninguna respuesta de la API: es todo para poder **publicarla** con una dirección `https://`
+(la que necesita tu build de producción con EAS) sin que la app se entere.
+
+- **Archivos en la nube:** `ARCHIVOS_PROVEEDOR` = `local` (default) · `supabase` · `aws` · `r2` · `b2` · `s3proxy` ·
+  `localstack`. Las URLs de los archivos siguen siendo `<origen>/archivos/<clave>`, con soporte de `Range`.
+  `GET /salud` informa el proveedor en `almacen`.
+- **Docker con archivos en S3:** `docker compose -f compose.yaml -f compose.almacen-s3.yaml up` (también
+  `compose.almacen-localstack.yaml`, que pide `LOCALSTACK_AUTH_TOKEN`).
+- **Base administrada:** `DB_PROVEEDOR` = `supabase` · `neon` · `aiven-postgres` · `aiven-mysql`, con `DB_SSL`,
+  `DB_SSL_CA` y `DB_ESQUEMA`. Revisa que `DB_URL` sea la correcta y, si no, te dice cuál copiar.
+- **Publicar en Render:** `render.yaml` y el paso a paso en el README (sección 11). Con `ENTORNO=publicado` la API no
+  arranca si dejaste SQLite, archivos locales, el secreto de desarrollo o la simulación de errores.
+- **Para comprobar tu configuración:** `pnpm db:probar`, `pnpm archivos:probar` y `pnpm publicado:probar <url>`.
+- `pnpm db:reiniciar` contra una base en la nube pide `--confirmar` y borra sólo el esquema de la API.
+
 ### M5 — Reportes de demora
 
 - **Reportar:** `POST /reportes-demora` (con sesión) con `{ id?, lineaId, paradaId, motivo, comentario?, fotoUri?, fechaHora }`.

@@ -55,6 +55,18 @@ Si querés usar otro motor de base de datos:
 Las bases quedan publicadas en puertos que no son los de siempre, así no chocan con una base
 que ya tengas instalada. Las podés mirar con DBeaver (usuario `api`, contraseña `api`, base `api`).
 
+Las fotos y los videos se guardan, por defecto, en un volumen de Docker. Si querés probar con
+almacenamiento tipo Amazon S3 (como el que vas a usar publicado), sumá el emulador a cualquiera
+de los comandos de arriba:
+
+```bash
+docker compose -f compose.yaml -f compose.almacen-s3.yaml up
+docker compose -f compose.postgres.yaml -f compose.almacen-s3.yaml up
+```
+
+(Hay otro, `compose.almacen-localstack.yaml`, que pide una cuenta gratis de LocalStack y la
+variable `LOCALSTACK_AUTH_TOKEN`; con el de S3 alcanza.) La app no nota la diferencia.
+
 - **Frenar:** `Ctrl + C`, o `docker compose down` desde otra terminal.
 - **Volver a cero** (borra la base y las fotos, y la próxima vez se vuelven a cargar los
   datos de demo): `docker compose down -v` y después `docker compose up`.
@@ -301,6 +313,7 @@ decir "información de hace 2 horas" cuando mostrás datos guardados.
 ## 9. Volver los datos al estado inicial
 
 - Sin Docker: `pnpm db:reiniciar` (borra todo, crea las tablas y carga los datos de demo).
+  Contra una base en la nube pide `--confirmar`.
 - Con Docker: `docker compose down -v` y `docker compose up`.
 
 ## 10. Problemas frecuentes
@@ -315,12 +328,91 @@ decir "información de hace 2 horas" cuando mostrás datos guardados.
 | `EADDRINUSE` (el puerto está ocupado) | Ya hay algo en el 3000 (¿otra API corriendo?). Cerrala o usá `PUERTO=4000`. |
 | Con XAMPP la base se comporta raro | Usá `DB_MOTOR=mariadb` (sección 3). |
 | Docker: `port is already allocated` | Otro programa usa ese puerto: `PUERTO=4000 docker compose up`. |
+| Publicada, la primera llamada tarda más de un minuto | Es normal en el plan gratis de Render: el servicio se duerme a los 15 minutos sin uso. Mostrá "cargando" en la app (sección 11). |
+| Supabase: la API no se conecta después de unos días | El plan gratis **pausa el proyecto** tras una semana sin uso: reactivalo desde el panel de Supabase. |
+| `No pudimos acceder a los archivos` (`ALMACEN_NO_DISPONIBLE`) | Probá `pnpm archivos:probar`: dice si fallan las credenciales, el bucket o la región. |
 | Quiero ver la base por dentro | Con Docker, conectate con DBeaver a los puertos de la sección 1. Con SQLite, abrí `datos/api.sqlite`. |
+
+## 11. En la nube: publicar la API
+
+Con Docker o con `pnpm dev` la API corre en tu computadora. Para el **build de producción con
+EAS** necesitás una dirección `https://` que ande desde cualquier red: una app instalada no puede
+apuntar a la IP de tu notebook. La combinación gratis y sin tarjeta que probamos:
+
+| Pieza | Servicio |
+|---|---|
+| La API (la imagen del `Dockerfile`) | **Render**, web service |
+| La base de datos | **Supabase** (PostgreSQL) |
+| Las fotos y los videos | **Supabase Storage** |
+
+Alternativas que también entran: Koyeb para la API; Neon o Aiven para la base; Cloudflare R2,
+Backblaze B2 o Amazon S3 para los archivos. Se elige con variables de entorno, sin tocar código.
+
+### Paso a paso con Render + Supabase
+
+1. **Supabase**: creá un proyecto en <https://supabase.com> y guardá la contraseña de la base.
+2. **La base**: en el proyecto, botón **Connect** → **Session pooler** → copiá la cadena y poné tu
+   contraseña. Tiene que tener `…pooler.supabase.com` y el puerto **5432**. (No sirve la conexión
+   directa, que es sólo IPv6, ni la del puerto 6543: la API te lo dice si te equivocás.)
+3. **El bucket**: **Storage** → **New bucket** → llamalo `archivos` (privado).
+4. **Las claves de archivos**: **Storage** → **S3 Connection** → **New access key**. Anotá
+   `Access key ID`, `Secret access key` y la **Region** del proyecto.
+5. **Render**: <https://render.com> → **New** → **Blueprint** → elegí el repo de tu grupo. Render lee
+   `render.yaml` y te pide los datos que faltan:
+
+   | Variable | Qué poner |
+   |---|---|
+   | `DB_URL` | la cadena del paso 2 |
+   | `SUPABASE_PROYECTO` | las letras de `https://<proyecto>.supabase.co` |
+   | `S3_REGION` | la región del paso 4 (por ejemplo `sa-east-1`) |
+   | `S3_BUCKET` | `archivos` |
+   | `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | las del paso 4 |
+
+   `JWT_SECRETO` lo genera Render solo.
+6. Esperá el primer deploy (unos minutos). La API crea las tablas en el esquema `api` y carga los
+   datos de demo sola.
+7. **Probala** desde tu computadora: `pnpm publicado:probar https://tu-api.onrender.com`. Revisa
+   `/salud`, que haya datos y que las URLs de los archivos sean `https://` y respondan.
+
+> Si el repo es tuyo, también podés usar el botón
+> `https://render.com/deploy?repo=https://github.com/<tu-usuario>/<tu-repo>`.
+
+### Cosas que conviene saber
+
+- **Arranque en frío:** el servicio gratis de Render se **duerme a los 15 minutos** sin tráfico y
+  tarda alrededor de un minuto en despertar. La primera llamada puede tardar: la app tiene que
+  mostrar que está cargando (el PRD ya lo pide).
+- **Supabase pausa el proyecto** después de una semana sin uso (plan gratis). Se reactiva desde el panel.
+- **Neon** suspende la base a los 5 minutos sin uso: la primera conexión tarda un poco más.
+  **Aiven** apaga el servicio gratis tras un tiempo sin uso y avisa por mail.
+- **La base gratis de Render** vence a los 30 días: por eso no la usamos.
+- Con `ENTORNO=publicado` la API **no arranca** si dejaste SQLite, archivos en disco, el
+  `JWT_SECRETO` de desarrollo (o uno de menos de 32 caracteres) o la simulación de errores. El
+  mensaje dice qué cambiar.
+- Los archivos subidos se ven siempre por `https://<tu-api>/archivos/…`: la app no sabe dónde están guardados.
+- Para volver los datos de demo a cero en la nube: `pnpm db:reiniciar --confirmar` con el `.env`
+  apuntando a esa base. Borra **sólo el esquema `api`**, nunca otros (en Supabase conviven `auth`, `storage`…).
+
+### Probar tu configuración antes de publicar
+
+Poné las variables en el `.env` (el `.env.example` trae un bloque por proveedor, con dónde
+conseguir cada dato) y corré:
+
+| Comando | Qué hace |
+|---|---|
+| `pnpm db:probar` | Se conecta a la base, muestra motor y esquema, crea y borra una tabla de prueba. Si falla, dice por qué (contraseña, pooler equivocado, certificado). |
+| `pnpm archivos:probar` | Sube un archivo chico al proveedor, lo lee entero y por rango, y lo borra. Si falla, dice si es el bucket, las credenciales o la región. |
+| `pnpm publicado:probar <url>` | Lo de arriba, pero contra la API ya publicada. |
+
+Variables de la base: `DB_PROVEEDOR` (`supabase`, `neon`, `aiven-postgres`, `aiven-mysql`), `DB_URL`,
+`DB_SSL` (`no`, `si`, `si-sin-verificar`), `DB_SSL_CA` y `DB_ESQUEMA`. Variables de los archivos:
+`ARCHIVOS_PROVEEDOR` (`local`, `supabase`, `aws`, `r2`, `b2`, `s3proxy`, `localstack`) y sus `S3_*`.
+Si el servidor rechaza el certificado, la API te dice si usar `DB_SSL=si-sin-verificar` o poner la CA en `DB_SSL_CA`.
 
 ---
 
 Para la cátedra: las reglas de construcción están en `AGENTS.md`, la especificación del
 proyecto en `docs/ESPECIFICACION.md` y las decisiones sobre los huecos del PRD en
 `docs/DECISIONES.md`. `pnpm verificar` corre tipos, lint y todos los tests;
-`pnpm test:e2e:matriz` corre los e2e contra los cuatro motores y `pnpm docker:probar`
-prueba los cuatro compose.
+`pnpm test:e2e:matriz` corre los e2e contra los cuatro motores (y los archivos contra S3Proxy) y
+`pnpm docker:probar` prueba los compose.

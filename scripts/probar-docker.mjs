@@ -11,6 +11,24 @@ const COMPOSES = [
   { nombre: 'postgres', archivo: 'compose.postgres.yaml', motor: 'postgres' },
   { nombre: 'mysql', archivo: 'compose.mysql.yaml', motor: 'mysql' },
   { nombre: 'mariadb', archivo: 'compose.mariadb.yaml', motor: 'mariadb' },
+  // Los archivos en un emulador de S3 (AGENTS §17.4): se suman a un compose de base.
+  {
+    nombre: 'sqlite+s3proxy',
+    archivo: ['compose.yaml', 'compose.almacen-s3.yaml'],
+    motor: 'better-sqlite3',
+    almacen: 's3proxy',
+  },
+  // LocalStack pide cuenta: sólo si hay token.
+  ...(process.env.LOCALSTACK_AUTH_TOKEN
+    ? [
+        {
+          nombre: 'postgres+localstack',
+          archivo: ['compose.postgres.yaml', 'compose.almacen-localstack.yaml'],
+          motor: 'postgres',
+          almacen: 'localstack',
+        },
+      ]
+    : []),
 ];
 
 /** Lo que se prueba contra cada compose, además de /salud: que las semillas se cargaron. */
@@ -76,7 +94,7 @@ const PRUEBAS = [
 ];
 const contexto = { token: '' };
 
-const env = { ...process.env, PUERTO, PUERTO_DB };
+const env = { ...process.env, PUERTO, PUERTO_DB, PUERTO_S3: '39992', PUERTO_LOCALSTACK: '39993' };
 
 /** "healthy" adentro del contenedor no garantiza que el puerto ya esté publicado afuera. */
 async function pedirConReintentos(url, intentos = 20) {
@@ -92,10 +110,11 @@ async function pedirConReintentos(url, intentos = 20) {
 const docker = (argumentos, opciones = {}) =>
   spawnSync('docker', argumentos, { stdio: 'inherit', env, ...opciones }).status ?? 1;
 
-async function probar({ nombre, archivo, motor }) {
-  const proyecto = `probar-transporte-${nombre}`;
-  const base = ['compose', '-p', proyecto, '-f', archivo];
-  console.log(`\n━━━ ${archivo} ━━━`);
+async function probar({ nombre, archivo, motor, almacen = 'local' }) {
+  const proyecto = `probar-transporte-${nombre.replace('+', '-')}`;
+  const archivos = [archivo].flat();
+  const base = ['compose', '-p', proyecto, ...archivos.flatMap((a) => ['-f', a])];
+  console.log(`\n━━━ ${archivos.join(' + ')} ━━━`);
   try {
     if (docker([...base, 'up', '-d', '--build', '--wait', '--wait-timeout', '240']) !== 0) {
       throw new Error('docker compose up no terminó bien');
@@ -109,6 +128,9 @@ async function probar({ nombre, archivo, motor }) {
     if (salud.datos.estado !== 'ok' || salud.datos.motor !== motor) {
       throw new Error(`/salud dice motor ${salud.datos.motor}, se esperaba ${motor}`);
     }
+    if (salud.datos.almacen !== almacen) {
+      throw new Error(`/salud dice almacén ${salud.datos.almacen}, se esperaba ${almacen}`);
+    }
     console.log(`✓ /salud: ${JSON.stringify(salud.datos)}`);
     for (const prueba of PRUEBAS) {
       await prueba.correr();
@@ -116,7 +138,7 @@ async function probar({ nombre, archivo, motor }) {
     }
     return true;
   } catch (error) {
-    console.error(`✗ ${archivo}: ${error.message}${error.cause ? ` (${error.cause.code ?? error.cause.message})` : ""}`);
+    console.error(`✗ ${archivos.join(' + ')}: ${error.message}${error.cause ? ` (${error.cause.code ?? error.cause.message})` : ""}`);
     docker([...base, 'logs', '--tail', '60']);
     return false;
   } finally {

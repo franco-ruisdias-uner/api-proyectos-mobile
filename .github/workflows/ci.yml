@@ -64,6 +64,31 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: node scripts/matriz.mjs ${{ matrix.motor }}
 
+  almacen-s3:
+    name: archivos sobre S3 (S3Proxy)
+    runs-on: ubuntu-latest
+    services:
+      s3:
+        image: andrewgaul/s3proxy:sha-9a9b1ee
+        env:
+          S3PROXY_ENDPOINT: http://0.0.0.0:8080
+          S3PROXY_AUTHORIZATION: none
+          JCLOUDS_PROVIDER: transient
+        ports: ['58080:8080']
+        options: >-
+          --health-cmd "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080'" --health-interval 2s --health-timeout 3s --health-retries 60
+    env:
+      MATRIZ_SIN_DOCKER: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: node scripts/matriz.mjs almacen-s3
+
   docker:
     name: docker compose (los cuatro)
     runs-on: ubuntu-latest

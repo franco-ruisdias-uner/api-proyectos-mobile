@@ -449,3 +449,60 @@ Decisión: `POST /reportes-demora` acepta y descarta `usuarioId`, `confirmacione
 mandar el reporte entero; AGENTS §4.4). Cualquier otro campo → 400. Un `comentario` vacío o de espacios se guarda
 como `null`. No hay push por reportes (la espec. §7 no la pide).
 Consecuencia en el contrato: ninguna.
+
+### A40 — Dependencias nuevas del M6
+Estado: PROVISORIA (autónomo)
+Decisión: `@aws-sdk/client-s3` (el adaptador S3: lo hablan AWS, Supabase, R2, B2 y los emuladores; no hay forma más
+corta con lo que ya había) y `@aws-sdk/s3-request-presigner` (sólo para `ARCHIVOS_REDIRIGIR`, las URLs firmadas).
+Los checksums por defecto del SDK (desde 3.731) se apagan con `WHEN_REQUIRED` en todo proveedor que no sea `aws`
+(AGENTS §17.2; confirmado con Context7 y probado contra S3Proxy).
+Consecuencia en el contrato: ninguna.
+
+### A41 — El puerto `AlmacenArchivos` suma `urlFirmada?` (opcional)
+Estado: PROVISORIA (autónomo)
+Hueco: `ARCHIVOS_REDIRIGIR` (AGENTS §17.1) necesita que el adaptador firme una URL, y el puerto del M0 no lo tenía.
+Decisión: método **opcional** `urlFirmada?(clave)`; sólo lo implementa `AlmacenS3`. Con `ARCHIVOS_PROVEEDOR=local` la
+combinación con `ARCHIVOS_REDIRIGIR=true` no arranca. Antes de redirigir se comprueba que la clave exista (404 si no).
+El controlador sigue siendo uno solo.
+Además, `ArchivosServicio.tamanio` ahora pide el primer byte (`leer` con rango 0-0) en lugar de abrir el archivo
+entero: en S3 evita bajarlo dos veces. Para el disco no cambia nada. El M0 no se rompe: mismos tests, en verde.
+Consecuencia en el contrato: ninguna.
+
+### A42 — Presets de base: SSL, esquema y conexión
+Estado: PROVISORIA (autónomo)
+Decisión: `DB_PROVEEDOR` fija el motor (si `DB_MOTOR` lo contradice, no arranca). SSL por preset: Supabase y Aiven
+`si-sin-verificar`, Neon `si`; con `DB_SSL_CA` los de CA propia pasan a `si` (verifican). Un `DB_SSL` explícito gana.
+`DB_URL` se parsea con `URL` y se le pasa a TypeORM por partes (host, puerto, usuario, contraseña, base) ya
+decodificadas, no como `url`. Esquema por defecto: Supabase `api`, Neon y Aiven-postgres `public`. La API crea el esquema
+(`queryRunner.createSchema(nombre, true)`) en un `dataSourceFactory` propio **antes** de sincronizar; `db:reiniciar`
+borra sólo ese esquema (TypeORM limita el `clearDatabase` de PostgreSQL al `schema` configurado; hay test) y pide
+`--confirmar` contra una base en la nube. En Aiven MySQL no hay esquema aparte: `db:reiniciar` borra las tablas de la
+base entera, que se espera dedicada a la API (el aviso lo dice).
+Consecuencia en el contrato: ninguna.
+
+### A43 — `ENTORNO=publicado`
+Estado: PROVISORIA (autónomo)
+Decisión: no arranca con SQLite, con archivos `local`, con `SIMULACION_HABILITADA=true`, con un `JWT_SECRETO` de menos de
+32 caracteres ni con el de desarrollo (el de `.env.example`, o cualquiera que contenga «desarrollo»). Se informan todos
+los motivos juntos. `render.yaml` usa `generateValue: true` para `JWT_SECRETO` (Render genera 256 bits): es más seguro
+que pedirle al alumno que invente uno, y la AGENTS sólo pide que el repo no lleve valor.
+Consecuencia en el contrato: ninguna.
+
+### A44 — Emuladores en Docker
+Estado: PROVISORIA (autónomo)
+Decisión: imágenes fijas: `andrewgaul/s3proxy:sha-9a9b1ee` y `localstack/localstack:2026.8.5`. Ninguna trae `curl`, así que
+el *healthcheck* abre un socket TCP con `bash` (`exec 3<>/dev/tcp/127.0.0.1/<puerto>`). S3Proxy escucha en 8080 (el
+`S3PROXY_ENDPOINT` por defecto de la imagen es el 80). En la matriz va con `JCLOUDS_PROVIDER=transient` (memoria), puerto
+58080, y la CI lo corre como *service container* en un trabajo aparte (`almacen-s3`). LocalStack no se pudo probar en esta
+sesión (pide `LOCALSTACK_AUTH_TOKEN`): sólo se verificó que el compose se combina bien y que falla con un mensaje claro
+sin el token. `docker:probar` lo suma si la variable existe.
+Consecuencia en el contrato: ninguna.
+
+### A45 — Lo que no se pudo probar con cuentas reales
+Estado: PROVISORIA (autónomo)
+Hueco: no hay cuentas de Supabase, Render, Neon, Aiven, R2, B2 ni AWS en esta sesión.
+Decisión: los presets se probaron por unidad (la tabla de datos y los mensajes de error) y el adaptador S3, de punta a
+punta, contra S3Proxy (matriz y Docker). Los endpoints son los de la sección 17.2 de AGENTS. Para comprobar un proveedor
+real están `pnpm db:probar`, `pnpm archivos:probar` y `pnpm publicado:probar <url>`. Pendiente para el primer grupo que
+publique: correr esas tres cosas y avisar si algún preset no encaja.
+Consecuencia en el contrato: ninguna.

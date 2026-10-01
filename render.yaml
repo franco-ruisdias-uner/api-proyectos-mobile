@@ -1,0 +1,41 @@
+# Blueprint de Render (AGENTS §18.2): la API desde el Dockerfile, con la base y los archivos
+# en Supabase. Los datos que son secretos no tienen valor acá: Render los pide al crear el
+# servicio (sync: false). Paso a paso en el README, sección 11.
+services:
+  - type: web
+    name: api-transporte-publico
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /salud
+    envVars:
+      # Fijas
+      - key: ENTORNO
+        value: publicado
+      - key: CONFIAR_PROXY
+        value: "true"
+      - key: DB_PROVEEDOR
+        value: supabase
+      - key: ARCHIVOS_PROVEEDOR
+        value: supabase
+      - key: SEMBRAR_SI_VACIA
+        value: "true"
+      - key: DB_SINCRONIZAR
+        value: "true"
+      - key: NOTIFICACIONES
+        value: expo
+      # Render las pide (secretos y datos de tu proyecto de Supabase)
+      - key: DB_URL
+        sync: false
+      - key: JWT_SECRETO
+        generateValue: true
+      - key: SUPABASE_PROYECTO
+        sync: false
+      - key: S3_REGION
+        sync: false
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
