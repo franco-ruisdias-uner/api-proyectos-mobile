@@ -304,3 +304,32 @@ alinea para que exista `hor-4410` (10:42 en `par-101`); por eso su primer servic
 exactamente a las 05:20. Los ids generados son `hor-10000` en adelante. Son datos de demo: no
 representan las tablas reales de las empresas.
 Consecuencia en el contrato: ninguna.
+
+### A23 — Ids de favoritos mal formados o inexistentes
+Estado: PROVISORIA (autónomo)
+Hueco: R16 dice que `PUT` con un id inexistente da `404`; no dice nada del mal formado ni del `DELETE`.
+Decisión: `PUT` con un id inexistente **o** mal formado (otro prefijo, mayúsculas distintas) →
+`404 LINEA_NO_ENCONTRADA` / `PARADA_NO_ENCONTRADA`, igual que A7 y A16. `DELETE` es idempotente
+sin mirar el id: siempre `204`, exista o no.
+Alternativa descartada: `400` por id mal formado (AGENTS §7.3), para no tener dos respuestas
+distintas con el mismo significado para la app.
+Consecuencia en el contrato: ninguna nueva.
+
+### A24 — Orden de los favoritos y repetidos
+Estado: PROVISORIA (autónomo)
+Decisión: cada favorito guarda un `orden` entero (el mayor existente + 1, no un instante, así
+no depende del reloj). Repetir un `PUT` no cambia el lugar; quitar y volver a agregar lo deja al
+final. Dos altas simultáneas de lo mismo: la clave primaria `(usuario, línea|parada)` decide y
+las dos respuestas son 200. Dos altas simultáneas de favoritos distintos pueden empatar en
+`orden`: se desempata por id (sólo ahí el orden de alta es aproximado).
+Consecuencia en el contrato: ninguna.
+
+### A25 — `PATCH /yo`
+Estado: PROVISORIA (autónomo)
+Hueco: qué pasa con un cuerpo vacío y con campos que no son editables.
+Decisión: cuerpo `{}` → `200` con el usuario sin cambios. `nombre` se recorta, 1 a 100
+caracteres; `null` no se acepta en ningún campo. `email`, favoritos, `id` y `rol` son datos de
+más → `400 VALIDACION_FALLIDA`. Las claves `__proto__` y `constructor` se ignoran (no cambian
+nada). Sin dar nunca `500`.
+Consecuencia en el contrato: ninguna. Se actualizó el test del verificador de M0 que fijaba
+que `PATCH /yo` daba 404 «hasta M3» (A5): ya no aplica.

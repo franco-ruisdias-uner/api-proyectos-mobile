@@ -5,6 +5,19 @@ cambia la forma de ninguna respuesta: sólo se agregan cosas.
 
 ## Sin publicar
 
+### M3 — Cuenta y favoritos
+
+- **Favoritos:** `PUT /yo/lineas-favoritas/:lineaId` y `PUT /yo/paradas-favoritas/:paradaId`
+  agregan y devuelven el `Usuario` (200). `DELETE` sobre las mismas rutas quita (204, sin
+  cuerpo). Los dos son idempotentes. El orden de `lineasFavoritas` y `paradasFavoritas` es el
+  de alta: lo nuevo va al final.
+- **Perfil:** `PATCH /yo` con `{ nombre?, avisosActivos?, tema? }` (parcial). El email y los
+  favoritos no se cambian por acá: un dato de más da `400`.
+- **Errores:** agregar una línea o parada que no existe da `404` (`LINEA_NO_ENCONTRADA`,
+  `PARADA_NO_ENCONTRADA`). No hay códigos nuevos.
+- **Datos de demo:** `julian@mail.com` (`usr-320`) tiene `lin-05` y `par-101` como favoritas;
+  `nuevo@demo.ar` no tiene ninguna.
+
 ### M2 — Horarios
 
 - **Tabla:** `GET /horarios`, con los filtros `lineaId`, `paradaId`, `sentido` y `tipoDeDia`.
