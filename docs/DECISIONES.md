@@ -532,3 +532,34 @@ Decisión: `test/e2e/semillas-contrato.e2e-spec.ts` siembra los datos completos 
 sembrada (líneas, paradas, horarios línea por línea, feriados, avisos, reportes, sesión y usuario de cada cuenta,
 resumen), entrando por la API. Corre en los cuatro motores con la suite e2e normal.
 Consecuencia en el contrato: ninguna.
+
+### A49 — Notificaciones en dos puertos, y el último módulo las deja vacías
+Estado: PROVISORIA (autónomo)
+Hueco: el repo tenía un solo puerto `Notificador` con `expo-server-sdk` y el servicio de avisos mezclado con el de
+dispositivos. AGENTS §19.2 pide dos puertos (`AlmacenTokensPush`, `EnviadorPush`) y `Avisos` como único servicio del
+dominio.
+Decisión: refactor sin cambiar el contrato. `Avisos.avisar` filtra por `avisosActivos`, pide los tokens al almacén,
+manda y descarta los inválidos; los errores se loguean. El enviador pasa a `fetch` (sin `expo-server-sdk`, que se
+quitó de las dependencias) hacia `EXPO_PUSH_URL`. Los puertos son clases abstractas (sirven de token de inyección).
+En `main` las implementaciones son `AlmacenTokensPorHacer` y `EnviadorPorHacer` (`src/notificaciones-alumnos/`), que
+responden 501; la solución completa está en la rama `solucion-notificaciones`.
+Consecuencia en el contrato: ninguna (`NO_IMPLEMENTADO` es un código nuevo, 501, sólo en `main` mientras no se programe).
+
+### A50 — `POST /dispositivos/prueba` propaga el 501; el resto de los avisos no
+Estado: PROVISORIA (autónomo)
+Hueco: AGENTS §19.3 dice que `Avisos.avisar` sigue y loguea "Push pendiente de implementar", y que los tres endpoints
+responden 501.
+Decisión: `avisar` (segundo plano) captura el 501 y escribe `Push pendiente de implementar: <título> → <n> usuarios`
+(`n` = usuarios con avisos activos). `probar` espera el envío y deja pasar el 501. Si la cuenta tiene los avisos
+apagados, la prueba responde 200 con `enviadas: 0` sin tocar el almacén. Los demás errores (por ejemplo, Expo caído) se
+loguean y la prueba responde `enviadas: 0`.
+Consecuencia en el contrato: ninguna.
+
+### A51 — Tests de `/dispositivos` y consigna
+Estado: PROVISORIA (autónomo)
+Decisión: los tests de `/dispositivos` (los de `test/e2e/` y el bloque adversarial de `test/verificacion/m0-base`) se
+mudaron a `test/notificaciones/` (`*.notif-spec.ts`, `pnpm test:notificaciones`, fuera de `pnpm verificar`). Verifican
+el estado por el puerto (`tokensDe`) y no por la tabla, así que sirven con cualquier implementación del alumno. Los
+tests de dominio usan dobles en memoria de los dos puertos (`test/utilidades/push-memoria.ts`); los que registraban
+un token por HTTP lo hacen ahora con `ctx.registrarToken(…)`. Se toca `test/verificacion/` sólo para eso.
+Consecuencia en el contrato: ninguna.

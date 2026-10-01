@@ -22,6 +22,7 @@ export class DispositivosControlador {
   @ApiOperation({
     summary: 'Registrar el token de push del teléfono',
     description:
+      '**Lo completan ustedes** (docs/NOTIFICACIONES.md): hasta entonces responde 501. ' +
       'Con sesión. Idempotente: registrar el mismo token otra vez no duplica nada. Si el token ' +
       'era de otra cuenta (se cambió de usuario en el mismo teléfono), pasa a la actual.',
   })
@@ -29,7 +30,7 @@ export class DispositivosControlador {
     datos: { tokenExpo: 'ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]', plataforma: 'android' },
     meta: null,
   })
-  @ErroresPosibles('VALIDACION_FALLIDA', 'NO_AUTENTICADO')
+  @ErroresPosibles('VALIDACION_FALLIDA', 'NO_AUTENTICADO', 'NO_IMPLEMENTADO')
   async registrar(
     @UsuarioActual() usuario: UsuarioDeSesion,
     @Body() dto: RegistrarDispositivoDto,
@@ -43,11 +44,12 @@ export class DispositivosControlador {
   @ApiOperation({
     summary: 'Mandarme una push de prueba',
     description:
+      '**Lo completan ustedes** (docs/NOTIFICACIONES.md): hasta entonces responde 501. ' +
       'Con sesión. Manda una notificación a los teléfonos registrados de la cuenta (si tiene ' +
       'los avisos activos). `enviadas` dice a cuántos teléfonos se mandó.',
   })
   @Ejemplo(200, 'Prueba enviada', { datos: { enviadas: 1 }, meta: null })
-  @ErroresPosibles('NO_AUTENTICADO')
+  @ErroresPosibles('NO_AUTENTICADO', 'NO_IMPLEMENTADO')
   async probar(@UsuarioActual() usuario: UsuarioDeSesion): Promise<RespuestaUno<PruebaDePush>> {
     return respuestaUno({ enviadas: await this.avisos.probar(usuario.id) });
   }
@@ -56,10 +58,12 @@ export class DispositivosControlador {
   @HttpCode(204)
   @ApiOperation({
     summary: 'Dar de baja el token de push del teléfono',
-    description: 'Con sesión. 204 sin cuerpo, exista o no el token (idempotente).',
+    description:
+      '**Lo completan ustedes** (docs/NOTIFICACIONES.md): hasta entonces responde 501. ' +
+      'Con sesión. 204 sin cuerpo, exista o no el token (idempotente).',
   })
   @ApiParam({ name: 'tokenExpo', example: 'ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]' })
-  @ErroresPosibles('NO_AUTENTICADO')
+  @ErroresPosibles('NO_AUTENTICADO', 'NO_IMPLEMENTADO')
   async darDeBaja(
     @UsuarioActual() usuario: UsuarioDeSesion,
     @Param('tokenExpo') tokenExpo: string,

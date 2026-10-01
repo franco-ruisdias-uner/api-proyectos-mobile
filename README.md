@@ -273,6 +273,11 @@ hasta 30 MB. Los videos se pueden reproducir con `expo-video` directo desde la U
 
 ### Notificaciones push
 
+> **Esta parte la completan ustedes.** Guardar los tokens y mandar las push no vienen hechos:
+> `POST /dispositivos`, `POST /dispositivos/prueba` y `DELETE /dispositivos/:tokenExpo` responden
+> `501 NO_IMPLEMENTADO` hasta que los programen. Guía y pistas en
+> [`docs/NOTIFICACIONES.md`](docs/NOTIFICACIONES.md); para comprobar su trabajo, `pnpm test:notificaciones`.
+
 1. Pedí permiso y obtené el token con `expo-notifications`.
 2. Registralo: `POST /dispositivos` con `{ "tokenExpo": "ExponentPushToken[…]", "plataforma": "android" }`.
 3. Probalo: `POST /dispositivos/prueba` te manda una notificación a vos.

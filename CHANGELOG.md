@@ -5,6 +5,14 @@ cambia la forma de ninguna respuesta: sólo se agregan cosas.
 
 ## Sin publicar
 
+### M8 — Notificaciones para completar
+
+- **Los tres endpoints de `/dispositivos` los completan ustedes** (guardar el token de Expo y mandar la push):
+  hasta entonces responden `501` con el código nuevo `NO_IMPLEMENTADO`. La forma de las respuestas exitosas no cambia.
+- Guía en `docs/NOTIFICACIONES.md` y `pnpm test:notificaciones` para comprobar lo que programen.
+- Todo lo demás sigue igual: publicar un aviso no se rompe aunque las push no estén programadas.
+- Variable nueva (opcional): `EXPO_PUSH_URL`, la dirección de la API de push de Expo.
+
 ### M7 — Datos de demo completos y README
 
 - **`rep-3390` es ahora idéntico al del PRD:** `motivo: "no_paso"`, comentario "Hace 25 minutos que espero".
