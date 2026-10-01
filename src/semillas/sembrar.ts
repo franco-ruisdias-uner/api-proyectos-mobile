@@ -21,6 +21,7 @@ import { ConfirmacionDemoraEntidad } from '../modulos/reportes/confirmacion-demo
 import { ReporteDemoraEntidad } from '../modulos/reportes/reporte-demora.entidad.js';
 import { reportesDeDemo } from './datos/reportes.js';
 import { avisosDeDemo } from './datos/avisos.js';
+import { CLAVE_DE_LA_FOTO_DE_DEMO, fotoDeDemo } from './medios/foto-de-demo.js';
 import { CLAVE_DEL_VIDEO_DE_DEMO, videoDeDemo } from './medios/video-de-demo.js';
 import { FERIADOS } from './datos/feriados.js';
 import { generarHorarios } from './datos/horarios.js';
@@ -37,6 +38,7 @@ export async function sembrar(
   archivos?: ArchivosServicio,
 ): Promise<void> {
   await archivos?.guardarConClave(CLAVE_DEL_VIDEO_DE_DEMO, videoDeDemo(), 'video/mp4');
+  await archivos?.guardarConClave(CLAVE_DE_LA_FOTO_DE_DEMO, fotoDeDemo(), 'image/png');
   await dataSource.transaction(async (manejador) => {
     const usuarios = manejador.getRepository(UsuarioEntidad);
     for (const u of USUARIOS) {

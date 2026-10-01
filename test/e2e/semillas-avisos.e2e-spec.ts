@@ -42,11 +42,17 @@ describe('Espec. §8 — avisos de demo', () => {
     esperarContrato(r.body, 'Aviso');
     expect(r.body.datos).toMatchObject({
       id: 'avi-088',
-      titulo: expect.stringContaining('Corrientes'),
+      titulo: 'Desvío por obra en calle Corrientes',
+      detalle: expect.stringContaining('desvían por Santa Fe'),
       lineaIds: ['lin-02', 'lin-07', 'lin-09'],
       gravedad: 'desvio',
     });
     expect(r.body.datos.trazadoAlternativo.length).toBeGreaterThanOrEqual(2);
+    // El punto del ejemplo del PRD.
+    expect(r.body.datos.trazadoAlternativo).toContainEqual({
+      latitud: -31.7345,
+      longitud: -60.523,
+    });
     expect(r.body.datos.videoUrl).toMatch(/\/archivos\/videos\/.+\.mp4$/);
   });
 

@@ -19,7 +19,7 @@ describe('Espec. §8 — reportes de demora de demo', () => {
   it('los recientes de par-101 cumplen el contrato, el más nuevo primero', async () => {
     const r = await ctx.http.get('/reportes-demora').query({ paradaId: 'par-101' }).expect(200);
     esperarContrato(r.body, 'ReporteDeDemora');
-    expect(ids(r.body)).toEqual(['rep-3392', 'rep-3390', 'rep-3391']);
+    expect(ids(r.body)).toEqual(['rep-3394', 'rep-3392', 'rep-3390', 'rep-3391']);
   });
 
   it('rep-3390 es de Julián (usr-320), en la línea 5, con confirmaciones', async () => {
@@ -28,9 +28,21 @@ describe('Espec. §8 — reportes de demora de demo', () => {
       usuarioId: 'usr-320',
       lineaId: 'lin-05',
       paradaId: 'par-101',
+      motivo: 'no_paso',
+      comentario: 'Hace 25 minutos que espero',
+      fotoUri: null,
       confirmaciones: 2,
       sincronizado: true,
     });
+  });
+
+  it('rep-3394 trae foto: la URL es de la API y se descarga', async () => {
+    const r = await ctx.http.get('/reportes-demora').query({ paradaId: 'par-101' }).expect(200);
+    const reporte = r.body.datos.find((x: { id: string }) => x.id === 'rep-3394');
+    expect(reporte.fotoUri).toMatch(/^http:\/\/.+\/archivos\/imagenes\/.+\.png$/);
+    const ruta = new URL(reporte.fotoUri).pathname;
+    const foto = await ctx.http.get(ruta).expect(200);
+    expect(foto.headers['content-type']).toBe('image/png');
   });
 
   it('hay uno viejo que no se muestra ni se puede confirmar', async () => {
