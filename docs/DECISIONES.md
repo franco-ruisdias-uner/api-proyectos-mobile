@@ -220,3 +220,12 @@ decodificarlos) responden con el código de la entidad de la ruta (`QR_NO_RECONO
 Además, `latitud` + `longitud` sin `radioMetros` es válido: no filtra, y sirve para
 `orden=distancia`.
 Consecuencia en el contrato: ninguna nueva.
+
+### A17 — Texto de búsqueda sin caracteres de control; línea sin número va al final
+Estado: PROVISORIA (autónomo)
+Decisión: `normalizarParaBusqueda` reemplaza los caracteres de control (incluido el byte NUL de
+`?q=%00`, que PostgreSQL rechaza con un 500) por espacios. `numeroOrden` de una línea cuyo
+`numero` no empieza con dígito vale 2147483647 (cabe en `int` en los cuatro motores); antes
+valía `MAX_SAFE_INTEGER` y no entraba en PostgreSQL, MySQL ni MariaDB. Alternativa descartada:
+prohibir números de línea alfabéticos.
+Consecuencia en el contrato: ninguna.

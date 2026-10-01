@@ -7,6 +7,7 @@ describe('AGENTS §5.5 — búsqueda sin tildes ni mayúsculas', () => {
     ['Peñaloza', 'penaloza'],
     ['Güemes', 'guemes'],
     ['Almafuerte\ty\nNewbery', 'almafuerte y newbery'],
+    ['a\u0000b', 'a b'],
     ['', ''],
   ])('%j → %j', (entrada, salida) => {
     expect(normalizarParaBusqueda(entrada)).toBe(salida);

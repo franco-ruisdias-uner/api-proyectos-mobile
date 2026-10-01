@@ -6,8 +6,8 @@ describe('Espec. §4 M1 — las líneas se ordenan por número, no por texto', (
     ['14', 14],
     ['05', 5],
     ['8A', 8],
-    ['A', Number.MAX_SAFE_INTEGER],
-    ['', Number.MAX_SAFE_INTEGER],
+    ['A', 2147483647],
+    ['', 2147483647],
   ])('ordenDeNumero(%j) = %j', (numero, esperado) => {
     expect(ordenDeNumero(numero)).toBe(esperado);
   });

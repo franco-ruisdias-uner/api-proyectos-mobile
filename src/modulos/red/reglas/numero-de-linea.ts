@@ -1,7 +1,10 @@
+/** Cabe en una columna `int` de los cuatro motores (AGENTS §5.3). */
+export const ORDEN_SIN_NUMERO = 2147483647;
+
 /** El número de la línea como entero ("8A" → 8); sin dígitos al principio, va al final. */
 export function ordenDeNumero(numero: string): number {
   const digitos = /^\d+/.exec(numero.trim());
-  return digitos ? Number(digitos[0]) : Number.MAX_SAFE_INTEGER;
+  return digitos ? Math.min(Number(digitos[0]), ORDEN_SIN_NUMERO) : ORDEN_SIN_NUMERO;
 }
 
 interface ConNumero {

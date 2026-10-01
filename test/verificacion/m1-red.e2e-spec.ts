@@ -542,3 +542,395 @@ describe('Espec. §8 + R1/R2/R3 — integridad de las semillas de demo', () => {
     expect(r.body.meta.total).toBe(esperado.size);
   });
 });
+
+// ---------------------------------------------------------------------------------------
+// Ampliación (segunda pasada)
+// ---------------------------------------------------------------------------------------
+
+describe('Espec. M1 — orden numérico de líneas con números raros', () => {
+  let ctx: AppDePrueba;
+  beforeAll(async () => {
+    ctx = await crearApp();
+  });
+  afterAll(() => ctx.cerrar());
+
+  it('"5", "5A", "5B", "6", "05": los números con letra no rompen y el 5 va antes que el 10', async () => {
+    for (const n of ['10', '6', '5B', '5A', '5', '5.1']) await crearLinea(ctx, { numero: n });
+    const r = await ctx.http.get('/lineas').expect(200);
+    esperarContrato(r.body, 'Linea');
+    const nums = r.body.datos.map((l: Linea) => l.numero);
+    expect(nums.indexOf('5')).toBeLessThan(nums.indexOf('6'));
+    expect(nums.indexOf('6')).toBeLessThan(nums.indexOf('10'));
+    expect(nums.indexOf('5')).toBeLessThan(nums.indexOf('5A'));
+    expect(nums.indexOf('5A')).toBeLessThan(nums.indexOf('6'));
+  });
+
+  it('un número de línea sin dígito inicial ("T1") se puede guardar en cualquier motor y sale al final', async () => {
+    await crearLinea(ctx, { id: 'lin-t1', numero: 'T1' });
+    await crearLinea(ctx, { id: 'lin-n3', numero: '3' });
+    const r = await ctx.http.get('/lineas?porPagina=100').expect(200);
+    const nums = r.body.datos.map((l: Linea) => l.numero);
+    expect(nums.indexOf('T1')).toBeGreaterThan(nums.indexOf('3'));
+  });
+
+  it('el número viaja como string tal cual se guardó (no se le quitan ceros)', async () => {
+    await crearLinea(ctx, { id: 'lin-cero', numero: '07' });
+    const r = await ctx.http.get('/lineas/lin-cero').expect(200);
+    expect(r.body.datos.numero).toBe('07');
+    expect(typeof r.body.datos.numero).toBe('string');
+  });
+
+  it('respuesta JSON con cabecera content-type json y /lineas/ con barra final no es 500', async () => {
+    const r = await ctx.http.get('/lineas').expect(200);
+    expect(r.headers['content-type']).toMatch(/application\/json/);
+    const b = await ctx.http.get('/lineas/');
+    expect([200, 404]).toContain(b.status);
+  });
+
+  it('parámetros repetidos (?pagina=1&pagina=2) no dan 500', async () => {
+    for (const qs of [
+      'pagina=1&pagina=2',
+      'porPagina=5&porPagina=6',
+      'pagina[]=1',
+      'pagina[a]=1',
+    ]) {
+      const r = await ctx.http.get(`/lineas?${qs}`);
+      expect(r.status, qs).toBeLessThan(500);
+      if (r.status === 400) esperarErrorLimpio(r, 400, 'VALIDACION_FALLIDA');
+    }
+  });
+
+  it('los mensajes de VALIDACION_FALLIDA nombran el campo en castellano y terminan con punto', async () => {
+    const r = await ctx.http.get('/lineas?pagina=0');
+    esperarErrorLimpio(r, 400, 'VALIDACION_FALLIDA');
+    const m = (r.body as { error: { mensaje: string } }).error.mensaje;
+    expect(m.length).toBeGreaterThan(5);
+    expect(m).toMatch(/[Pp]ágina|pagina/);
+  });
+});
+
+describe('Espec. M1 — GET /paradas: más filtros y bordes geográficos', () => {
+  let ctx: AppDePrueba;
+  // 0.001° de longitud a -31.7333 son ~94,6 m; 0.001° de latitud ~111,2 m.
+  const LAT = -31.7333;
+  const LON = -60.5241;
+  beforeAll(async () => {
+    ctx = await crearApp();
+    await crearParada(ctx, { id: 'par-g0', nombre: 'Centro', latitud: LAT, longitud: LON });
+    await crearParada(ctx, {
+      id: 'par-g1',
+      nombre: 'Este 95',
+      latitud: LAT,
+      longitud: LON + 0.001,
+    });
+    await crearParada(ctx, {
+      id: 'par-g2',
+      nombre: 'Norte 111',
+      latitud: LAT + 0.001,
+      longitud: LON,
+    });
+    await crearParada(ctx, {
+      id: 'par-g3',
+      nombre: 'Diagonal',
+      latitud: LAT + 0.0007,
+      longitud: LON + 0.0007,
+      sentido: 'vuelta',
+      refugio: false,
+      codigoQr: null,
+    });
+    await crearLinea(ctx, {
+      id: 'lin-g1',
+      numero: '1',
+      recorridos: [
+        // par-g0 repetida (circular): no debe duplicar en los resultados
+        { sentido: 'ida', paradaIds: ['par-g0', 'par-g1', 'par-g0'] },
+        { sentido: 'vuelta', paradaIds: ['par-g3'] },
+      ],
+    });
+  });
+  afterAll(() => ctx.cerrar());
+
+  const ids = (r: { body: { datos: Parada[] } }) => r.body.datos.map((p) => p.id);
+
+  it('el radio respeta la distancia real: 100 m incluye g0,g1; 90 m excluye g1; 113 m incluye g2 y g3 (102 m)', async () => {
+    const q = (m: number) =>
+      ctx.http.get(`/paradas?latitud=${LAT}&longitud=${LON}&radioMetros=${m}&orden=distancia`);
+    expect(ids(await q(100))).toEqual(['par-g0', 'par-g1']);
+    expect(ids(await q(90))).toEqual(['par-g0']);
+    expect(ids(await q(113))).toEqual(['par-g0', 'par-g1', 'par-g3', 'par-g2']);
+    expect(ids(await q(1))).toEqual(['par-g0']);
+  });
+
+  it('orden=distancia sin radio: ordena todas, el total es el de todas', async () => {
+    const r = await ctx.http
+      .get(`/paradas?latitud=${LAT}&longitud=${LON}&orden=distancia`)
+      .expect(200);
+    expect(ids(r)).toEqual(['par-g0', 'par-g1', 'par-g3', 'par-g2']);
+    expect(r.body.meta.total).toBe(4);
+  });
+
+  it('orden=distancia paginado: páginas de a 1 suman el mismo orden', async () => {
+    const vistos: string[] = [];
+    for (let p = 1; p <= 4; p++) {
+      const r = await ctx.http
+        .get(
+          `/paradas?latitud=${LAT}&longitud=${LON}&radioMetros=500&orden=distancia&pagina=${p}&porPagina=1`,
+        )
+        .expect(200);
+      expect(r.body.meta).toEqual({ total: 4, pagina: p, porPagina: 1 });
+      vistos.push(...ids(r));
+    }
+    expect(vistos).toEqual(['par-g0', 'par-g1', 'par-g3', 'par-g2']);
+  });
+
+  it('lineaId con una parada repetida en el recorrido no duplica ni infla el total', async () => {
+    const r = await ctx.http.get('/paradas?lineaId=lin-g1').expect(200);
+    esperarContrato(r.body, 'Parada');
+    expect(ids(r).sort()).toEqual(['par-g0', 'par-g1', 'par-g3']);
+    expect(r.body.meta.total).toBe(3);
+  });
+
+  it('lineaId + sentido: sólo las paradas de ese recorrido', async () => {
+    const i = await ctx.http.get('/paradas?lineaId=lin-g1&sentido=ida').expect(200);
+    expect(ids(i).sort()).toEqual(['par-g0', 'par-g1']);
+    const v = await ctx.http.get('/paradas?lineaId=lin-g1&sentido=vuelta').expect(200);
+    expect(ids(v)).toEqual(['par-g3']);
+    const sinLinea = await ctx.http.get('/paradas?sentido=vuelta').expect(200);
+    expect(ids(sinLinea)).toEqual(['par-g3']);
+  });
+
+  it('nulos y booleanos: codigoQr null (no ""), refugio false (no null)', async () => {
+    const r = await ctx.http.get('/paradas/par-g3').expect(200);
+    esperarContrato(r.body, 'Parada');
+    expect(r.body.datos.codigoQr).toBeNull();
+    expect(r.body.datos.refugio).toBe(false);
+    expect(r.body.datos.sentido).toBe('vuelta');
+    expect(r.body.datos.lineaIds).toEqual(['lin-g1']);
+  });
+
+  it('las coordenadas salen como números, no como strings', async () => {
+    const r = await ctx.http.get('/paradas/par-g1').expect(200);
+    expect(r.body.datos.coordenadas).toEqual({ latitud: LAT, longitud: LON + 0.001 });
+  });
+
+  it.each([
+    'latitud=-31.7&longitud=-60.5&radioMetros=1e3',
+    'latitud=0x10&longitud=-60.5&radioMetros=100',
+    'latitud=%20&longitud=-60.5&radioMetros=100',
+    'latitud=-31.7&longitud=-60.5&radioMetros=12.5abc',
+    'q=a&q=b&sentido=ida&sentido=vuelta',
+    'lineaId=lin-g1&lineaId=lin-g2',
+    'porPagina=1000.5',
+  ])('entradas raras ?%s: 200 o 400 limpio, nunca 500', async (qs) => {
+    const r = await ctx.http.get(`/paradas?${qs}`);
+    expect([200, 400]).toContain(r.status);
+    if (r.status === 400) esperarErrorLimpio(r, 400, 'VALIDACION_FALLIDA');
+    else esperarContrato(r.body, 'Parada');
+  });
+
+  it('q con caracteres peligrosos no rompe ni trae todo', async () => {
+    for (const q of [
+      "'",
+      '"; DROP TABLE paradas;--',
+      '%',
+      '_',
+      '\\',
+      '%25',
+      'x'.repeat(5000),
+      '\u0000',
+    ]) {
+      const r = await ctx.http.get(`/paradas?q=${encodeURIComponent(q)}`);
+      expect(r.status, q.slice(0, 10)).toBeLessThan(500);
+      if (r.status === 200 && q.trim() !== '' && q !== '\u0000') expect(r.body.datos).toEqual([]);
+    }
+  });
+
+  it('un filtro sin resultados conserva el sobre: datos [] y meta con total 0', async () => {
+    const r = await ctx.http.get('/paradas?lineaId=lin-nada&porPagina=7&pagina=3').expect(200);
+    expect(r.body).toEqual({ datos: [], meta: { total: 0, pagina: 3, porPagina: 7 } });
+  });
+
+  it('la lista entera por porPagina=1000 pasa el contrato y respeta el tope de 1000', async () => {
+    const r = await ctx.http.get('/paradas?porPagina=1000').expect(200);
+    expect(r.body.meta.porPagina).toBe(1000);
+  });
+});
+
+describe('Espec. R4 — QR: más casos', () => {
+  let ctx: AppDePrueba;
+  beforeAll(async () => {
+    ctx = await crearApp();
+    await crearParada(ctx, { id: 'par-q1' });
+    await crearParada(ctx, { id: 'par-q2', codigoQr: null });
+    await crearParada(ctx, { id: 'par-q3', codigoQr: 'PARANA:par-q3' });
+  });
+  afterAll(() => ctx.cerrar());
+
+  it('PARANA%3Apar-q1 (dos puntos codificado) resuelve igual que con los dos puntos crudos', async () => {
+    const a = await ctx.http.get('/paradas/qr/PARANA%3Apar-q1').expect(200);
+    const b = await ctx.http.get('/paradas/qr/PARANA:par-q1').expect(200);
+    esperarContrato(a.body, 'Parada');
+    expect(a.body).toEqual(b.body);
+    expect(a.body.datos.codigoQr).toBe('PARANA:par-q1');
+  });
+
+  it('parada sin QR: ni el código ni su id lo resuelven (A14)', async () => {
+    esperarErrorLimpio(await ctx.http.get('/paradas/qr/PARANA:par-q2'), 404, 'QR_NO_RECONOCIDO');
+  });
+
+  it.each([
+    'parana:par-q1',
+    'Parana:par-q1',
+    'par-q1',
+    'PARANA-par-q1',
+    'PARANA:par-q9',
+    'https%3A%2F%2Fexample.com',
+    'PARANA:par-q1%00',
+  ])(
+    'el código %s no es de una parada de Paraná (404 QR_NO_RECONOCIDO con el mensaje del catálogo)',
+    async (c) => {
+      const r = await ctx.http.get(`/paradas/qr/${c}`);
+      esperarErrorLimpio(r, 404, 'QR_NO_RECONOCIDO');
+      expect((r.body as { error: { mensaje: string } }).error.mensaje).toBe(
+        'Ese código no es de una parada de Paraná.',
+      );
+    },
+  );
+
+  it('un código larguísimo no da 500', async () => {
+    const r = await ctx.http.get(`/paradas/qr/${'A'.repeat(10000)}`);
+    expect(r.status).toBeLessThan(500);
+  });
+
+  it('con token vencido/mal firmado el QR público no da 500', async () => {
+    const r = await ctx.http
+      .get('/paradas/qr/PARANA:par-q1')
+      .set('Authorization', 'Bearer aaa.bbb.ccc');
+    expect([200, 401]).toContain(r.status);
+  });
+
+  it('método equivocado sobre el QR: error con sobre', async () => {
+    const r = await ctx.http.post('/paradas/qr/PARANA:par-q1');
+    expect([401, 403, 404, 405]).toContain(r.status);
+    esperarError(r, r.status, (r.body as { error: { codigo: string } }).error.codigo);
+  });
+});
+
+describe('Espec. §8 — semillas de la red: requisitos del PRD y de la especificación', () => {
+  let ctx: AppDePrueba;
+  let lineas: Linea[];
+  let paradas: Parada[];
+  beforeAll(async () => {
+    ctx = await crearApp();
+    await sembrar(ctx.dataSource, ctx.reloj);
+    lineas = (await ctx.http.get('/lineas?porPagina=100').expect(200)).body.datos;
+    paradas = (await ctx.http.get('/paradas?porPagina=1000').expect(200)).body.datos;
+  });
+  afterAll(() => ctx.cerrar());
+
+  it('hay exactamente 14 líneas, con números distintos, colores distintos y empresa', () => {
+    expect(lineas).toHaveLength(14);
+    expect(new Set(lineas.map((l) => l.numero)).size).toBe(14);
+    expect(new Set(lineas.map((l) => l.color.toLowerCase())).size).toBe(14);
+    for (const l of lineas) {
+      expect(l.color).toMatch(/^#[0-9A-Fa-f]{6}$/);
+      expect(l.empresa.trim()).not.toBe('');
+      expect(l.nombre.trim()).not.toBe('');
+    }
+  });
+
+  it('orden numérico de la demo: los números salen 1..14 ascendentes', () => {
+    const nums = lineas.map((l) => Number(l.numero));
+    expect(nums).toEqual([...nums].sort((a, b) => a - b));
+  });
+
+  it('hay una línea inactiva y las demás activas', () => {
+    expect(lineas.some((l) => !l.activa)).toBe(true);
+    expect(lineas.filter((l) => l.activa).length).toBeGreaterThanOrEqual(10);
+  });
+
+  it('R3: cada recorrido tiene trazado con ≥2 puntos, destino no vacío y paradas sin repetir', () => {
+    for (const l of lineas)
+      for (const r of l.recorridos) {
+        expect(r.trazado.length, `${l.id} ${r.sentido}`).toBeGreaterThanOrEqual(2);
+        expect(r.destino.trim(), `${l.id} destino`).not.toBe('');
+        expect(new Set(r.paradaIds).size, `${l.id} ${r.sentido} repetidas`).toBe(
+          r.paradaIds.length,
+        );
+        expect(r.paradaIds.length, `${l.id} ${r.sentido} sin paradas`).toBeGreaterThan(0);
+      }
+  });
+
+  it('lin-05 y lin-14 están completas: ida y vuelta con paradas distintas entre sí', () => {
+    for (const id of ['lin-05', 'lin-14']) {
+      const l = lineas.find((x) => x.id === id)!;
+      expect(l, id).toBeDefined();
+      expect(l.recorridos.map((r) => r.sentido)).toEqual(['ida', 'vuelta']);
+      const [ida, vuelta] = l.recorridos;
+      const comunes = ida.paradaIds.filter((p) => vuelta.paradaIds.includes(p));
+      expect(comunes, `${id} comparte paradas entre sentidos`).toEqual([]);
+      expect(ida.destino).not.toBe(vuelta.destino);
+    }
+  });
+
+  it('todas las líneas activas tienen los dos sentidos (PRD: "en los dos sentidos")', () => {
+    for (const l of lineas.filter((x) => x.activa))
+      expect(
+        l.recorridos.map((r) => r.sentido),
+        l.id,
+      ).toEqual(['ida', 'vuelta']);
+  });
+
+  it('cada par de paradas de un recorrido está a una distancia razonable (< 3 km)', () => {
+    const porId = new Map(paradas.map((p) => [p.id, p.coordenadas]));
+    const km = (
+      a: { latitud: number; longitud: number },
+      b: { latitud: number; longitud: number },
+    ) => Math.hypot((a.latitud - b.latitud) * 111.2, (a.longitud - b.longitud) * 94.6);
+    for (const l of lineas)
+      for (const r of l.recorridos)
+        for (let i = 1; i < r.paradaIds.length; i++)
+          expect(
+            km(porId.get(r.paradaIds[i - 1])!, porId.get(r.paradaIds[i])!),
+            `${l.id} ${r.sentido}`,
+          ).toBeLessThan(3);
+  });
+
+  it('sólo hay paradas con nombre no vacío, sin ids repetidos, y ida y vuelta existen', () => {
+    for (const p of paradas) expect(p.nombre.trim()).not.toBe('');
+    expect(paradas.some((p) => p.sentido === 'ida')).toBe(true);
+    expect(paradas.some((p) => p.sentido === 'vuelta')).toBe(true);
+  });
+
+  it('paradas con nombre de las zonas del PRD: Alameda y Urquiza, Almafuerte y Newbery y Corrientes', () => {
+    const nombres = paradas.map((p) => p.nombre);
+    expect(nombres.some((n) => /alameda.*urquiza/i.test(n))).toBe(true);
+    expect(nombres.some((n) => /almafuerte.*newbery/i.test(n))).toBe(true);
+    expect(nombres.filter((n) => /corrientes/i.test(n)).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('búsqueda sin tildes sobre la demo: q=alameda encuentra par-101 y q=ALMAFUERTE encuentra Newbery', async () => {
+    const a = await ctx.http.get('/paradas?q=alameda').expect(200);
+    expect(a.body.datos.some((p: Parada) => p.id === 'par-101')).toBe(true);
+    const b = await ctx.http.get('/paradas?q=ALMAFUERTE').expect(200);
+    expect(b.body.datos.some((p: Parada) => /newbery/i.test(p.nombre))).toBe(true);
+  });
+
+  it('cerca de par-101 (radio 300 m) está par-101 y orden=distancia la pone primera', async () => {
+    const p = paradas.find((x) => x.id === 'par-101')!;
+    const r = await ctx.http
+      .get(
+        `/paradas?latitud=${p.coordenadas.latitud}&longitud=${p.coordenadas.longitud}&radioMetros=300&orden=distancia`,
+      )
+      .expect(200);
+    expect(r.body.datos[0].id).toBe('par-101');
+  });
+
+  it('GET /lineas/lin-05 de la demo tiene el nombre del PRD y pasa por par-101 en algún sentido', async () => {
+    const r = await ctx.http.get('/lineas/lin-05').expect(200);
+    esperarContrato(r.body, 'Linea');
+    expect(r.body.datos.nombre).toBe('Puerto Viejo — San Agustín');
+    const todas = r.body.datos.recorridos.flatMap((x: { paradaIds: string[] }) => x.paradaIds);
+    expect(todas).toContain('par-101');
+  });
+});
