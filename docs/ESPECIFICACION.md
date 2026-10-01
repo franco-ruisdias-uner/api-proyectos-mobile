@@ -59,6 +59,7 @@ correlativo por año, asignado por el servidor al recibir el reporte (R4).
 | **M5 — Avisos** | Push por cambio de estado y por adhesión; interruptor de avisos. |
 | **M6 — Nube** | Archivos en cualquier servicio compatible con S3 (AGENTS §17), presets de bases administradas y publicación en Render con Supabase (AGENTS §18). |
 | **M7 — Semillas completas y README** | Datos de demo, casos feos, medios, README. |
+| **M8 — Notificaciones para completar** | Vaciar el guardado de tokens de Expo y el envío de push para que los alumnos los programen; la solución queda en la rama `solucion-notificaciones` (AGENTS §19). |
 
 ---
 
