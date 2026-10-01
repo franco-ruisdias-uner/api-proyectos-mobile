@@ -4,13 +4,13 @@ import { DataSource, type FindOptionsWhere, In, Repository } from 'typeorm';
 import type { Meta } from '../../../contrato/api.js';
 import type { Aviso } from '../../../contrato/tipos.js';
 import { ArchivosServicio } from '../../comun/archivos/archivos.servicio.js';
+import { Avisos } from '../../comun/notificaciones/avisos.js';
 import { ExclusionPorClave } from '../../comun/db/exclusion.js';
 import { ErrorDeApi } from '../../comun/errores/error-de-api.js';
 import { interpretarInstante, sinMilisegundos } from '../../comun/fechas/fechas.js';
 import { esIdDe, nuevoId } from '../../comun/ids/ids.js';
 import { Reloj } from '../../comun/reloj/reloj.js';
 import { paginar } from '../../comun/respuesta/respuesta.js';
-import { DispositivosServicio } from '../dispositivos/dispositivos.servicio.js';
 import { LineaEntidad } from '../red/linea.entidad.js';
 import { LineaFavoritaEntidad } from '../usuarios/favorita.entidad.js';
 import { AvisoLineaEntidad } from './aviso-linea.entidad.js';
@@ -46,7 +46,7 @@ export class AvisosServicio {
     private readonly favoritas: Repository<LineaFavoritaEntidad>,
     private readonly dataSource: DataSource,
     private readonly archivos: ArchivosServicio,
-    private readonly dispositivos: DispositivosServicio,
+    private readonly push: Avisos,
     private readonly reloj: Reloj,
   ) {}
 
@@ -203,7 +203,7 @@ export class AvisosServicio {
   private async notificar(aviso: AvisoEntidad, lineaIds: string[]): Promise<void> {
     try {
       const favoritas = await this.favoritas.findBy({ lineaId: In(lineaIds) });
-      this.dispositivos.notificar(usuariosAvisados(favoritas, lineaIds), {
+      this.push.avisar(usuariosAvisados(favoritas, lineaIds), {
         titulo: aviso.titulo,
         cuerpo: resumir(aviso.detalle),
         datos: { tipo: 'aviso', avisoId: aviso.id },

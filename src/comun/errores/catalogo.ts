@@ -19,6 +19,10 @@ export const CATALOGO = {
   },
   RANGO_NO_VALIDO: { estado: 416, mensaje: 'No se puede enviar esa parte del archivo.' },
   ERROR_INTERNO: { estado: 500, mensaje: 'Algo salió mal. Probá de nuevo en un rato.' },
+  NO_IMPLEMENTADO: {
+    estado: 501,
+    mensaje: 'Esta parte la programan ustedes. Mirá docs/NOTIFICACIONES.md.',
+  },
   ALMACEN_NO_DISPONIBLE: {
     estado: 503,
     mensaje: 'No pudimos acceder a los archivos. Probá de nuevo en un rato.',

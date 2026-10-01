@@ -791,8 +791,7 @@ describe('R11/PATCH/finalizar — reglas finas', () => {
 });
 
 describe('Espec. §7 / D9 — push, casos adversariales', () => {
-  const tel = async (u: UsuarioDePrueba, tokenExpo: string) =>
-    ctx.http.post('/dispositivos').set(u.auth).send({ tokenExpo, plataforma: 'ios' }).expect(201);
+  const tel = async (u: UsuarioDePrueba, tokenExpo: string) => ctx.registrarToken(u.id, tokenExpo);
   const fav = async (u: UsuarioDePrueba, lineaId: string, orden = 0) =>
     ctx.dataSource.getRepository(LineaFavoritaEntidad).insert({ usuarioId: u.id, lineaId, orden });
 
@@ -1019,11 +1018,11 @@ describe('§8 — semillas de avisos (con la siembra real)', () => {
       .post('/auth/ingreso')
       .send({ email: 'julian@mail.com', contrasena: CONTRASENA_DE_DEMO })
       .expect(200);
-    await ctxS.http
-      .post('/dispositivos')
-      .set('Authorization', `Bearer ${ju.body.datos.token}`)
-      .send({ tokenExpo: 'ExponentPushToken[julian-demo]', plataforma: 'android' })
-      .expect(201);
+    await ctxS.registrarToken(
+      ju.body.datos.usuario.id,
+      'ExponentPushToken[julian-demo]',
+      'android',
+    );
     const dir = await ctxS.http
       .post('/auth/ingreso')
       .send({ email: 'transporte@parana.demo.ar', contrasena: CONTRASENA_DE_DEMO })

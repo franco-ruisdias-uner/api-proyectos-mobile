@@ -1,20 +1,14 @@
 import { Global, Module } from '@nestjs/common';
-import { CONFIGURACION, type Configuracion } from '../../config/configuracion.js';
-import { Notificador } from './notificador.js';
-import { NotificadorExpo } from './notificador-expo.js';
-import { NotificadorRegistro } from './notificador-registro.js';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { NotificacionesAlumnosModulo } from '../../notificaciones-alumnos/notificaciones-alumnos.modulo.js';
+import { UsuarioEntidad } from '../../modulos/usuarios/usuario.entidad.js';
+import { Avisos } from './avisos.js';
 
-/** NOTIFICACIONES=expo|registro elige la implementación del puerto (AGENTS §9). */
+/** `Avisos` para el dominio; los dos puertos los pone `NotificacionesAlumnosModulo` (AGENTS §19). */
 @Global()
 @Module({
-  providers: [
-    {
-      provide: Notificador,
-      inject: [CONFIGURACION],
-      useFactory: (config: Configuracion) =>
-        config.notificaciones === 'expo' ? new NotificadorExpo() : new NotificadorRegistro(),
-    },
-  ],
-  exports: [Notificador],
+  imports: [TypeOrmModule.forFeature([UsuarioEntidad]), NotificacionesAlumnosModulo],
+  providers: [Avisos],
+  exports: [Avisos, NotificacionesAlumnosModulo],
 })
 export class NotificacionesModulo {}

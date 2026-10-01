@@ -1,8 +1,6 @@
 import { Entity, Index, PrimaryColumn } from 'typeorm';
-import { ColumnaEnum, ColumnaInstante, ColumnaReferencia } from '../../comun/db/columnas.js';
-
-export const PLATAFORMAS = ['android', 'ios'] as const;
-export type Plataforma = (typeof PLATAFORMAS)[number];
+import { ColumnaEnum, ColumnaInstante, ColumnaReferencia } from '../comun/db/columnas.js';
+import type { Plataforma } from '../comun/notificaciones/puertos.js';
 
 /** Token de Expo de un teléfono. Uno por token: si cambia de dueño, pasa al último. */
 @Entity('dispositivos')

@@ -49,6 +49,8 @@ export interface Configuracion {
     redirigir: boolean;
   };
   notificaciones: ModoNotificaciones;
+  /** Dirección de la API de push de Expo (AGENTS §19.2); los tests apuntan a un servidor falso. */
+  expoPushUrl: string;
   relojFijo: Date | null;
   simulacionHabilitada: boolean;
   sembrarSiVacia: boolean;
@@ -173,6 +175,7 @@ export function leerConfiguracion(entrada: Record<string, unknown>): Configuraci
       redirigir,
     },
     notificaciones: entre('NOTIFICACIONES', ['expo', 'registro'] as const, 'expo'),
+    expoPushUrl: env.EXPO_PUSH_URL ?? 'https://exp.host/--/api/v2/push/send',
     relojFijo,
     simulacionHabilitada: booleano('SIMULACION_HABILITADA', entorno === 'desarrollo'),
     sembrarSiVacia: booleano('SEMBRAR_SI_VACIA', false),

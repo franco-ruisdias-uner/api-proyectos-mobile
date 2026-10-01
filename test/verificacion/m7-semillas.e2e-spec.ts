@@ -474,12 +474,8 @@ describe('PRD — Usuario: usr-320 y las cuentas de demo', () => {
 
   it('el pasajero de demo recibe la push de un aviso nuevo en su línea favorita (lin-05)', async () => {
     const dir = await ingresar(ctx, 'transporte@parana.demo.ar');
-    const jul = await ingresar(ctx, 'julian@mail.com');
-    await ctx.http
-      .post('/dispositivos')
-      .set(jul)
-      .send({ tokenExpo: 'ExponentPushToken[julian-demo]', plataforma: 'android' })
-      .expect(201);
+    await ingresar(ctx, 'julian@mail.com');
+    await ctx.registrarToken('usr-320', 'ExponentPushToken[julian-demo]', 'android');
     ctx.notificador.vaciar();
     await ctx.http
       .post('/avisos')

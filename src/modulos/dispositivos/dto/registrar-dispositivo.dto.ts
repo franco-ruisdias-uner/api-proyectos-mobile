@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsDefined, IsIn, IsString, Matches } from 'class-validator';
-import { PLATAFORMAS, type Plataforma } from '../dispositivo.entidad.js';
+import { PLATAFORMAS, type Plataforma } from '../../../comun/notificaciones/puertos.js';
 
 export const FORMATO_TOKEN_EXPO = /^(Exponent|Expo)PushToken\[[^\]\s]{1,180}\]$/;
 

@@ -4,14 +4,18 @@ import type { Dispositivo, PruebaDePush, RespuestaUno } from '../../../contrato/
 import { UsuarioActual, type UsuarioDeSesion } from '../../comun/auth/decoradores.js';
 import { Ejemplo, ErroresPosibles } from '../../comun/documentacion/swagger.js';
 import { respuestaUno } from '../../comun/respuesta/respuesta.js';
-import { DispositivosServicio } from './dispositivos.servicio.js';
+import { Avisos } from '../../comun/notificaciones/avisos.js';
+import { AlmacenTokensPush } from '../../comun/notificaciones/puertos.js';
 import { RegistrarDispositivoDto } from './dto/registrar-dispositivo.dto.js';
 
 @ApiTags('Notificaciones')
 @ApiBearerAuth()
 @Controller('dispositivos')
 export class DispositivosControlador {
-  constructor(private readonly servicio: DispositivosServicio) {}
+  constructor(
+    private readonly almacen: AlmacenTokensPush,
+    private readonly avisos: Avisos,
+  ) {}
 
   @Post()
   @HttpCode(201)
@@ -30,7 +34,8 @@ export class DispositivosControlador {
     @UsuarioActual() usuario: UsuarioDeSesion,
     @Body() dto: RegistrarDispositivoDto,
   ): Promise<RespuestaUno<Dispositivo>> {
-    return respuestaUno(await this.servicio.registrar(usuario.id, dto));
+    await this.almacen.guardar(usuario.id, dto.tokenExpo, dto.plataforma);
+    return respuestaUno({ tokenExpo: dto.tokenExpo, plataforma: dto.plataforma });
   }
 
   @Post('prueba')
@@ -44,7 +49,7 @@ export class DispositivosControlador {
   @Ejemplo(200, 'Prueba enviada', { datos: { enviadas: 1 }, meta: null })
   @ErroresPosibles('NO_AUTENTICADO')
   async probar(@UsuarioActual() usuario: UsuarioDeSesion): Promise<RespuestaUno<PruebaDePush>> {
-    return respuestaUno(await this.servicio.probar(usuario.id));
+    return respuestaUno({ enviadas: await this.avisos.probar(usuario.id) });
   }
 
   @Delete(':tokenExpo')
@@ -59,6 +64,9 @@ export class DispositivosControlador {
     @UsuarioActual() usuario: UsuarioDeSesion,
     @Param('tokenExpo') tokenExpo: string,
   ): Promise<void> {
-    await this.servicio.darDeBaja(usuario.id, tokenExpo);
+    // Sólo se borra el token si es de quien lo pide.
+    if ((await this.almacen.tokensDe([usuario.id])).includes(tokenExpo)) {
+      await this.almacen.borrar(tokenExpo);
+    }
   }
 }

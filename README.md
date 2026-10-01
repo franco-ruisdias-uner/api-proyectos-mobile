@@ -233,9 +233,6 @@ imagen real, subí tu propio clip con `POST /archivos`.
 | `GET` | `/avisos/:id` | 🌐 público | Detalle de un aviso |
 | `PATCH` | `/avisos/:id` | 🛠 direccion | Editar un aviso |
 | `POST` | `/avisos/:id/finalizar` | 🛠 direccion | Terminar un aviso ahora |
-| `POST` | `/dispositivos` | 🔒 con sesión | Registrar el token de push del teléfono |
-| `POST` | `/dispositivos/prueba` | 🔒 con sesión | Mandarme una push de prueba |
-| `DELETE` | `/dispositivos/:tokenExpo` | 🔒 con sesión | Dar de baja el token de push del teléfono |
 | `GET` | `/reportes-demora` | 🌐 público | Reportes recientes de una parada o una línea |
 | `POST` | `/reportes-demora` | 🔒 con sesión | Reportar una demora |
 | `GET` | `/reportes-demora/resumen` | 🛠 direccion | Resumen de reportes para la Dirección |
@@ -248,6 +245,9 @@ imagen real, subí tu propio clip con `POST /archivos`.
 | `DELETE` | `/yo/lineas-favoritas/:lineaId` | 🔒 con sesión | Quitar una línea de favoritas |
 | `PUT` | `/yo/paradas-favoritas/:paradaId` | 🔒 con sesión | Agregar una parada a favoritas |
 | `DELETE` | `/yo/paradas-favoritas/:paradaId` | 🔒 con sesión | Quitar una parada de favoritas |
+| `POST` | `/dispositivos` | 🔒 con sesión | Registrar el token de push del teléfono |
+| `POST` | `/dispositivos/prueba` | 🔒 con sesión | Mandarme una push de prueba |
+| `DELETE` | `/dispositivos/:tokenExpo` | 🔒 con sesión | Dar de baja el token de push del teléfono |
 <!-- endpoints:fin -->
 
 ### Subir fotos, audios y videos
@@ -326,6 +326,7 @@ usalo para decidir qué hacer. El **mensaje** está en castellano y se puede mos
 | `LINEA_NO_PARA_EN_PARADA` | 422 | Esa línea no para en esta parada. |
 | `REPORTE_VENCIDO` | 422 | Ese reporte ya es viejo para confirmarlo. |
 | `ERROR_INTERNO` | 500 | Algo salió mal. Probá de nuevo en un rato. |
+| `NO_IMPLEMENTADO` | 501 | Esta parte la programan ustedes. Mirá docs/NOTIFICACIONES.md. |
 | `ALMACEN_NO_DISPONIBLE` | 503 | No pudimos acceder a los archivos. Probá de nuevo en un rato. |
 <!-- errores:fin -->
 

@@ -10,15 +10,15 @@ import type TestAgent from 'supertest/lib/agent.js';
 import type { DataSource } from 'typeorm';
 import { configurarAplicacion } from '../../src/aplicacion.js';
 import { AppModule } from '../../src/app.module.js';
-import { Notificador } from '../../src/comun/notificaciones/notificador.js';
-import { NotificadorMemoria } from '../../src/comun/notificaciones/notificador-memoria.js';
+import { Avisos } from '../../src/comun/notificaciones/avisos.js';
+import { AlmacenTokensPush, EnviadorPush } from '../../src/comun/notificaciones/puertos.js';
 import { Reloj, RelojFijo } from '../../src/comun/reloj/reloj.js';
 import {
   CONFIGURACION,
   type Configuracion,
   leerConfiguracion,
 } from '../../src/config/configuracion.js';
-import { DispositivosServicio } from '../../src/modulos/dispositivos/dispositivos.servicio.js';
+import { AlmacenTokensMemoria, EnviadorMemoria } from './push-memoria.js';
 
 /** Instante por defecto de los tests: un sábado a la mañana en Paraná. */
 export const AHORA_POR_DEFECTO = '2026-09-19T10:30:00-03:00';
@@ -29,13 +29,27 @@ export interface OpcionesDeApp {
   ahora?: string;
   /** Controladores extra, sólo para probar piezas transversales (guards, filtros). */
   controladores?: Type[];
+  /**
+   * Con `true` quedan los puertos de verdad (almacén de tokens y enviador) en lugar de los
+   * dobles en memoria: lo usa la consigna de los alumnos (`test/notificaciones/`).
+   */
+  puertosReales?: boolean;
 }
 
 export interface AppDePrueba {
   app: NestExpressApplication;
   http: TestAgent;
   reloj: RelojFijo;
-  notificador: NotificadorMemoria;
+  /** Doble del enviador: lo que `Avisos` decidió mandar (con `puertosReales` no se usa). */
+  notificador: EnviadorMemoria;
+  /** Doble del almacén de tokens. */
+  tokens: AlmacenTokensMemoria;
+  /** Deja un token de Expo registrado para ese usuario, sin pasar por HTTP. */
+  registrarToken(
+    usuarioId: string,
+    tokenExpo: string,
+    plataforma?: 'android' | 'ios',
+  ): Promise<void>;
   dataSource: DataSource;
   config: Configuracion;
   /** Espera los envíos de push que quedaron en segundo plano. */
@@ -59,7 +73,7 @@ export function entornoDePrueba(extra: Record<string, string> = {}): Record<stri
 }
 
 /**
- * Levanta la app completa contra una base limpia, con RelojFijo y NotificadorMemoria
+ * Levanta la app completa contra una base limpia, con RelojFijo y dobles en memoria de las push
  * (AGENTS §10.2). Sin mocks de repositorios.
  */
 export async function crearApp(opciones: OpcionesDeApp = {}): Promise<AppDePrueba> {
@@ -68,19 +82,25 @@ export async function crearApp(opciones: OpcionesDeApp = {}): Promise<AppDePrueb
     entornoDePrueba({ DIRECTORIO_ARCHIVOS: directorio, ...opciones.entorno }),
   );
   const reloj = new RelojFijo(opciones.ahora ?? AHORA_POR_DEFECTO);
-  const notificador = new NotificadorMemoria();
+  const notificador = new EnviadorMemoria();
+  const tokens = new AlmacenTokensMemoria();
 
-  const modulo = await Test.createTestingModule({
+  let constructor = Test.createTestingModule({
     imports: [AppModule],
     controllers: opciones.controladores ?? [],
   })
     .overrideProvider(CONFIGURACION)
     .useValue(config)
     .overrideProvider(Reloj)
-    .useValue(reloj)
-    .overrideProvider(Notificador)
-    .useValue(notificador)
-    .compile();
+    .useValue(reloj);
+  if (!opciones.puertosReales) {
+    constructor = constructor
+      .overrideProvider(EnviadorPush)
+      .useValue(notificador)
+      .overrideProvider(AlmacenTokensPush)
+      .useValue(tokens);
+  }
+  const modulo = await constructor.compile();
 
   const app = modulo.createNestApplication<NestExpressApplication>({ logger: ['fatal'] });
   configurarAplicacion(app);
@@ -93,16 +113,19 @@ export async function crearApp(opciones: OpcionesDeApp = {}): Promise<AppDePrueb
     // La base del servidor es compartida entre archivos: se arranca siempre de cero.
     await dataSource.synchronize(true);
   }
-  const dispositivos = app.get(DispositivosServicio);
+  const avisos = app.get(Avisos);
 
   return {
     app,
     http: request(app.getHttpServer()),
     reloj,
     notificador,
+    tokens,
+    registrarToken: (usuarioId, tokenExpo, plataforma = 'ios') =>
+      app.get(AlmacenTokensPush).guardar(usuarioId, tokenExpo, plataforma),
     dataSource,
     config,
-    esperarPush: () => dispositivos.esperarEnvios(),
+    esperarPush: () => avisos.esperarEnvios(),
     cerrar: () => app.close(),
   };
 }

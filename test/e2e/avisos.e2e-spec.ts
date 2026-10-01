@@ -483,11 +483,7 @@ describe('Espec. §4 — POST /avisos', () => {
 
   describe('Espec. §7 / D9 — push al crearlo', () => {
     const registrarTelefono = async (u: UsuarioDePrueba, tokenExpo: string) => {
-      await ctx.http
-        .post('/dispositivos')
-        .set(u.auth)
-        .send({ tokenExpo, plataforma: 'android' })
-        .expect(201);
+      await ctx.registrarToken(u.id, tokenExpo, 'android');
     };
 
     it('la reciben quienes tienen la línea como favorita, una vez por teléfono', async () => {
@@ -651,11 +647,7 @@ describe('Espec. §4 — PATCH /avisos/:id', () => {
   it('no dispara push (D9)', async () => {
     const fan = await crearUsuario(ctx);
     const l = await lineaConFavoritos(fan);
-    await ctx.http
-      .post('/dispositivos')
-      .set(fan.auth)
-      .send({ tokenExpo: 'ExponentPushToken[patch-1]', plataforma: 'ios' })
-      .expect(201);
+    await ctx.registrarToken(fan.id, 'ExponentPushToken[patch-1]');
     const aviso = await crearAviso(ctx, { lineaIds: [l.id] });
     await ctx.http
       .patch(`/avisos/${aviso.id}`)
