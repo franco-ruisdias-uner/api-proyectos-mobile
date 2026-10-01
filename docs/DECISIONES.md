@@ -388,3 +388,11 @@ Pendiente para M7: reemplazarlo por un clip real. El trazado alternativo de `avi
 cerca de Corrientes y Urquiza, no un recorrido medido. `avi-090` (unidad rota en Almafuerte y Newbery) va sobre
 `lin-08`, la única que para en `par-102` en las semillas.
 Consecuencia en el contrato: ninguna.
+
+### A33 — Ediciones simultáneas de un aviso y push al autor
+Estado: PROVISORIA (autónomo)
+Decisión: las ediciones (`PATCH`) de un mismo aviso se serializan dentro del proceso (`ExclusionPorClave`), porque
+reemplazan las filas de `aviso_lineas` y dos a la vez daban `500` en PostgreSQL y MariaDB (choque de clave o
+deadlock). Con varias instancias de la API habría que pasarlo a un bloqueo de la base.
+La especificación no excluye al autor de la push: si la Dirección tiene la línea como favorita, la recibe.
+Consecuencia en el contrato: ninguna.

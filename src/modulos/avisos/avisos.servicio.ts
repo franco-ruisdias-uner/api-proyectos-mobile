@@ -4,6 +4,7 @@ import { DataSource, type FindOptionsWhere, In, Repository } from 'typeorm';
 import type { Meta } from '../../../contrato/api.js';
 import type { Aviso } from '../../../contrato/tipos.js';
 import { ArchivosServicio } from '../../comun/archivos/archivos.servicio.js';
+import { ExclusionPorClave } from '../../comun/db/exclusion.js';
 import { ErrorDeApi } from '../../comun/errores/error-de-api.js';
 import { interpretarInstante, sinMilisegundos } from '../../comun/fechas/fechas.js';
 import { esIdDe, nuevoId } from '../../comun/ids/ids.js';
@@ -33,6 +34,8 @@ const LARGO_MAXIMO_DEL_CUERPO_DE_LA_PUSH = 200;
 @Injectable()
 export class AvisosServicio {
   private readonly registro = new Logger('Avisos');
+  /** Las ediciones de un mismo aviso corren de a una: reemplazan sus filas de `aviso_lineas`. */
+  private readonly ediciones = new ExclusionPorClave();
 
   constructor(
     @InjectRepository(AvisoEntidad) private readonly avisos: Repository<AvisoEntidad>,
@@ -112,7 +115,11 @@ export class AvisosServicio {
   }
 
   /** Parcial, sin push (D9). `lineaIds` reemplaza la lista completa. */
-  async editar(id: string, dto: ActualizarAvisoDto): Promise<Aviso> {
+  editar(id: string, dto: ActualizarAvisoDto): Promise<Aviso> {
+    return this.ediciones.ejecutar(id, () => this.aplicarEdicion(id, dto));
+  }
+
+  private async aplicarEdicion(id: string, dto: ActualizarAvisoDto): Promise<Aviso> {
     const aviso = await this.buscar(id);
     const cambios: Partial<AvisoEntidad> = {};
 
