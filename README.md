@@ -149,6 +149,11 @@ comercio las da de alta el Centro Comercial.
   `horarios` y `coordenadas`. Un comercio de vacaciones trae `horarios: []`. Un comercio dado de
   baja no está en el listado, pero su detalle (`GET /comercios/:id`) y su QR
   (`GET /comercios/qr/CCU:com-118`) lo devuelven con `activo: false`.
+- **Promociones:** `GET /promociones` y `GET /promociones/:id` no piden sesión. `?estado=vigentes`
+  (el default), `proximas` (empiezan en los próximos 7 días) o `por-vencer` (vencen en 3 días o
+  menos), más `?rubroId=` y `?comercioId=`. **Una promo vencida no se muestra más**: no está en
+  ninguna lista y su detalle da `410 PROMO_VENCIDA`; una dada de baja, o de un comercio dado de
+  baja, da `404 PROMOCION_NO_ENCONTRADA`. Probá con `pro-441` (vigente) y `pro-447` (vencida).
 - **Fotos y videos:** primero subís el archivo con `POST /archivos` (`multipart/form-data`,
   campo `archivo`) y la API te devuelve una `url`; después mandás esa `url` en el recurso.
 - **Notificaciones push:** registrá el token de `expo-notifications` con `POST /dispositivos`
@@ -171,6 +176,8 @@ comercio las da de alta el Centro Comercial.
 | `POST` | `/dispositivos` | 🔒 con sesión | Registrar el teléfono para recibir push |
 | `DELETE` | `/dispositivos/:tokenExpo` | 🔒 con sesión | Dar de baja el teléfono |
 | `POST` | `/dispositivos/prueba` | 🔒 con sesión | Mandarme una push de prueba |
+| `GET` | `/promociones` | 🌐 público | Promociones |
+| `GET` | `/promociones/:id` | 🌐 público | Detalle de una promoción |
 | `GET` | `/rubros` | 🌐 público | Rubros |
 | `GET` | `/salud` | 🌐 público | ¿Anda la API? |
 | `GET` | `/yo` | 🔒 con sesión | Mi cuenta |
@@ -189,8 +196,10 @@ comercio las da de alta el Centro Comercial.
 | 404 | `RUTA_NO_ENCONTRADA` | No encontramos lo que buscabas. |
 | 404 | `COMERCIO_NO_ENCONTRADO` | No existe ese comercio. |
 | 404 | `QR_NO_RECONOCIDO` | Ese código no es de un comercio asociado. |
+| 404 | `PROMOCION_NO_ENCONTRADA` | No existe esa promoción. |
 | 404 | `ARCHIVO_NO_ENCONTRADO` | No encontramos ese archivo. |
 | 409 | `EMAIL_YA_REGISTRADO` | Ya hay una cuenta con ese email. Probá ingresar. |
+| 410 | `PROMO_VENCIDA` | Esa promoción ya no está vigente. |
 | 413 | `ARCHIVO_DEMASIADO_GRANDE` | El archivo es demasiado grande. Las fotos pueden pesar hasta 5 MB, los audios 10 MB y los videos 30 MB. |
 | 415 | `TIPO_DE_ARCHIVO_NO_PERMITIDO` | Ese tipo de archivo no se puede subir. Usá una foto JPG, PNG o WEBP, un audio M4A, AAC o MP3, o un video MP4. |
 | 416 | `RANGO_NO_SATISFACIBLE` | No pudimos leer esa parte del archivo. |

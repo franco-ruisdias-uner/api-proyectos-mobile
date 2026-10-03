@@ -8,9 +8,11 @@ import { hoyEnZona } from '../comun/fechas/fechas.js';
 import type { Reloj } from '../comun/reloj/reloj.js';
 import { normalizarParaBusqueda } from '../comun/texto/texto.js';
 import { Comercio } from '../modulos/comercios/comercio.entidad.js';
+import { Promocion } from '../modulos/promociones/promocion.entidad.js';
 import { Rubro } from '../modulos/comercios/rubro.entidad.js';
 import { Usuario } from '../modulos/usuarios/usuario.entidad.js';
 import { COMERCIOS } from './datos/comercios.js';
+import { PROMOCIONES } from './datos/promociones.js';
 import { RUBROS } from './datos/rubros.js';
 import { CONTRASENA_DEMO, USUARIOS } from './datos/usuarios.js';
 
@@ -25,7 +27,10 @@ const MILISEGUNDOS_POR_DIA = 24 * 60 * 60 * 1000;
 
 /** Sube las imágenes de `src/semillas/medios/` y devuelve nombre → clave. */
 async function subirMedios(almacen: AlmacenArchivos, reloj: Reloj): Promise<Map<string, string>> {
-  const usados = new Set(COMERCIOS.flatMap((c) => c.imagenes));
+  const usados = new Set([
+    ...COMERCIOS.flatMap((c) => c.imagenes),
+    ...PROMOCIONES.flatMap((p) => (p.imagen ? [p.imagen] : [])),
+  ]);
   const claves = new Map<string, string>();
   for (const nombre of usados) {
     const contenido = await readFile(join(import.meta.dirname, 'medios', `${nombre}.png`));
@@ -58,6 +63,14 @@ export async function sembrar({ dataSource, reloj, almacen }: DependenciasSemill
           vacacionesDias === null
             ? null
             : hoyEnZona(new Date(ahora.getTime() + vacacionesDias * MILISEGUNDOS_POR_DIA)),
+      })),
+    );
+    await m.getRepository(Promocion).insert(
+      PROMOCIONES.map(({ desdeDias, hastaDias, imagen, ...p }) => ({
+        ...p,
+        desde: new Date(ahora.getTime() + desdeDias * MILISEGUNDOS_POR_DIA),
+        hasta: new Date(ahora.getTime() + hastaDias * MILISEGUNDOS_POR_DIA),
+        imagenClave: imagen === null ? null : medios.get(imagen)!,
       })),
     );
   });

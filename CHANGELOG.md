@@ -4,6 +4,16 @@ Lo que cambia en la API, contado para quienes la usan desde la app. Lo más nuev
 
 ## [Sin publicar]
 
+### M2 — Promociones (lectura)
+
+- `GET /promociones`: `estado=vigentes` (default), `proximas` (empiezan en los próximos 7 días) o
+  `por-vencer` (vigentes que vencen en 3 días o menos); filtros `rubroId` y `comercioId`. Las
+  vigentes y por vencer van por `hasta`; las próximas, por `desde`.
+- `GET /promociones/:id`: el detalle. Una promo vencida da 410 `PROMO_VENCIDA`.
+- Una promo vencida, dada de baja o de un comercio dado de baja nunca aparece en las listas.
+- Errores nuevos: `PROMOCION_NO_ENCONTRADA` y `PROMO_VENCIDA`.
+- Datos de demo: 10 promociones (`pro-441` es la del PRD) de cada estado.
+
 ### M1 — Comercios
 
 - `GET /rubros`: los 9 rubros, por `orden`.

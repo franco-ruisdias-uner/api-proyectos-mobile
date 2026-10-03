@@ -14,7 +14,7 @@ const COMPOSES = [
 ];
 
 /** Listados públicos con datos de demo. Se suman a medida que los módulos los agregan. */
-const LISTADOS_PUBLICOS = ['/rubros', '/comercios'];
+const LISTADOS_PUBLICOS = ['/rubros', '/comercios', '/promociones'];
 
 const env = { ...process.env, PUERTO, PUERTO_DB };
 const docker = (args, opciones = {}) =>

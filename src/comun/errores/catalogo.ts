@@ -37,6 +37,11 @@ export const CATALOGO = {
   COMERCIO_NO_ENCONTRADO: { estado: 404, mensaje: 'No existe ese comercio.' },
   QR_NO_RECONOCIDO: { estado: 404, mensaje: 'Ese código no es de un comercio asociado.' },
 
+  // Promociones
+  PROMOCION_NO_ENCONTRADA: { estado: 404, mensaje: 'No existe esa promoción.' },
+  // 410 al pedir el detalle; 422 al intentar usarla, validarla o editarla.
+  PROMO_VENCIDA: { estado: 410, mensaje: 'Esa promoción ya no está vigente.' },
+
   // Archivos
   ARCHIVO_NO_ENCONTRADO: { estado: 404, mensaje: 'No encontramos ese archivo.' },
   ARCHIVO_NO_SUBIDO: { estado: 422, mensaje: 'Primero hay que subir la foto o el video.' },

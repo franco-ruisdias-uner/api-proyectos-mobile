@@ -241,3 +241,25 @@ Decisión: `orden=puntaje` y `orden=distancia` desempatan por nombre y, si sigue
 verificador notó que AGENTS §4.2 dice sólo `id`; el orden total sigue siendo determinístico). Los tramos
 de `horarios` salen ordenados por día y hora de apertura. Un `telefono`, `whatsapp` o `instagram` vacío
 sale `null`, nunca `""`.
+
+### A23 — Promociones: qué se ve y qué da error (M2)
+Estado: PROVISORIA (autónomo)
+Hueco: R4 dice qué no se muestra pero no el código de cada caso en el detalle, ni qué pasa con una
+promo próxima lejana o con ids mal formados.
+Decisión: detalle de una promo vencida → 410 `PROMO_VENCIDA`; dada de baja (`activa: false`) o de un
+comercio inactivo → 404 `PROMOCION_NO_ENCONTRADA`, también si además está vencida (la baja pesa más:
+no existe para el público). Una próxima se ve en el detalle aunque falte más de 7 días (el límite de
+D4 sólo rige para la lista `proximas`). Las vigentes incluyen a las por vencer (son un subconjunto).
+Los límites son inclusivos: vigente en `desde` y en `hasta` exactos; "por vencer" con `hasta` a
+exactamente 3 días; "próxima" con `desde` a exactamente 7. Un `estado`, `rubroId` o `comercioId` mal
+formado → 400; bien formado pero inexistente → lista vacía; un id de ruta mal formado → 404.
+`rubroId` es el rubro del comercio de la promo. Paginación estándar (máx. 100). Las fechas y el orden
+se resuelven en TypeScript con el `Reloj` (como A16). Alternativas descartadas: 404 también para
+vencidas; 410 para las dadas de baja.
+
+### A24 — Semillas de promociones y `usos` (M2)
+Estado: PROVISORIA (autónomo)
+Decisión: 10 promociones con fechas relativas a "ahora" (`pro-441` a `pro-450`). `Promocion.usos` se
+siembra con números fijos (como A20): M6 tiene que respaldarlos con `UsoDePromocion` validados y
+recalcularlos (R13). Los textos y fechas de `pro-441` salvo el título y el comercio son inventados
+(no se pudo leer el PRD).
