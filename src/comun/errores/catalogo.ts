@@ -33,6 +33,10 @@ export const CATALOGO = {
   EMAIL_YA_REGISTRADO: { estado: 409, mensaje: 'Ya hay una cuenta con ese email. Probá ingresar.' },
   CREDENCIALES_INVALIDAS: { estado: 401, mensaje: 'El email o la contraseña no son correctos.' },
 
+  // Comercios
+  COMERCIO_NO_ENCONTRADO: { estado: 404, mensaje: 'No existe ese comercio.' },
+  QR_NO_RECONOCIDO: { estado: 404, mensaje: 'Ese código no es de un comercio asociado.' },
+
   // Archivos
   ARCHIVO_NO_ENCONTRADO: { estado: 404, mensaje: 'No encontramos ese archivo.' },
   ARCHIVO_NO_SUBIDO: { estado: 422, mensaje: 'Primero hay que subir la foto o el video.' },

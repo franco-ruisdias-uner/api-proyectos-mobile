@@ -157,9 +157,13 @@ comercio las da de alta el Centro Comercial.
 | `GET` | `/archivos/:clave` | 🌐 público | Descargar un archivo |
 | `POST` | `/auth/ingreso` | 🌐 público | Ingresar |
 | `POST` | `/auth/registro` | 🌐 público | Crear una cuenta de vecino |
+| `GET` | `/comercios` | 🌐 público | Comercios |
+| `GET` | `/comercios/:id` | 🌐 público | Detalle de un comercio |
+| `GET` | `/comercios/qr/:codigo` | 🌐 público | Comercio por código QR |
 | `POST` | `/dispositivos` | 🔒 con sesión | Registrar el teléfono para recibir push |
 | `DELETE` | `/dispositivos/:tokenExpo` | 🔒 con sesión | Dar de baja el teléfono |
 | `POST` | `/dispositivos/prueba` | 🔒 con sesión | Mandarme una push de prueba |
+| `GET` | `/rubros` | 🌐 público | Rubros |
 | `GET` | `/salud` | 🌐 público | ¿Anda la API? |
 | `GET` | `/yo` | 🔒 con sesión | Mi cuenta |
 | `PATCH` | `/yo` | 🔒 con sesión | Cambiar datos de mi cuenta |
@@ -175,6 +179,8 @@ comercio las da de alta el Centro Comercial.
 | 401 | `CREDENCIALES_INVALIDAS` | El email o la contraseña no son correctos. |
 | 403 | `SIN_PERMISO` | No tenés permiso para hacer esto. |
 | 404 | `RUTA_NO_ENCONTRADA` | No encontramos lo que buscabas. |
+| 404 | `COMERCIO_NO_ENCONTRADO` | No existe ese comercio. |
+| 404 | `QR_NO_RECONOCIDO` | Ese código no es de un comercio asociado. |
 | 404 | `ARCHIVO_NO_ENCONTRADO` | No encontramos ese archivo. |
 | 409 | `EMAIL_YA_REGISTRADO` | Ya hay una cuenta con ese email. Probá ingresar. |
 | 413 | `ARCHIVO_DEMASIADO_GRANDE` | El archivo es demasiado grande. Las fotos pueden pesar hasta 5 MB, los audios 10 MB y los videos 30 MB. |
