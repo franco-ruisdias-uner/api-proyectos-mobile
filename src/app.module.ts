@@ -16,6 +16,7 @@ import { PanelComercioModulo } from './modulos/panel-comercio/panel-comercio.mod
 import { PromocionesModulo } from './modulos/promociones/promociones.modulo.js';
 import { ResenasModulo } from './modulos/resenas/resenas.modulo.js';
 import { SaludControlador } from './modulos/salud/salud.controlador.js';
+import { UsosModulo } from './modulos/usos/usos.modulo.js';
 import { UsuariosModulo } from './modulos/usuarios/usuarios.modulo.js';
 import { SemillasModulo } from './semillas/semillas.modulo.js';
 
@@ -59,6 +60,7 @@ export class AppModule {
         PromocionesModulo,
         ResenasModulo,
         PanelComercioModulo,
+        UsosModulo,
         SemillasModulo,
       ],
       controllers: [SaludControlador],

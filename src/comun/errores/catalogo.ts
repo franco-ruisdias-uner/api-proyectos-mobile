@@ -44,6 +44,16 @@ export const CATALOGO = {
   // 410 al pedir el detalle; 422 al intentar usarla, validarla o editarla.
   PROMO_VENCIDA: { estado: 410, mensaje: 'Esa promoción ya no está vigente.' },
 
+  PROMO_NO_EMPEZO: { estado: 422, mensaje: 'Esa promoción todavía no empezó.' },
+  PROMO_SIN_CODIGO: {
+    estado: 422,
+    mensaje: 'Esta promoción no necesita código: se aplica directo en el local.',
+  },
+  PROMO_YA_USADA: { estado: 409, mensaje: 'Ya usaste esta promoción.' },
+  CODIGO_INVALIDO: { estado: 404, mensaje: 'Ese código no existe.' },
+  CODIGO_YA_VALIDADO: { estado: 409, mensaje: 'Ese código ya se usó.' },
+  PROMO_DE_OTRO_COMERCIO: { estado: 403, mensaje: 'Ese código es de otro comercio.' },
+
   HORARIOS_SUPERPUESTOS: { estado: 422, mensaje: 'Hay dos horarios que se pisan el mismo día.' },
 
   // Reseñas

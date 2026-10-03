@@ -365,3 +365,29 @@ Bordes que dejó el verificador de M5 (comportamiento actual, queda fijado):
 - En `PATCH` y `DELETE` de promos, el orden es: sesión y rol, formato del cuerpo (400), promo inexistente (404), dueño (403), y recién ahí las reglas de fechas y archivos.
   Sin `desde`, un `hasta ≤ ahora` da 400 porque `desde` toma «ahora» y `hasta ≤ desde` se chequea primero.
 - `GET /mi-comercio/promociones` ignora filtros desconocidos como `?estado=`.
+
+### A29 — Uso de promociones: alcance, orden de errores y semillas (M6)
+Estado: PROVISORIA (autónomo)
+Hueco: la especificación no fija el orden de los chequeos ni qué pasa con casos borde.
+Decisión:
+- Tabla `usos_de_promocion` con índice único en (`promocionId`, `usuarioId`) (D9: uno por vecino y promo,
+  aun con pedidos simultáneos) y en `codigo`. Columna interna `generadoEn` (no sale en el contrato).
+- `POST /promociones/:id/usos`, orden: 404 `PROMOCION_NO_ENCONTRADA` (inexistente, mal formada, dada de
+  baja o de comercio inactivo, como el detalle) → 422 `PROMO_SIN_CODIGO` → 422 `PROMO_VENCIDA` /
+  `PROMO_NO_EMPEZO` → 409 `PROMO_YA_USADA` (ya validado) → 200 con el mismo uso si estaba sin validar →
+  201. Sólo `vecino` (403 para comercio). Una promo dada de baja se considera inexistente al generar.
+- `PROMO_VENCIDA` va con 422 al generar y al validar (§6); el catálogo conserva 410 para el detalle.
+- `GET /yo/usos`: cualquier cuenta con sesión; una de comercio recibe la lista vacía (no 403). Más
+  nuevos primero (`generadoEn`, desempate por id); paginación estándar.
+- `POST /mi-comercio/usos/validar`, orden: 403 si el comercio de la sesión no existe → 404 `CODIGO_INVALIDO`
+  (el código se normaliza: sin espacios y en mayúsculas; uno que no existe o con formato raro da lo mismo)
+  → 403 `PROMO_DE_OTRO_COMERCIO` → 409 `CODIGO_YA_VALIDADO` → 422 `PROMO_VENCIDA` (también si la promo fue
+  dada de baja) / `PROMO_NO_EMPEZO` → actualización condicionada a `validadoEn` nulo (el perdedor de dos
+  escaneos simultáneos recibe 409) y recálculo de `Promocion.usos` desde la tabla, en una transacción.
+  Falta o tipo erróneo de `codigo`, o campos de más: 400.
+- Un comercio dado de baja sigue pudiendo validar los códigos de sus promos vigentes (D12 sólo oculta al público).
+- Semillas (resuelve A20/A24): `usos` de cada promo = usos validados sembrados (23 en `pro-441`…);
+  Marta validó uno en `pro-444`; `uso-7781` (`CCU-7KQ4-M9XH`) es suyo y está sin validar; hay otros
+  dos pendientes. Las promos sin `soloApp` también traen usos sembrados (dato de demo, la API no los genera).
+Alternativas descartadas: 403 en `GET /yo/usos` para comercios; permitir reusar un código tras vencer
+la promo; códigos con número de promo y de usuario (adivinables, D8).

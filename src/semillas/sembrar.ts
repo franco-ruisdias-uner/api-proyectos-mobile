@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { DataSource } from 'typeorm';
+import { type DataSource, IsNull, Not } from 'typeorm';
 import type { AlmacenArchivos } from '../comun/archivos/almacen-archivos.js';
 import { nuevaClave } from '../comun/archivos/reglas/claves.js';
 import { hashearContrasena } from '../comun/auth/contrasenas.js';
@@ -15,10 +15,12 @@ import { RubroDeInteres } from '../modulos/usuarios/rubro-de-interes.entidad.js'
 import { ReporteDeResena } from '../modulos/resenas/reporte-de-resena.entidad.js';
 import { Resena } from '../modulos/resenas/resena.entidad.js';
 import { promedioDeEstrellas } from '../modulos/resenas/reglas/resenas.js';
+import { UsoDePromocion } from '../modulos/usos/uso-de-promocion.entidad.js';
 import { Usuario } from '../modulos/usuarios/usuario.entidad.js';
 import { COMERCIOS } from './datos/comercios.js';
 import { PROMOCIONES } from './datos/promociones.js';
 import { generarResenas, VECINOS_DE_RELLENO } from './datos/resenas.js';
+import { generarUsos } from './datos/usos.js';
 import { RUBROS } from './datos/rubros.js';
 import {
   CONTRASENA_DEMO,
@@ -102,6 +104,35 @@ export async function sembrar({ dataSource, reloj, almacen }: DependenciasSemill
         imagenClave: imagen === null ? null : medios.get(imagen)!,
       })),
     );
+    await m.getRepository(UsoDePromocion).insert(
+      generarUsos().map(({ validado, ...u }) => {
+        const promo = PROMOCIONES.find((p) => p.id === u.promocionId)!;
+        if (!validado) {
+          return {
+            ...u,
+            generadoEn: new Date(ahora.getTime() - MILISEGUNDOS_POR_DIA),
+            validadoEn: null,
+          };
+        }
+        // Repartidos entre el comienzo de la promo y hoy (o su fin, si ya venció).
+        const desde = ahora.getTime() + promo.desdeDias * MILISEGUNDOS_POR_DIA;
+        const fin = Math.min(
+          ahora.getTime(),
+          ahora.getTime() + promo.hastaDias * MILISEGUNDOS_POR_DIA,
+        );
+        const validadoEn = new Date(
+          desde + ((fin - desde) * (validado.posicion + 1)) / (validado.total + 1),
+        );
+        return { ...u, generadoEn: new Date(validadoEn.getTime() - 5 * 60 * 1000), validadoEn };
+      }),
+    );
+    // R13 (A20): `usos` de cada promo sale de los usos validados sembrados, no de un número fijo.
+    for (const { id } of PROMOCIONES) {
+      const usos = await m
+        .getRepository(UsoDePromocion)
+        .count({ where: { promocionId: id, validadoEn: Not(IsNull()) } });
+      await m.getRepository(Promocion).update({ id }, { usos });
+    }
     await m.getRepository(Resena).insert(
       resenas.map(({ haceDias, ...r }) => ({
         ...r,

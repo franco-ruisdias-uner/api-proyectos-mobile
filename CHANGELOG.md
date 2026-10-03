@@ -4,6 +4,19 @@ Lo que cambia en la API, contado para quienes la usan desde la app. Lo más nuev
 
 ## [Sin publicar]
 
+### M6 — Uso de promociones
+
+- `POST /promociones/:id/usos`: sólo vecinos. Genera tu código (`CCU-XXXX-XXXX`) de una promoción
+  `soloApp` y vigente. 201 la primera vez; 200 con el mismo código si lo pedís de nuevo sin haberlo
+  usado; 409 `PROMO_YA_USADA` si ya lo usaste.
+- `GET /yo/usos`: tus `UsoDePromocion` (validados o no), los más nuevos primero, con paginación.
+- `POST /mi-comercio/usos/validar`: sólo cuentas de comercio. `{ codigo }` registra el uso y devuelve
+  el `UsoDePromocion` con `validadoEn`; suma uno a `usos` de la promoción.
+- Errores nuevos: `PROMO_NO_EMPEZO`, `PROMO_SIN_CODIGO`, `PROMO_YA_USADA`, `CODIGO_INVALIDO`,
+  `CODIGO_YA_VALIDADO` y `PROMO_DE_OTRO_COMERCIO`. `PROMO_VENCIDA` da 422 al generar o validar un código.
+- Datos de demo: `usos` de cada promo sale de usos validados reales; `uso-7781` es el código de Marta
+  (`CCU-7KQ4-M9XH`), sin validar.
+
 ### M5 — Panel del comercio
 
 - `GET /mi-comercio` y `PATCH /mi-comercio`: sólo cuentas de comercio. Editan datos, `horarios`

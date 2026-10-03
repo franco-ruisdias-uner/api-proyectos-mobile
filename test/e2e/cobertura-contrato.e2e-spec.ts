@@ -7,9 +7,7 @@ import { DEFINICIONES } from '../utilidades/contrato.js';
  * módulo empieza a devolver uno, se saca de esta lista y este test exige que haya algún
  * `esperarContrato(…, '<Tipo>')` en test/.
  */
-const TODAVIA_NO_DEVUELTOS: Record<string, string> = {
-  UsoDePromocion: 'M6',
-};
+const TODAVIA_NO_DEVUELTOS: Record<string, string> = {};
 
 /** Partes de otros tipos o del sobre: no se devuelven solos. */
 const AUXILIARES = new Set(['Coordenadas', 'Horario', 'Rol', 'Meta', 'RespuestaError']);

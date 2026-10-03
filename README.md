@@ -112,7 +112,7 @@ Todos tienen la contraseña **`demo1234`**.
 
 | Email | Rol | Para qué sirve |
 |---|---|---|
-| `marta@mail.com` | vecino | La usuaria del PRD (`usr-512`). |
+| `marta@mail.com` | vecino | La usuaria del PRD (`usr-512`), con un código sin validar (`CCU-7KQ4-M9XH`). |
 | `nuevo@demo.ar` | vecino | Una cuenta sin nada cargado. |
 | `tornillo@demo.ar` | comercio | Ferretería El Tornillo (`com-118`). |
 | `otro.comercio@demo.ar` | comercio | Otro comercio, para probar lo que no es tuyo. |
@@ -165,6 +165,15 @@ comercio las da de alta el Centro Comercial.
   (vencidas y dadas de baja también, con `usos`); `POST` crea (`hasta` posterior a `desde` y a
   hoy; `descuento` entero de 1 a 100 o `null`); `PATCH` edita una no vencida (si no,
   `422 PROMO_VENCIDA`); `DELETE` la da de baja (`activa: false`) y responde 204.
+- **Usar una promoción con código:** el vecino pide su código con `POST /promociones/:id/usos`
+  (sólo promos `soloApp` y vigentes; 201 la primera vez y 200 con el mismo código si lo vuelve a
+  pedir sin haberlo usado). El código tiene la forma `CCU-7KQ4-M9XH` y es lo que muestra o escanea.
+  `GET /yo/usos` lista los suyos (`validadoEn: null` hasta que el comercio lo valida). En el
+  mostrador, el comercio manda `POST /mi-comercio/usos/validar` con `{ "codigo": "…" }`: devuelve
+  el uso con `validadoEn` y suma uno a `usos` de la promo. Errores: `PROMO_SIN_CODIGO`,
+  `PROMO_VENCIDA` (acá es 422, no 410), `PROMO_NO_EMPEZO`, `PROMO_YA_USADA`, `CODIGO_INVALIDO`,
+  `PROMO_DE_OTRO_COMERCIO` y `CODIGO_YA_VALIDADO`. Probá con el código de Marta
+  (`CCU-7KQ4-M9XH`, `uso-7781`) desde `tornillo@demo.ar`.
 - **Fotos y videos:** primero subís el archivo con `POST /archivos` (`multipart/form-data`,
   campo `archivo`) y la API te devuelve una `url`; después mandás esa `url` en el recurso.
 - **Notificaciones push:** registrá el token de `expo-notifications` con `POST /dispositivos`
@@ -195,8 +204,10 @@ comercio las da de alta el Centro Comercial.
 | `POST` | `/mi-comercio/promociones` | 🔒 con sesión | Crear una promoción |
 | `PATCH` | `/mi-comercio/promociones/:id` | 🔒 con sesión | Editar una promoción |
 | `DELETE` | `/mi-comercio/promociones/:id` | 🔒 con sesión | Dar de baja una promoción |
+| `POST` | `/mi-comercio/usos/validar` | 🔒 con sesión | Validar el código de un cliente |
 | `GET` | `/promociones` | 🌐 público | Promociones |
 | `GET` | `/promociones/:id` | 🌐 público | Detalle de una promoción |
+| `POST` | `/promociones/:id/usos` | 🔒 con sesión | Generar mi código de una promoción |
 | `PATCH` | `/resenas/:id` | 🔒 con sesión | Editar mi reseña |
 | `DELETE` | `/resenas/:id` | 🔒 con sesión | Borrar mi reseña |
 | `POST` | `/resenas/:id/reportes` | 🔒 con sesión | Reportar una reseña como ofensiva |
@@ -207,6 +218,7 @@ comercio las da de alta el Centro Comercial.
 | `PATCH` | `/yo` | 🔒 con sesión | Cambiar datos de mi cuenta |
 | `PUT` | `/yo/favoritos/:comercioId` | 🔒 con sesión | Agregar un favorito |
 | `DELETE` | `/yo/favoritos/:comercioId` | 🔒 con sesión | Quitar un favorito |
+| `GET` | `/yo/usos` | 🔒 con sesión | Mis códigos de promociones |
 <!-- /tabla:endpoints -->
 
 ### Códigos de error
@@ -218,13 +230,17 @@ comercio las da de alta el Centro Comercial.
 | 401 | `NO_AUTENTICADO` | Tenés que ingresar con tu cuenta para hacer esto. |
 | 401 | `CREDENCIALES_INVALIDAS` | El email o la contraseña no son correctos. |
 | 403 | `SIN_PERMISO` | No tenés permiso para hacer esto. |
+| 403 | `PROMO_DE_OTRO_COMERCIO` | Ese código es de otro comercio. |
 | 404 | `RUTA_NO_ENCONTRADA` | No encontramos lo que buscabas. |
 | 404 | `COMERCIO_NO_ENCONTRADO` | No existe ese comercio. |
 | 404 | `QR_NO_RECONOCIDO` | Ese código no es de un comercio asociado. |
 | 404 | `PROMOCION_NO_ENCONTRADA` | No existe esa promoción. |
+| 404 | `CODIGO_INVALIDO` | Ese código no existe. |
 | 404 | `RESENA_NO_ENCONTRADA` | No existe esa reseña. |
 | 404 | `ARCHIVO_NO_ENCONTRADO` | No encontramos ese archivo. |
 | 409 | `EMAIL_YA_REGISTRADO` | Ya hay una cuenta con ese email. Probá ingresar. |
+| 409 | `PROMO_YA_USADA` | Ya usaste esta promoción. |
+| 409 | `CODIGO_YA_VALIDADO` | Ese código ya se usó. |
 | 409 | `RESENA_YA_EXISTE` | Ya dejaste una reseña para este comercio. Podés editarla. |
 | 409 | `RESENA_YA_RESPONDIDA` | Ya respondiste esta reseña. |
 | 409 | `ID_EN_USO` | Ese identificador ya está en uso. |
@@ -233,6 +249,8 @@ comercio las da de alta el Centro Comercial.
 | 415 | `TIPO_DE_ARCHIVO_NO_PERMITIDO` | Ese tipo de archivo no se puede subir. Usá una foto JPG, PNG o WEBP, un audio M4A, AAC o MP3, o un video MP4. |
 | 416 | `RANGO_NO_SATISFACIBLE` | No pudimos leer esa parte del archivo. |
 | 422 | `RUBRO_NO_ENCONTRADO` | Alguno de los rubros elegidos no existe. |
+| 422 | `PROMO_NO_EMPEZO` | Esa promoción todavía no empezó. |
+| 422 | `PROMO_SIN_CODIGO` | Esta promoción no necesita código: se aplica directo en el local. |
 | 422 | `HORARIOS_SUPERPUESTOS` | Hay dos horarios que se pisan el mismo día. |
 | 422 | `REPORTE_PROPIO` | No podés reportar tu propia reseña. |
 | 422 | `FECHA_EN_EL_FUTURO` | La fecha no puede ser posterior a este momento. |
