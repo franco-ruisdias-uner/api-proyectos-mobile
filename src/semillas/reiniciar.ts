@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { getDataSourceToken } from '@nestjs/typeorm';
 import type { DataSource } from 'typeorm';
 import { AppModule } from '../app.module.js';
+import { ALMACEN_ARCHIVOS, type AlmacenArchivos } from '../comun/archivos/almacen-archivos.js';
 import { Reloj } from '../comun/reloj/reloj.js';
 import { validarEntorno } from '../config/entorno.js';
 import { sembrar } from './sembrar.js';
@@ -27,7 +28,11 @@ async function reiniciar() {
   console.log(`Base: ${entorno.dbMotor}. Borrando y creando el esquema…`);
   await dataSource.synchronize(true);
   console.log('Cargando los datos de demo…');
-  await sembrar({ dataSource, reloj: app.get(Reloj) });
+  await sembrar({
+    dataSource,
+    reloj: app.get(Reloj),
+    almacen: app.get<AlmacenArchivos>(ALMACEN_ARCHIVOS),
+  });
   await app.close();
   console.log('Listo. Arrancá la API con: pnpm dev');
 }

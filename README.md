@@ -141,6 +141,14 @@ comercio las da de alta el Centro Comercial.
 - Las fechas con hora vienen así: `"2026-11-14T21:00:00-03:00"`. Los ids son texto
   (`"com-118"`), nunca números. Un campo sin valor viene en `null`.
 - Las listas aceptan `?pagina=1&porPagina=20`.
+- **Comercios:** `GET /rubros` y `GET /comercios` no piden sesión. El listado acepta
+  `?rubroId=rub-ferreteria`, `?q=pintura` (busca en nombre y descripción, sin tildes),
+  `?latitud=-32.48&longitud=-58.23&radioMetros=1000` y `?orden=nombre|distancia|puntaje`.
+  `porPagina` llega hasta **1000**, para guardar el listado en el teléfono. La API **no** dice
+  si un comercio está «abierto ahora» ni a qué distancia queda: eso lo calcula la app con
+  `horarios` y `coordenadas`. Un comercio de vacaciones trae `horarios: []`. Un comercio dado de
+  baja no está en el listado, pero su detalle (`GET /comercios/:id`) y su QR
+  (`GET /comercios/qr/CCU:com-118`) lo devuelven con `activo: false`.
 - **Fotos y videos:** primero subís el archivo con `POST /archivos` (`multipart/form-data`,
   campo `archivo`) y la API te devuelve una `url`; después mandás esa `url` en el recurso.
 - **Notificaciones push:** registrá el token de `expo-notifications` con `POST /dispositivos`

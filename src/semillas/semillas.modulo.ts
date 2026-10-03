@@ -1,6 +1,7 @@
 import { Inject, Logger, Module, type OnApplicationBootstrap } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import type { DataSource } from 'typeorm';
+import { ALMACEN_ARCHIVOS, type AlmacenArchivos } from '../comun/archivos/almacen-archivos.js';
 import { Reloj } from '../comun/reloj/reloj.js';
 import { ENTORNO, type Entorno } from '../config/entorno.js';
 import { baseVacia, sembrar } from './sembrar.js';
@@ -14,6 +15,7 @@ export class SemillasModulo implements OnApplicationBootstrap {
     @Inject(ENTORNO) private readonly entorno: Entorno,
     @InjectDataSource() private readonly dataSource: DataSource,
     private readonly reloj: Reloj,
+    @Inject(ALMACEN_ARCHIVOS) private readonly almacen: AlmacenArchivos,
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
@@ -22,7 +24,7 @@ export class SemillasModulo implements OnApplicationBootstrap {
       this.logger.log('La base ya tiene datos: no se siembra.');
       return;
     }
-    await sembrar({ dataSource: this.dataSource, reloj: this.reloj });
+    await sembrar({ dataSource: this.dataSource, reloj: this.reloj, almacen: this.almacen });
     this.logger.log('Base vacía: se cargaron los datos de demo.');
   }
 }

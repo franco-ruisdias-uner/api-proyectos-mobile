@@ -59,8 +59,38 @@ servidor (un cambio de estado, algo nuevo publicado, algo cancelado por otro).
 
 <!-- Copiar acá las entradas "D…" de ESPECIFICACION.md a medida que se implementan. -->
 
-Ninguna de las decisiones D1–D13 de `ESPECIFICACION.md` toca el módulo M0: se copian acá a
-medida que los módulos que las usan se implementan.
+Las decisiones D1–D13 de `ESPECIFICACION.md` se copian acá a medida que los módulos que las usan se
+implementan. Con M1: D1, D2, D3, D12 y D13.
+
+### D1 — Buscar «por lo que venden»
+Estado: PROVISORIA
+Hueco: PRD §1 pide buscar por lo que venden, pero `Comercio` no tiene campo de productos.
+Decisión: `q` busca en `nombre` y `descripcion`, sin tildes ni mayúsculas. Los comercios tienen que
+nombrar en la descripción lo que venden (las semillas lo hacen).
+Consecuencia en el contrato: ninguna; sólo cambia qué encuentra `GET /comercios?q=`.
+
+### D2 — Un comercio cerrado por vacaciones
+Estado: PROVISORIA (autónomo). En `ESPECIFICACION.md` figura PENDIENTE: se implementó su default.
+Hueco: el PRD pide mockear «uno cerrado por vacaciones» y no hay campo para eso.
+Opciones: A) columna interna `cerradoHasta` y `horarios: []` mientras dura. B) un campo nuevo en
+`Comercio` (rompe el contrato). C) cambiar `activo`.
+Decisión: A. En M1 sólo se **lee** (la siembra com-138 la usa); `PATCH /mi-comercio` la edita en M5.
+El último día de cierre es inclusive y «hoy» se calcula en Buenos Aires.
+Consecuencia en el contrato: ninguna: el teléfono ve `horarios: []` y lo muestra cerrado.
+
+### D3 — Horarios de verano
+Estado: PROVISORIA
+Decisión: un solo juego de horarios por comercio; lo edita el comercio cuando cambia la temporada.
+
+### D12 — Comercio dado de baja
+Estado: PROVISORIA
+Decisión: no aparece en `GET /comercios` (ni en la búsqueda) y su detalle y su QR lo devuelven con
+`activo: false`. Sus promos salen del listado en M2.
+
+### D13 — Para qué sirve `codigoQr`
+Estado: PROVISORIA
+Decisión: `CCU:<comercioId>`, y `GET /comercios/qr/:codigo` lo resuelve (también si el comercio está
+de baja, porque es un comercio asociado conocido). Cualquier otra cosa → 404 `QR_NO_RECONOCIDO`.
 
 ---
 
@@ -164,3 +194,43 @@ salvo que esté `URL_PUBLICA`, que no depende del pedido. Vale para cualquier en
 Estado: PROVISORIA (autónomo)
 Decisión: la demora tiene un tope de 30 segundos (`demora-99999999` espera 30 s); un valor que
 no es un número entero positivo (`demora--5`) se ignora, como cualquier valor que no se entiende.
+
+### A16 — Cómo se resuelven `q`, el radio y el orden en `GET /comercios` (M1)
+Estado: PROVISORIA (autónomo)
+Hueco: AGENTS §5.5 dice buscar con `Like('%término%')`; pero `%` y `_` del usuario serían comodines, y
+escapar cambia de un motor a otro (`ESCAPE` en SQLite, barra invertida en MySQL).
+Opciones: A) `Like` y quitar `%` y `_` del término. B) `Like` con `ESCAPE` por motor. C) la base filtra
+por `activo`, rubro y caja de coordenadas; la búsqueda, el radio, el orden y la página en TypeScript.
+Decisión: C. Son unos cientos de filas y así el orden (que en la base depende de la collation) y la
+búsqueda dan lo mismo en los cuatro motores. Se sigue usando la columna `nombreBusqueda` /
+`descripcionBusqueda` normalizada. `%` y `_` se buscan como texto.
+Consecuencia en el contrato: ninguna.
+
+### A17 — Parámetros de ubicación de `GET /comercios` (M1)
+Estado: PROVISORIA (autónomo)
+Hueco: ESPECIFICACION no dice qué pasa con `latitud` sin `longitud`, ni si el radio tiene valor por defecto.
+Decisión: la posición va entera o no va; `radioMetros` y `orden=distancia` sin posición → 400
+`VALIDACION_FALLIDA`. Con posición y sin radio no se filtra (sólo se ordena si se pidió `distancia`).
+El radio es de 1 m en adelante, sin tope. La API no devuelve la distancia (AGENTS §4.5).
+
+### A18 — Ids mal formados en la ruta y filtros (M1)
+Estado: PROVISORIA (autónomo)
+Decisión: `GET /comercios/:id` con algo que no tiene forma de id de comercio es 404
+`COMERCIO_NO_ENCONTRADO` (ningún comercio puede tener ese id). `?rubroId=` con algo que no es de la
+forma `rub-…` es 400; con un rubro bien formado pero inexistente, lista vacía. Un `%` mal escapado
+en `/comercios/qr/…` lo rechaza Express con 400 (sobre de error), no 500.
+
+### A19 — `GET /rubros` y la paginación (M1)
+Estado: PROVISORIA (autónomo)
+Decisión: acepta `pagina` y `porPagina` (default 20, máximo 100); con 9 rubros entran en una página.
+
+### A20 — Puntaje y reseñas sembrados antes de que existan las reseñas (M1)
+Estado: PROVISORIA (autónomo)
+Decisión: en M1 `puntaje` y `cantidadResenas` se siembran como números fijos. M4 tiene que sembrar las
+reseñas que los respalden (p. ej. 12 para `com-118`) y recalcularlos desde la tabla (R8).
+
+### A21 — Medios de las semillas (M1)
+Estado: PROVISORIA (autónomo)
+Decisión: tres PNG lisos generados por `scripts/generar-medios.mjs` (sin derechos de terceros), que se
+suben por el puerto `AlmacenArchivos` al sembrar. Todavía no hay video de muestra (un `.mp4` real
+pesa y no se puede generar sin dependencias): `videoUrl` queda en `null` en toda la semilla; M9 lo revisa.

@@ -1,3 +1,4 @@
+import { ALMACEN_ARCHIVOS } from '../../src/comun/archivos/almacen-archivos.js';
 import { Reloj } from '../../src/comun/reloj/reloj.js';
 import { Usuario } from '../../src/modulos/usuarios/usuario.entidad.js';
 import { UsuariosServicio } from '../../src/modulos/usuarios/usuarios.servicio.js';
@@ -31,7 +32,11 @@ describe('AGENTS §10.4 — Las semillas cumplen el contrato', () => {
   beforeAll(async () => {
     t = await crearApp();
     expect(await baseVacia(t.dataSource)).toBe(true);
-    await sembrar({ dataSource: t.dataSource, reloj: t.app.get(Reloj) });
+    await sembrar({
+      dataSource: t.dataSource,
+      reloj: t.app.get(Reloj),
+      almacen: t.app.get(ALMACEN_ARCHIVOS),
+    });
   });
   afterAll(() => t.cerrar());
 
