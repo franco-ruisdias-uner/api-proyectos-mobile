@@ -139,3 +139,13 @@ describe('AGENTS §17.2 — configuracionS3: un preset por proveedor', () => {
     });
   });
 });
+
+describe('AGENTS §17.3 — ARCHIVOS_CREAR_BUCKET manda sobre el preset', () => {
+  it('un emulador con ARCHIVOS_CREAR_BUCKET=false no crea el bucket', () => {
+    expect(
+      configuracionS3({ ARCHIVOS_PROVEEDOR: 's3proxy', ARCHIVOS_CREAR_BUCKET: 'false' }),
+    ).toEqual({
+      config: expect.objectContaining({ crearBucket: false }),
+    });
+  });
+});

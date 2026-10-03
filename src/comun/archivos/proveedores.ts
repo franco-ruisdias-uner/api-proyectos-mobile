@@ -175,7 +175,10 @@ export function configuracionS3(variables: Record<string, unknown>): ResultadoS3
       bucket: texto('S3_BUCKET') ?? 'archivos',
       accessKeyId: texto('S3_ACCESS_KEY_ID') ?? 'clave-de-mentira',
       secretAccessKey: texto('S3_SECRET_ACCESS_KEY') ?? 'clave-de-mentira',
-      crearBucket: texto('ARCHIVOS_CREAR_BUCKET') === 'true' || preset.emulador,
+      // Si la variable está, manda; si no, los emuladores crean el bucket y los demás no.
+      crearBucket: texto('ARCHIVOS_CREAR_BUCKET')
+        ? texto('ARCHIVOS_CREAR_BUCKET') === 'true'
+        : preset.emulador,
       checksumsSoloSiHaceFalta: nombre !== 'aws',
     },
   };
