@@ -395,3 +395,13 @@ la promo; códigos con número de promo y de usuario (adivinables, D8).
 Bordes que dejó el verificador de M6 (comportamiento actual, queda fijado):
 - `POST /promociones/:id/usos` no declara cuerpo: si llega uno, se ignora (no hay 400 por campos de más).
 - `codigo` vacío o sólo espacios en `POST /mi-comercio/usos/validar` da 400; un texto cualquiera, 404 `CODIGO_INVALIDO`.
+
+### A30 — Avisos por promo nueva (M7)
+**PROVISORIA (autónomo).** Alcance: sólo el alta de una promo manda push (ESPECIFICACION §7); editar, dar de
+baja o vencer no. Se avisa también si la promo empieza en el futuro (el hueco no distingue). Destinatarios:
+favoritos ∪ interesados en el rubro del comercio, sin repetidos y sin quien la crea; el filtro por
+`avisosActivos` lo hace `Avisos`. Texto: título = nombre del comercio, cuerpo = `Nueva promoción: <título>`,
+`datos` = `{ tipo: "promocion", promocionId, comercioId }`. Los destinatarios se consultan antes de responder
+(dos consultas por índice) y el envío va después, sin bloquear; un error se loguea y el alta no se rompe.
+Alternativas descartadas: avisar sólo si ya está vigente; una push por motivo (favorito / rubro); incluir el
+porcentaje de descuento en el texto.

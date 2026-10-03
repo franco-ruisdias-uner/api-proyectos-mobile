@@ -4,6 +4,13 @@ Lo que cambia en la API, contado para quienes la usan desde la app. Lo más nuev
 
 ## [Sin publicar]
 
+### M7 — Avisos
+
+- Al crear una promoción (`POST /mi-comercio/promociones`) la API manda una push a quienes tienen al
+  comercio en `favoritos` o su rubro en `rubrosDeInteres`, siempre que tengan `avisosActivos`. Una sola
+  por persona. Título: nombre del comercio; cuerpo: `Nueva promoción: <título>`; `datos`:
+  `{ tipo: "promocion", promocionId, comercioId }`. Editar o dar de baja no avisa. No cambia ninguna respuesta.
+
 ### M6 — Uso de promociones
 
 - `POST /promociones/:id/usos`: sólo vecinos. Genera tu código (`CCU-XXXX-XXXX`) de una promoción

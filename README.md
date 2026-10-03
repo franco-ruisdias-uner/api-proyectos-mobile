@@ -177,7 +177,10 @@ comercio las da de alta el Centro Comercial.
 - **Fotos y videos:** primero subís el archivo con `POST /archivos` (`multipart/form-data`,
   campo `archivo`) y la API te devuelve una `url`; después mandás esa `url` en el recurso.
 - **Notificaciones push:** registrá el token de `expo-notifications` con `POST /dispositivos`
-  y probalo con `POST /dispositivos/prueba`.
+  y probalo con `POST /dispositivos/prueba`. La API manda una push cuando un comercio crea una
+  promoción: les llega a quienes lo tienen en favoritos o tienen su rubro en `rubrosDeInteres`, si
+  tienen `avisosActivos`. Trae `datos: { tipo: "promocion", promocionId, comercioId }` para abrir la
+  pantalla de la promo. Los recordatorios de "promo por vencer" son notificaciones locales del teléfono.
 - **Documentación completa, con ejemplos:** <http://localhost:3000/docs> (Swagger). Desde ahí
   podés probar cada endpoint.
 

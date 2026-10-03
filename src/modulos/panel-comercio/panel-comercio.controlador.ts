@@ -96,7 +96,8 @@ export class PanelComercioControlador {
     description:
       'Sólo cuentas de comercio. `{ titulo, detalle, descuento?, desde?, hasta, imagenUrl?, soloApp? }`. ' +
       '`descuento` es un entero de 1 a 100 o `null`; `hasta` tiene que ser posterior a `desde` y a este momento. ' +
-      'Nace activa y con 0 usos.',
+      'Nace activa y con 0 usos. Manda una push a quienes tienen al comercio en favoritos o su rubro en ' +
+      'rubros de interés (con avisos activos, una sola por persona; el comercio no se avisa a sí mismo).',
   })
   @ApiResponse({ status: 201, example: { datos: EJEMPLO_PROMOCION, meta: null } })
   @DocErrores(
