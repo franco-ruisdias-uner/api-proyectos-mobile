@@ -1,6 +1,6 @@
 # Sólo para los tests (`pnpm test:e2e:matriz`): las tres bases en tmpfs (rápidas y
-# descartables), en puertos que no chocan con nada. S3Proxy se suma con el módulo «Nube»,
-# cuando haya un adaptador S3 que probar.
+# descartables), en puertos que no chocan con nada, más S3Proxy (un S3 de juguete, sin
+# volumen) en el 58080 para probar el adaptador de archivos S3.
 name: api-directorio-comercios-matriz
 services:
   postgres:
@@ -33,3 +33,15 @@ services:
       interval: 2s
       timeout: 3s
       retries: 90
+  s3:
+    image: andrewgaul/s3proxy:s3proxy-4.1.1
+    environment:
+      S3PROXY_AUTHORIZATION: none
+      S3PROXY_ENDPOINT: http://0.0.0.0:8080
+      JCLOUDS_PROVIDER: transient
+    ports: ["58080:8080"]
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080'"]
+      interval: 2s
+      timeout: 3s
+      retries: 60

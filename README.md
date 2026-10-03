@@ -281,10 +281,83 @@ vencidas o por vencer sin esperar.
 
 ## 8. Volver los datos al estado inicial
 
-- Sin Docker: `pnpm db:reiniciar`.
+- Sin Docker: `pnpm db:reiniciar` (si la base está en la nube: `pnpm db:reiniciar --confirmar`).
 - Con Docker: `docker compose down -v` y `docker compose up`.
 
-## 9. Problemas frecuentes
+## 9. Archivos en la nube (opcional)
+
+Por defecto las fotos se guardan en una carpeta de tu compu (`ARCHIVOS_PROVEEDOR=local`). Para
+guardarlas en un servicio en la nube cambiás **variables en el `.env`, no código**: la app sigue
+viendo URLs `<tu API>/archivos/<clave>`.
+
+| `ARCHIVOS_PROVEEDOR` | Servicio | Variables que pide |
+|---|---|---|
+| `local` (default) | Carpeta de tu compu | `DIRECTORIO_ARCHIVOS` |
+| `supabase` | Supabase Storage | `SUPABASE_PROYECTO`, `S3_BUCKET`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` |
+| `r2` | Cloudflare R2 | `R2_CUENTA`, `S3_BUCKET`, las dos claves |
+| `b2` | Backblaze B2 | `S3_BUCKET`, `S3_REGION`, las dos claves |
+| `aws` | Amazon S3 | `S3_BUCKET`, `S3_REGION`, las dos claves |
+| `s3proxy` / `localstack` | Emuladores locales (Docker) | nada |
+
+El `.env.example` trae un bloque por proveedor con dónde conseguir cada dato. Si falta una
+variable, la API no arranca y te dice cuál es y dónde se consigue. Para comprobar tu
+configuración sin levantar la API: `pnpm archivos:probar` (sube un archivo de prueba, lo lee
+entero y por rango, y lo borra).
+
+Con Docker podés probar un S3 de juguete sumando un segundo archivo:
+
+```bash
+docker compose -f compose.yaml -f compose.almacen-s3.yaml up
+docker compose -f compose.postgres.yaml -f compose.almacen-s3.yaml up
+```
+
+(LocalStack, "AWS local", pide una cuenta gratis y su token:
+`LOCALSTACK_AUTH_TOKEN=… docker compose -f compose.yaml -f compose.almacen-localstack.yaml up`.)
+
+> Firebase Storage no se puede usar: exige una cuenta con tarjeta (plan Blaze).
+
+## 10. Publicar la API en internet (Render + Supabase)
+
+Una app instalada en un teléfono (build de producción con EAS) no puede apuntar a la IP de tu
+notebook: necesita una URL `https://` que ande desde cualquier red. La combinación gratis y sin
+tarjeta es **Render** (la API) + **Supabase** (base de datos y archivos).
+
+1. **Supabase:** creá un proyecto en <https://supabase.com>. Anotá el identificador del proyecto
+   y la región.
+2. **Base de datos:** en el proyecto, botón **Connect** → **Session pooler**. Copiá la cadena
+   (host `…pooler.supabase.com`, puerto **5432**, usuario `postgres.<id>`) y reemplazá
+   `[YOUR-PASSWORD]` por la contraseña del proyecto (los símbolos raros van codificados: `@` → `%40`).
+   Ésa es tu `DB_URL`. No uses la conexión directa (es sólo IPv6) ni el puerto 6543.
+3. **Archivos:** en **Storage** creá un bucket (por ejemplo `archivos`). En **Storage → S3
+   Connection** generá un par de claves de acceso: son `S3_ACCESS_KEY_ID` y `S3_SECRET_ACCESS_KEY`
+   (guardalas, se muestran una sola vez).
+4. **Render:** subí tu repo a GitHub y apretá
+   [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+   (pegá la dirección de tu repo). Render lee `render.yaml` y te pide los valores que faltan:
+   `DB_URL`, `JWT_SECRETO` (inventá una clave larga, de 32 caracteres o más), `SUPABASE_PROYECTO`,
+   `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID` y `S3_SECRET_ACCESS_KEY`.
+5. **Probar:** cuando Render termine, desde tu compu:
+   `pnpm publicado:probar https://tu-servicio.onrender.com` (revisa `/salud`, la base, los
+   archivos y que las URLs de las fotos sean `https`).
+
+Cosas que conviene saber:
+
+- **Arranque en frío:** el servicio gratis de Render se duerme a los 15 minutos sin tráfico y
+  tarda alrededor de un minuto en despertar. La primera llamada puede tardar: la app tiene que
+  mostrar que está cargando.
+- **Supabase pausa el proyecto** después de una semana sin uso (se reactiva desde el panel).
+- Las tablas van en el esquema `api` (no en `public`), y la API las crea sola al arrancar. Con
+  `SEMBRAR_SI_VACIA=true` carga los datos de demo la primera vez.
+- Con `ENTORNO=publicado` la API **no arranca** si queda algo de desarrollo: SQLite, archivos en
+  disco, el `JWT_SECRETO` de ejemplo o la simulación de fallas. El mensaje dice qué cambiar.
+- Para comprobar la conexión a la base desde tu compu: poné las variables en el `.env` y corré
+  `pnpm db:probar`. Para volver a cero la base en la nube: `pnpm db:reiniciar --confirmar`
+  (borra sólo el esquema de la API).
+- Otras bases gratis: `DB_PROVEEDOR=neon`, `aiven-postgres` o `aiven-mysql` (ver `.env.example`).
+  Neon duerme la base a los 5 minutos sin uso; Aiven apaga el servicio gratis si no lo usás.
+  Otras APIs en la nube: Koyeb funciona igual (usa la variable `PORT`).
+
+## 11. Problemas frecuentes
 
 | Qué pasa | Qué hacer |
 |---|---|
@@ -295,6 +368,10 @@ vencidas o por vencer sin esperar.
 | `EADDRINUSE: address already in use :::3000` | Ya hay algo en el puerto 3000 (¿otra API abierta?). Cerralo o usá `PUERTO=3001`. |
 | Con XAMPP, errores raros al crear tablas | Usá `DB_MOTOR=mariadb` (sección 3). |
 | `401 NO_AUTENTICADO` | Falta `Authorization: Bearer <token>` o el token venció (dura 30 días): volvé a ingresar. |
+| `La API no puede arrancar` con `ENTORNO=publicado` | Es a propósito: leé qué cambiar (SQLite, archivos en disco, `JWT_SECRETO` de ejemplo…). |
+| Supabase: `ENOTFOUND` o `Tenant or user not found` | Usá la cadena del **Session pooler** (usuario `postgres.<id>`), no la conexión directa. |
+| Error de certificado al conectar a la base | Probá `DB_SSL=si-sin-verificar`, o bajá la CA del proveedor y ponela en `DB_SSL_CA`. |
+| Las fotos no cargan en la app publicada | Falta `CONFIAR_PROXY=true` (las URLs salen `http`): `pnpm publicado:probar <url>` lo detecta. |
 | Docker: `port is already allocated` | Otro programa usa ese puerto: `PUERTO=3001 docker compose up`. |
 
 ---
@@ -302,6 +379,6 @@ vencidas o por vencer sin esperar.
 ### Para la cátedra
 
 `pnpm verificar` (tipos + lint + unitarios + e2e en SQLite), `pnpm test:e2e:matriz` (los
-cuatro motores, con Docker), `pnpm docker:probar` (los cuatro compose de punta a punta) y
+cuatro motores y S3Proxy, con Docker), `pnpm docker:probar` (los compose de punta a punta, también con S3Proxy) y
 `pnpm docs:readme` (regenera las tablas de arriba). Las reglas del proyecto están en
 `AGENTS.md` y `docs/ESPECIFICACION.md`; las decisiones, en `docs/DECISIONES.md`.

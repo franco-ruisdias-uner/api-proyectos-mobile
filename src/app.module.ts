@@ -6,7 +6,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ArchivosModulo } from './comun/archivos/archivos.modulo.js';
 import { GuardSesion } from './comun/auth/guard-sesion.js';
 import { Tokens } from './comun/auth/tokens.js';
-import { opcionesTypeOrm } from './comun/db/opciones.js';
+import { DataSource } from 'typeorm';
+import { crearEsquemaSiHaceFalta, opcionesTypeOrm } from './comun/db/opciones.js';
 import { NotificacionesModulo } from './comun/notificaciones/notificaciones.modulo.js';
 import { Reloj, RelojFijo, RelojSistema } from './comun/reloj/reloj.js';
 import { ENTORNO, type Entorno } from './config/entorno.js';
@@ -51,7 +52,14 @@ export class AppModule {
       imports: [
         ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true, load: [() => ({ entorno })] }),
         NucleoModulo.crear(entorno),
-        TypeOrmModule.forRoot(opcionesTypeOrm(entorno)),
+        TypeOrmModule.forRootAsync({
+          useFactory: () => opcionesTypeOrm(entorno),
+          dataSourceFactory: async (opciones) => {
+            if (!opciones) throw new Error('Faltan las opciones de la base.');
+            await crearEsquemaSiHaceFalta(opciones, entorno);
+            return new DataSource(opciones).initialize();
+          },
+        }),
         ArchivosModulo,
         NotificacionesModulo,
         UsuariosModulo,

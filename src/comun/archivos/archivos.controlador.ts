@@ -89,6 +89,10 @@ export class ArchivosControlador {
   })
   @ApiResponse({ status: 200, description: 'El archivo completo' })
   @ApiResponse({ status: 206, description: 'La parte pedida con Range' })
+  @ApiResponse({
+    status: 302,
+    description: 'Con ARCHIVOS_REDIRIGIR=true y un proveedor en la nube: URL firmada de 15 minutos',
+  })
   @DocErrores('ARCHIVO_NO_ENCONTRADO', 'RANGO_NO_SATISFACIBLE', 'ALMACEN_NO_DISPONIBLE')
   async descargar(
     @Param('clave') partes: string[] | string,
@@ -96,6 +100,11 @@ export class ArchivosControlador {
     @Res() res: Response,
   ): Promise<void> {
     const clave = Array.isArray(partes) ? partes.join('/') : partes;
+    const redireccion = await this.archivos.urlDeRedireccion(clave);
+    if (redireccion) {
+      res.redirect(302, redireccion);
+      return;
+    }
     let descarga;
     try {
       descarga = await this.archivos.descargar(clave, rango);

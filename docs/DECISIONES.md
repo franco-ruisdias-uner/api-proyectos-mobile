@@ -405,3 +405,34 @@ favoritos ∪ interesados en el rubro del comercio, sin repetidos y sin quien la
 (dos consultas por índice) y el envío va después, sin bloquear; un error se loguea y el alta no se rompe.
 Alternativas descartadas: avisar sólo si ya está vigente; una push por motivo (favorito / rubro); incluir el
 porcentaje de descuento en el texto.
+
+### A31 — Nube: archivos S3, presets de base y publicación (M8)
+**PROVISORIA (autónomo).** Alcance y detalles que la especificación y AGENTS §17–18 no fijan:
+- Un solo adaptador S3 (`AlmacenS3`, `@aws-sdk/client-s3`) y una tabla de presets
+  (`src/comun/archivos/proveedores.ts`); `configuracionS3` es pura. Fuera de `aws`, el cliente va con
+  `requestChecksumCalculation` y `responseChecksumValidation` en `WHEN_REQUIRED` (confirmado con Context7
+  para la versión instalada). El puerto sumó un método **opcional** `urlFirmada?` (lo usa sólo
+  `ARCHIVOS_REDIRIGIR`, con `@aws-sdk/s3-request-presigner`); no hizo falta cambiar nada fuera de
+  `src/comun/archivos/`.
+- Dependencias nuevas: `@aws-sdk/client-s3` (el adaptador) y `@aws-sdk/s3-request-presigner` (la URL
+  firmada de `ARCHIVOS_REDIRIGIR`); no alcanzaba con `fetch` por la firma SigV4.
+- Los emuladores (`s3proxy`, `localstack`) crean el bucket al arrancar y traen bucket `archivos` y claves
+  de mentira por defecto. En un bucket inexistente sin `ARCHIVOS_CREAR_BUCKET`, `prepararse` falla en
+  seguida (no reintenta). `prepararse` reintenta 5 veces (1 s) ante fallas de red.
+- `DB_PROVEEDOR` pisa a `DB_MOTOR`. `DB_SSL_CA` con `si-sin-verificar` pasa a `si` (verifica contra esa
+  CA). Con PostgreSQL/MySQL la `DB_URL` se parte con `URL` y se pasa a TypeORM como host/puerto/usuario/
+  clave/base decodificados; los parámetros de la query (`?sslmode=…`) se ignoran: el cifrado se pide con `DB_SSL`.
+- `DB_ESQUEMA` (PostgreSQL): se crea con `queryRunner.createSchema(…, true)` desde un `DataSource` previo,
+  antes de `synchronize`. `db:reiniciar` contra `DB_PROVEEDOR` exige `--confirmar`.
+- `ENTORNO=publicado`: además de lo que pide AGENTS, tampoco admite los emuladores (`s3proxy`/`localstack`);
+  la simulación de fallas viene apagada por defecto en este entorno.
+- Sin Docker: el adaptador S3 se prueba en `pnpm test` y en el e2e con un servidor mínimo con el protocolo
+  de S3 (`test/utilidades/s3-falso.ts`, SDK real por HTTP). Las mismas suites corren además contra S3Proxy
+  cuando está `S3PROXY_URL` (la matriz y la CI lo definen). Las imágenes `andrewgaul/s3proxy:s3proxy-4.1.1`
+  y `localstack/localstack:2026.9.0` existen en Docker Hub; el healthcheck de S3Proxy (`bash /dev/tcp`) y los
+  compose no se pudieron ejecutar acá.
+- Lo que necesita cuentas reales (Supabase, Render, R2…) no está probado: para eso `db:probar`,
+  `archivos:probar` y `publicado:probar`.
+Alternativas descartadas: un adaptador por proveedor; aceptar `DB_URL` con `?sslmode=` para decidir el SSL;
+reintentar siempre el bucket inexistente.
+

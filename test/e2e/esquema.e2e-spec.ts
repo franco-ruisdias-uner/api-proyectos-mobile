@@ -1,3 +1,4 @@
+import { Table } from 'typeorm';
 import { ALMACEN_ARCHIVOS } from '../../src/comun/archivos/almacen-archivos.js';
 import { Reloj } from '../../src/comun/reloj/reloj.js';
 import { Usuario } from '../../src/modulos/usuarios/usuario.entidad.js';
@@ -98,3 +99,37 @@ describe('AGENTS §16.2 — SEMBRAR_SI_VACIA', () => {
     await t.cerrar();
   });
 });
+
+// AGENTS §18.3 — sólo PostgreSQL (la matriz): las tablas quedan en DB_ESQUEMA y reiniciar no toca otro esquema.
+describe.runIf(process.env.DB_MOTOR === 'postgres')(
+  'AGENTS §18.3 — DB_ESQUEMA en PostgreSQL',
+  () => {
+    let t: AppDePrueba;
+    beforeAll(async () => {
+      t = await crearApp({ variables: { DB_ESQUEMA: 'api_prueba' } });
+    });
+    afterAll(async () => {
+      const runner = t.dataSource.createQueryRunner();
+      await runner.dropTable('public.tabla_ajena', true);
+      await runner.release();
+      await t.dataSource.dropDatabase();
+      await t.cerrar();
+    });
+
+    it('las tablas de la API quedan en el esquema pedido y reiniciar no toca una tabla ajena de public', async () => {
+      const runner = t.dataSource.createQueryRunner();
+      await runner.createTable(
+        new Table({
+          name: 'public.tabla_ajena',
+          columns: [{ name: 'id', type: 'int', isPrimary: true }],
+        }),
+        true,
+      );
+      expect(await runner.hasTable('api_prueba.usuarios')).toBe(true);
+      await t.dataSource.synchronize(true);
+      expect(await runner.hasTable('api_prueba.usuarios')).toBe(true);
+      expect(await runner.hasTable('public.tabla_ajena')).toBe(true);
+      await runner.release();
+    });
+  },
+);

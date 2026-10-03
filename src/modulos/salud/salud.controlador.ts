@@ -22,7 +22,8 @@ export class SaludControlador {
   @ApiOperation({
     summary: '¿Anda la API?',
     description:
-      'Público. Lo primero que conviene probar desde el teléfono: http://<IP de la compu>:3000/salud',
+      'Público. Lo primero que conviene probar desde el teléfono: http://<IP de la compu>:3000/salud. ' +
+      '`almacen` dice dónde se guardan los archivos: local, aws, supabase, r2, b2, s3proxy o localstack.',
   })
   @ApiResponse({
     status: 200,

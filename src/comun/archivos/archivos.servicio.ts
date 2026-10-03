@@ -3,6 +3,7 @@ import type { ArchivoSubido } from '../../../contrato/api.js';
 import { origenActual } from '../contexto/contexto-pedido.js';
 import { ErrorApi } from '../errores/error-api.js';
 import { Reloj } from '../reloj/reloj.js';
+import { ENTORNO, type Entorno } from '../../config/entorno.js';
 import {
   ALMACEN_ARCHIVOS,
   type AlmacenArchivos,
@@ -23,7 +24,12 @@ export class ArchivosServicio {
   constructor(
     @Inject(ALMACEN_ARCHIVOS) private readonly almacen: AlmacenArchivos,
     private readonly reloj: Reloj,
-  ) {}
+    @Inject(ENTORNO) entorno: Entorno,
+  ) {
+    this.redirigir = entorno.archivosRedirigir;
+  }
+
+  private readonly redirigir: boolean;
 
   /** Valida la firma y el tamaño, guarda con una clave nueva y devuelve la URL absoluta. */
   async subir(contenido: Buffer): Promise<ArchivoSubido> {
@@ -34,6 +40,17 @@ export class ArchivosServicio {
     const clave = nuevaClave(formato.tipo, formato.ext, this.reloj.ahora());
     await this.conAlmacen(() => this.almacen.guardar(clave, contenido, formato.mime));
     return { url: urlDeArchivo(clave), tipo: formato.tipo, bytes: contenido.length };
+  }
+
+  /** Con ARCHIVOS_REDIRIGIR y un proveedor en la nube: URL firmada de 15 minutos; si no, null. */
+  async urlDeRedireccion(clave: string): Promise<string | null> {
+    if (!this.redirigir || !this.almacen.urlFirmada) return null;
+    if (!esClaveValida(clave)) throw new ErrorApi('ARCHIVO_NO_ENCONTRADO');
+    const url = await this.conAlmacen(async () => {
+      if (!(await this.almacen.existe(clave))) throw new ArchivoNoEncontrado(clave);
+      return this.almacen.urlFirmada!(clave);
+    });
+    return url;
   }
 
   async descargar(clave: string, cabeceraRango: string | undefined): Promise<DescargaArchivo> {

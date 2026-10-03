@@ -59,3 +59,69 @@ describe('AGENTS §11.3 — El entorno se valida al arrancar', () => {
     expect(() => validarEntorno({ PUERTO: 'x' })).toThrow(/PUERTO[\s\S]*JWT_SECRETO/);
   });
 });
+
+describe('AGENTS §18.2 — ENTORNO=publicado no arranca con una configuración de desarrollo', () => {
+  const publicado = {
+    ENTORNO: 'publicado',
+    JWT_SECRETO: 'una-clave-larga-y-secreta-de-al-menos-32-caracteres',
+    DB_PROVEEDOR: 'supabase',
+    DB_URL: 'postgres://postgres.abcd:clave@aws-0-sa-east-1.pooler.supabase.com:5432/postgres',
+    ARCHIVOS_PROVEEDOR: 'supabase',
+    SUPABASE_PROYECTO: 'abcd',
+    S3_BUCKET: 'archivos',
+    S3_REGION: 'sa-east-1',
+    S3_ACCESS_KEY_ID: 'AK',
+    S3_SECRET_ACCESS_KEY: 'SK',
+  };
+
+  it('la configuración de referencia (Render + Supabase) arranca, con la simulación apagada por defecto', () => {
+    const e = validarEntorno(publicado);
+    expect(e).toMatchObject({
+      entorno: 'publicado',
+      dbMotor: 'postgres',
+      dbEsquema: 'api',
+      archivosProveedor: 'supabase',
+      simulacionHabilitada: false,
+    });
+    expect(e.s3?.endpoint).toBe('https://abcd.storage.supabase.co/storage/v1/s3');
+  });
+
+  it.each([
+    ['la base es SQLite', { DB_PROVEEDOR: '', DB_URL: '', DB_MOTOR: 'better-sqlite3' }, /SQLite/],
+    ['los archivos son locales', { ARCHIVOS_PROVEEDOR: 'local' }, /ARCHIVOS_PROVEEDOR=local/],
+    ['los archivos son de un emulador', { ARCHIVOS_PROVEEDOR: 's3proxy' }, /emulador/],
+    [
+      'el JWT_SECRETO es el de desarrollo',
+      { JWT_SECRETO: 'solo-para-desarrollo-no-usar-en-produccion' },
+      /JWT_SECRETO/,
+    ],
+    ['el JWT_SECRETO es corto', { JWT_SECRETO: 'corto' }, /32 caracteres/],
+    ['la simulación está prendida', { SIMULACION_HABILITADA: 'true' }, /SIMULACION_HABILITADA/],
+  ])('no arranca si %s', (_motivo, cambio, mensaje) => {
+    expect(() => validarEntorno({ ...publicado, ...cambio })).toThrow(mensaje);
+  });
+
+  it('en desarrollo esas mismas cosas están permitidas', () => {
+    expect(() =>
+      validarEntorno({ JWT_SECRETO: 'solo-para-desarrollo-no-usar-en-produccion' }),
+    ).not.toThrow();
+  });
+
+  it('con un proveedor de archivos en la nube, si falta una variable dice cuál y dónde se consigue', () => {
+    expect(() =>
+      validarEntorno({
+        JWT_SECRETO: 'x',
+        ARCHIVOS_PROVEEDOR: 'r2',
+        S3_BUCKET: 'b',
+        S3_ACCESS_KEY_ID: 'a',
+        S3_SECRET_ACCESS_KEY: 'b',
+      }),
+    ).toThrow(/R2_CUENTA.*Account ID/s);
+  });
+
+  it('ARCHIVOS_REDIRIGIR tiene que ser true o false', () => {
+    expect(() => validarEntorno({ JWT_SECRETO: 'x', ARCHIVOS_REDIRIGIR: 'tal vez' })).toThrow(
+      /ARCHIVOS_REDIRIGIR/,
+    );
+  });
+});

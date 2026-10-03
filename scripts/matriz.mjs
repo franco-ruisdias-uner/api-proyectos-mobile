@@ -24,6 +24,10 @@ const correr = (cmd, args, env = {}) =>
   spawnSync(cmd, args, { stdio: 'inherit', env: { ...process.env, ...env } }).status ?? 1;
 
 const servicios = elegidos.map((m) => MOTORES[m].servicio).filter(Boolean);
+// S3Proxy acompaña a las bases: los archivos también se prueban contra un S3 de verdad (AGENTS §17.4).
+const conS3 = servicios.length > 0;
+if (conS3) servicios.push('s3');
+const S3PROXY_URL = process.env.S3PROXY_URL ?? (conS3 ? 'http://127.0.0.1:58080' : undefined);
 // En la CI las bases ya vienen como service containers: MATRIZ_SIN_DOCKER=1.
 const usarDocker = servicios.length > 0 && !process.env.MATRIZ_SIN_DOCKER;
 if (usarDocker) {
@@ -39,8 +43,13 @@ if (usarDocker) {
 
 const resultados = {};
 try {
+  if (S3PROXY_URL) {
+    console.log('\n━━━ Contrato del almacén de archivos contra S3Proxy ━━━\n');
+    resultados.s3 = correr('pnpm', ['exec', 'vitest', 'run', 'test/almacen'], { S3PROXY_URL }) === 0;
+  }
   for (const m of elegidos) {
-    const { servicio: _s, ...env } = MOTORES[m];
+    const { servicio: _s, ...motor } = MOTORES[m];
+    const env = S3PROXY_URL ? { ...motor, S3PROXY_URL } : motor;
     console.log(`\n━━━ E2E contra ${m} ━━━\n`);
     resultados[m] = correr('pnpm', ['exec', 'vitest', 'run', '--config', './vitest.config.e2e.ts'], env) === 0;
   }
@@ -50,5 +59,6 @@ try {
   }
 }
 
-console.log('\nMatriz: ' + elegidos.map((m) => `${m} ${resultados[m] ? '✓' : '✗'}`).join(' · '));
+const todos = S3PROXY_URL ? ['s3', ...elegidos] : elegidos;
+console.log('\nMatriz: ' + todos.map((m) => `${m} ${resultados[m] ? '✓' : '✗'}`).join(' · '));
 process.exit(Object.values(resultados).every(Boolean) ? 0 : 1);

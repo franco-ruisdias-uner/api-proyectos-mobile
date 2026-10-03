@@ -54,9 +54,14 @@ jobs:
         ports: ["53307:3306"]
         options: >-
           --health-cmd "healthcheck.sh --connect --innodb_initialized" --health-interval 3s --health-timeout 3s --health-retries 60
+      s3:
+        image: andrewgaul/s3proxy:s3proxy-4.1.1
+        env: { S3PROXY_AUTHORIZATION: none, S3PROXY_ENDPOINT: "http://0.0.0.0:8080", JCLOUDS_PROVIDER: transient }
+        ports: ["58080:8080"]
     env:
       TZ: ${{ matrix.tz }}
       MATRIZ_SIN_DOCKER: "1"
+      S3PROXY_URL: http://127.0.0.1:58080
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

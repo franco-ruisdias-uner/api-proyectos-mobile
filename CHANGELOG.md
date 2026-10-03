@@ -4,6 +4,21 @@ Lo que cambia en la API, contado para quienes la usan desde la app. Lo más nuev
 
 ## [Sin publicar]
 
+### M8 — Nube
+
+- **No cambia ninguna respuesta de la API.** Las URLs de los archivos siguen siendo
+  `<origen>/archivos/<clave>` con cualquier proveedor.
+- Archivos en la nube: `ARCHIVOS_PROVEEDOR` ahora acepta `aws`, `supabase`, `r2`, `b2`, `s3proxy` y
+  `localstack` (además de `local`). `GET /salud` informa el proveedor en `almacen`. Nuevo:
+  `ARCHIVOS_REDIRIGIR=true` responde 302 a una URL firmada de 15 minutos.
+- Bases administradas: `DB_PROVEEDOR` (`supabase`, `neon`, `aiven-postgres`, `aiven-mysql`), `DB_SSL`,
+  `DB_SSL_CA` y `DB_ESQUEMA`. Las tablas de Supabase van en el esquema `api`.
+- `ENTORNO=publicado`: la API no arranca con SQLite, archivos en disco, el `JWT_SECRETO` de desarrollo
+  o la simulación de fallas.
+- `render.yaml` para publicar en Render; `pnpm publicado:probar <url>`, `pnpm db:probar` y
+  `pnpm archivos:probar`. `pnpm db:reiniciar` pide `--confirmar` contra una base en la nube.
+- Docker: `compose.almacen-s3.yaml` y `compose.almacen-localstack.yaml` se suman a cualquier compose.
+
 ### M7 — Avisos
 
 - Al crear una promoción (`POST /mi-comercio/promociones`) la API manda una push a quienes tienen al

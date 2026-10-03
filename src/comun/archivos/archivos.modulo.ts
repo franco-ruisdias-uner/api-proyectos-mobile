@@ -1,7 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { ENTORNO, type Entorno } from '../../config/entorno.js';
 import { ALMACEN_ARCHIVOS } from './almacen-archivos.js';
-import { AlmacenLocal } from './almacen-local.js';
+import { crearAlmacen } from './crear-almacen.js';
 import { ArchivosControlador } from './archivos.controlador.js';
 import { ArchivosServicio } from './archivos.servicio.js';
 
@@ -14,8 +14,7 @@ import { ArchivosServicio } from './archivos.servicio.js';
       provide: ALMACEN_ARCHIVOS,
       inject: [ENTORNO],
       useFactory: async (entorno: Entorno) => {
-        // Hoy sólo hay disco; el módulo «Nube» suma los proveedores compatibles con S3.
-        const almacen = new AlmacenLocal(entorno.directorioArchivos);
+        const almacen = crearAlmacen(entorno);
         await almacen.prepararse();
         return almacen;
       },
