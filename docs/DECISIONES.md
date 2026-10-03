@@ -317,3 +317,42 @@ Alternativas descartadas: 404 para el reenvío con distinto cuerpo; 201 en la re
 400 con `{}` en PATCH.
 Semillas (resuelve A20): `puntaje` y `cantidadResenas` salen de reseñas reales, hasta 60 por comercio
 (el de «muchas», com-125, queda en 60 en vez de 87); 60 vecinos de relleno (`vecino01@demo.ar`…).
+
+### D2 — Cierre por vacaciones (M5)
+Estado: PROVISORIA (autónomo); en `ESPECIFICACION.md` figura PENDIENTE y se implementó su default.
+`PATCH /mi-comercio` acepta `cerradoHasta` (`AAAA-MM-DD`, fecha real, o `null`); es un dato de
+entrada: ninguna respuesta lo trae (el contrato no cambia). Mientras `hoy ≤ cerradoHasta` (Buenos Aires)
+el comercio sale con `horarios: []`, también en `GET /mi-comercio`. Una fecha pasada es válida y no
+hace nada.
+
+### A28 — Panel del comercio: alcance y códigos (M5)
+Estado: PROVISORIA (autónomo)
+Hueco: la especificación no lista los campos editables ni todos los bordes de las promos.
+Decisión:
+- `PATCH /mi-comercio` edita `nombre`, `descripcion`, `direccion`, `coordenadas`, `telefono`, `whatsapp`,
+  `instagram`, `imagenes`, `videoUrl`, `horarios`, `mediosDePago` y `cerradoHasta`. El rubro no se edita
+  (cambia a quién le llegan los avisos y lo administra el Centro Comercial); `activo`, `puntaje`,
+  `cantidadResenas`, `id` y `codigoQr` tampoco: cualquier otro campo da 400. `telefono`, `whatsapp`,
+  `instagram` y `videoUrl` se vacían con `null` (nunca `""`); los demás no admiten `null`. `{}` → 200 sin cambios.
+- Formatos: `whatsapp` de 10 a 15 dígitos; `instagram` `@` + 1 a 30 letras, números, `.` o `_`;
+  `mediosDePago` repetidos se juntan y uno fuera del catálogo da 400; `horarios` a lo sumo 50 tramos,
+  con `abre < cierra` (un tramo que cruza la medianoche se carga como dos de días distintos); un tramo que
+  empieza justo cuando termina otro no se pisa. Formato o `abre ≥ cierra` → 400; superposición → 422
+  `HORARIOS_SUPERPUESTOS`. Los tramos salen ordenados por día y hora.
+- Fotos: cada URL tiene que ser de `/archivos` de esta API, existir y ser del tipo correcto
+  (`imagenes` sólo fotos, `videoUrl` sólo video; si no, 422 `ARCHIVO_NO_SUBIDO`). Hasta 8 fotos (9 → 400).
+  Se valida todo antes de escribir: un pedido con un error no guarda nada.
+- Promos: `POST` acepta `{ titulo, detalle, descuento?, desde?, hasta, imagenUrl?, soloApp? }`; sin `desde`
+  empieza ahora; `activa`, `usos`, `id` y `comercioId` no se aceptan (400). `hasta ≤ desde` → 400;
+  `hasta ≤ ahora` → 422 `PROMO_VENCIDA` (al crear o al editar). Editar una promo vencida → 422
+  `PROMO_VENCIDA`; la ventana de un `PATCH` se valida con lo guardado más lo que cambia.
+  `PATCH` no reactiva ni toca `activa`. Se puede editar una dada de baja no vencida.
+- `DELETE` es baja lógica e idempotente (204 también si ya estaba de baja, o vencida); conserva usos.
+  Id inexistente o mal formado → 404 `PROMOCION_NO_ENCONTRADA`; de otro comercio → 403 (el 404 va antes).
+  Una cuenta `comercio` sin `comercioId` → 403 `SIN_PERMISO`.
+- `GET /mi-comercio/promociones`: orden `desde` descendente y, si empata, `id` descendente; sin filtros;
+  `porPagina` máx. 100.
+- Un comercio dado de baja puede seguir editando su ficha y sus promos (siguen ocultas al público, D12).
+- El push por promo nueva (ESPECIFICACION M5 «Dispara push») lo agrega M7; M5 no manda nada.
+Alternativas descartadas: dejar editar el rubro; 400 para `hasta` pasado al crear; `PATCH` con `activa`
+para reactivar; 403 al crear promos desde un comercio dado de baja.

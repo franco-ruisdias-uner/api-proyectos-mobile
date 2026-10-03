@@ -154,6 +154,17 @@ comercio las da de alta el Centro Comercial.
   menos), más `?rubroId=` y `?comercioId=`. **Una promo vencida no se muestra más**: no está en
   ninguna lista y su detalle da `410 PROMO_VENCIDA`; una dada de baja, o de un comercio dado de
   baja, da `404 PROMOCION_NO_ENCONTRADA`. Probá con `pro-441` (vigente) y `pro-447` (vencida).
+- **Panel del comercio:** lo usa la cuenta de comercio (`tornillo@demo.ar`); una cuenta de vecino
+  recibe `403 SIN_PERMISO`. `GET` y `PATCH /mi-comercio` leen y editan la ficha: datos,
+  `horarios` (un elemento por tramo; el horario cortado son dos; si dos tramos se pisan el mismo
+  día, `422 HORARIOS_SUPERPUESTOS`), `imagenes` (hasta 8) y `videoUrl` (URLs de `POST /archivos`),
+  y `mediosDePago` (`efectivo`, `debito`, `credito`, `transferencia`, `billetera_virtual`).
+  Mandás sólo lo que cambia; `horarios`, `imagenes` y `mediosDePago` se reemplazan enteros. Para
+  cerrar por vacaciones mandá `cerradoHasta: "2026-12-31"` (y `null` para levantarlo). `activo`
+  y el rubro no se tocan desde la app. Las promos: `GET /mi-comercio/promociones` trae **todas**
+  (vencidas y dadas de baja también, con `usos`); `POST` crea (`hasta` posterior a `desde` y a
+  hoy; `descuento` entero de 1 a 100 o `null`); `PATCH` edita una no vencida (si no,
+  `422 PROMO_VENCIDA`); `DELETE` la da de baja (`activa: false`) y responde 204.
 - **Fotos y videos:** primero subís el archivo con `POST /archivos` (`multipart/form-data`,
   campo `archivo`) y la API te devuelve una `url`; después mandás esa `url` en el recurso.
 - **Notificaciones push:** registrá el token de `expo-notifications` con `POST /dispositivos`
@@ -178,6 +189,12 @@ comercio las da de alta el Centro Comercial.
 | `POST` | `/dispositivos` | 🔒 con sesión | Registrar el teléfono para recibir push |
 | `DELETE` | `/dispositivos/:tokenExpo` | 🔒 con sesión | Dar de baja el teléfono |
 | `POST` | `/dispositivos/prueba` | 🔒 con sesión | Mandarme una push de prueba |
+| `GET` | `/mi-comercio` | 🔒 con sesión | Mi comercio |
+| `PATCH` | `/mi-comercio` | 🔒 con sesión | Editar mi comercio |
+| `GET` | `/mi-comercio/promociones` | 🔒 con sesión | Mis promociones |
+| `POST` | `/mi-comercio/promociones` | 🔒 con sesión | Crear una promoción |
+| `PATCH` | `/mi-comercio/promociones/:id` | 🔒 con sesión | Editar una promoción |
+| `DELETE` | `/mi-comercio/promociones/:id` | 🔒 con sesión | Dar de baja una promoción |
 | `GET` | `/promociones` | 🌐 público | Promociones |
 | `GET` | `/promociones/:id` | 🌐 público | Detalle de una promoción |
 | `PATCH` | `/resenas/:id` | 🔒 con sesión | Editar mi reseña |
@@ -216,6 +233,7 @@ comercio las da de alta el Centro Comercial.
 | 415 | `TIPO_DE_ARCHIVO_NO_PERMITIDO` | Ese tipo de archivo no se puede subir. Usá una foto JPG, PNG o WEBP, un audio M4A, AAC o MP3, o un video MP4. |
 | 416 | `RANGO_NO_SATISFACIBLE` | No pudimos leer esa parte del archivo. |
 | 422 | `RUBRO_NO_ENCONTRADO` | Alguno de los rubros elegidos no existe. |
+| 422 | `HORARIOS_SUPERPUESTOS` | Hay dos horarios que se pisan el mismo día. |
 | 422 | `REPORTE_PROPIO` | No podés reportar tu propia reseña. |
 | 422 | `FECHA_EN_EL_FUTURO` | La fecha no puede ser posterior a este momento. |
 | 422 | `ARCHIVO_NO_SUBIDO` | Primero hay que subir la foto o el video. |

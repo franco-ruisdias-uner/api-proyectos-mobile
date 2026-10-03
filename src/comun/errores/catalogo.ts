@@ -44,6 +44,8 @@ export const CATALOGO = {
   // 410 al pedir el detalle; 422 al intentar usarla, validarla o editarla.
   PROMO_VENCIDA: { estado: 410, mensaje: 'Esa promoción ya no está vigente.' },
 
+  HORARIOS_SUPERPUESTOS: { estado: 422, mensaje: 'Hay dos horarios que se pisan el mismo día.' },
+
   // Reseñas
   RESENA_NO_ENCONTRADA: { estado: 404, mensaje: 'No existe esa reseña.' },
   RESENA_YA_EXISTE: {

@@ -12,6 +12,7 @@ import { Reloj, RelojFijo, RelojSistema } from './comun/reloj/reloj.js';
 import { ENTORNO, type Entorno } from './config/entorno.js';
 import { AuthModulo } from './modulos/auth/auth.modulo.js';
 import { ComerciosModulo } from './modulos/comercios/comercios.modulo.js';
+import { PanelComercioModulo } from './modulos/panel-comercio/panel-comercio.modulo.js';
 import { PromocionesModulo } from './modulos/promociones/promociones.modulo.js';
 import { ResenasModulo } from './modulos/resenas/resenas.modulo.js';
 import { SaludControlador } from './modulos/salud/salud.controlador.js';
@@ -57,6 +58,7 @@ export class AppModule {
         ComerciosModulo,
         PromocionesModulo,
         ResenasModulo,
+        PanelComercioModulo,
         SemillasModulo,
       ],
       controllers: [SaludControlador],

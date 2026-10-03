@@ -4,6 +4,17 @@ Lo que cambia en la API, contado para quienes la usan desde la app. Lo más nuev
 
 ## [Sin publicar]
 
+### M5 — Panel del comercio
+
+- `GET /mi-comercio` y `PATCH /mi-comercio`: sólo cuentas de comercio. Editan datos, `horarios`
+  (un elemento por tramo), `imagenes` (hasta 8), `videoUrl` y `mediosDePago`. `cerradoHasta`
+  (`AAAA-MM-DD` o `null`) marca el cierre por vacaciones. `activo`, el rubro y el puntaje no se tocan.
+- `GET /mi-comercio/promociones`: todas las del comercio, vencidas y dadas de baja incluidas, con `usos`.
+- `POST /mi-comercio/promociones` (201), `PATCH /mi-comercio/promociones/:id` y
+  `DELETE /mi-comercio/promociones/:id` (204, baja lógica con `activa: false`).
+- Error nuevo: `HORARIOS_SUPERPUESTOS` (422). `PROMO_VENCIDA` también da 422 al crear o editar una
+  promoción que ya terminó.
+
 ### M4 — Reseñas
 
 - `GET /comercios/:id/resenas`: público, de la más nueva a la más vieja.
