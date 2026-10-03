@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, type Repository } from 'typeorm';
-import { Reloj } from '../reloj/reloj.js';
+import { Reloj } from '../comun/reloj/reloj.js';
 import { Dispositivo } from './dispositivo.entidad.js';
-import type { AlmacenTokensPush, Plataforma } from './puertos.js';
+import type { AlmacenTokensPush, Plataforma } from '../comun/notificaciones/puertos.js';
 
 /** Tokens de Expo en la tabla `dispositivos`. */
 @Injectable()
-export class AlmacenTokensTypeorm implements AlmacenTokensPush {
+export class AlmacenTokensPorHacer implements AlmacenTokensPush {
   constructor(
     @InjectRepository(Dispositivo) private readonly repo: Repository<Dispositivo>,
     private readonly reloj: Reloj,

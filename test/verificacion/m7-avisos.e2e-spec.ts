@@ -33,12 +33,7 @@ describe('M7 — Avisos: push por promo nueva (ESPECIFICACION §7, A30)', () => 
   const vecino = async (tokens: string[], extra: { avisosActivos?: boolean } = {}) => {
     const u = await crearUsuario(t, extra);
     for (const tok of tokens) {
-      await t
-        .http()
-        .post('/dispositivos')
-        .set(u.auth)
-        .send({ tokenExpo: tok, plataforma: 'ios' })
-        .expect(201);
+      await t.almacen.guardar(u.id, tok, 'ios');
     }
     return u;
   };
@@ -143,12 +138,7 @@ describe('M7 — Avisos: push por promo nueva (ESPECIFICACION §7, A30)', () => 
   describe('Quién no recibe', () => {
     it('el propio comercio, aunque tenga el token registrado y siga su rubro', async () => {
       const a = tok();
-      await t
-        .http()
-        .post('/dispositivos')
-        .set(tornillo.auth)
-        .send({ tokenExpo: a, plataforma: 'ios' })
-        .expect(201);
+      await t.almacen.guardar(tornillo.id, a, 'ios');
       await alta(tornillo).expect(201);
       expect(await tokensEnviados()).not.toContain(a);
     });
@@ -165,12 +155,7 @@ describe('M7 — Avisos: push por promo nueva (ESPECIFICACION §7, A30)', () => 
       const viejo = await vecino([a]);
       await seguir(viejo);
       const nuevo = await vecino([]);
-      await t
-        .http()
-        .post('/dispositivos')
-        .set(nuevo.auth)
-        .send({ tokenExpo: a, plataforma: 'ios' })
-        .expect(201);
+      await t.almacen.guardar(nuevo.id, a, 'ios');
       await alta(tornillo).expect(201);
       expect(await tokensEnviados()).toEqual([]);
     });
@@ -311,13 +296,7 @@ describe('M7 — Avisos: push por promo nueva (ESPECIFICACION §7, A30)', () => 
       t.enviador.limpiar();
       await alta(tornillo).expect(201);
       expect(await tokensEnviados()).toEqual([]);
-      await t
-        .http()
-        .delete(`/dispositivos/${encodeURIComponent(a)}`)
-        .set(u.auth)
-        .expect((r) => {
-          if (r.status >= 500) throw new Error(`status ${r.status}`);
-        });
+      expect(await t.almacen.tokensDe([u.id])).toEqual([]);
     });
   });
 });

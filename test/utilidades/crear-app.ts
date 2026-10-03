@@ -9,11 +9,11 @@ import type TestAgent from 'supertest/lib/agent.js';
 import type { DataSource } from 'typeorm';
 import { AppModule } from '../../src/app.module.js';
 import { Avisos } from '../../src/comun/notificaciones/avisos.js';
-import { ENVIADOR_PUSH } from '../../src/comun/notificaciones/puertos.js';
+import { ALMACEN_TOKENS_PUSH, ENVIADOR_PUSH } from '../../src/comun/notificaciones/puertos.js';
 import { Reloj, RelojFijo } from '../../src/comun/reloj/reloj.js';
 import { configurarApp, OPCIONES_APP } from '../../src/configurar-app.js';
 import { type Entorno, validarEntorno } from '../../src/config/entorno.js';
-import { EnviadorMemoria } from './dobles-push.js';
+import { AlmacenTokensMemoria, EnviadorMemoria } from './dobles-push.js';
 
 /** Instante por defecto de los tests: sábado 3 de octubre de 2026, 12:00 en Buenos Aires. */
 export const AHORA_DE_PRUEBA = '2026-10-03T12:00:00-03:00';
@@ -23,6 +23,8 @@ export interface AppDePrueba {
   http: () => TestAgent;
   reloj: RelojFijo;
   enviador: EnviadorMemoria;
+  /** Almacén de tokens en memoria; con `almacenReal: true` no se usa y vale `null`. */
+  almacen: AlmacenTokensMemoria;
   avisos: Avisos;
   dataSource: DataSource;
   entorno: Entorno;
@@ -31,10 +33,11 @@ export interface AppDePrueba {
 
 /**
  * Levanta la app completa contra una base limpia (SQLite en memoria por defecto, o el motor de
- * la matriz), con RelojFijo y el enviador de push en memoria (AGENTS §10.2).
+ * la matriz), con RelojFijo y los dos puertos de push en memoria (AGENTS §10.2, §19.2). La
+ * consigna de notificaciones usa `almacenReal: true` para probar el almacén de verdad.
  */
 export async function crearApp(
-  opciones: { ahora?: string; variables?: Record<string, string> } = {},
+  opciones: { ahora?: string; variables?: Record<string, string>; almacenReal?: boolean } = {},
 ): Promise<AppDePrueba> {
   const directorioArchivos = await mkdtemp(join(tmpdir(), 'api-archivos-'));
   const motor = process.env.DB_MOTOR ?? 'better-sqlite3';
@@ -53,12 +56,16 @@ export async function crearApp(
 
   const reloj = new RelojFijo(opciones.ahora ?? AHORA_DE_PRUEBA);
   const enviador = new EnviadorMemoria();
-  const modulo = await Test.createTestingModule({ imports: [AppModule.crear(entorno)] })
+  const almacen = new AlmacenTokensMemoria();
+  let constructor = Test.createTestingModule({ imports: [AppModule.crear(entorno)] })
     .overrideProvider(Reloj)
     .useValue(reloj)
     .overrideProvider(ENVIADOR_PUSH)
-    .useValue(enviador)
-    .compile();
+    .useValue(enviador);
+  if (!opciones.almacenReal) {
+    constructor = constructor.overrideProvider(ALMACEN_TOKENS_PUSH).useValue(almacen);
+  }
+  const modulo = await constructor.compile();
 
   const app = modulo.createNestApplication<NestExpressApplication>(OPCIONES_APP);
   configurarApp(app, entorno);
@@ -74,6 +81,7 @@ export async function crearApp(
     http: () => request(app.getHttpServer()),
     reloj,
     enviador,
+    almacen,
     avisos,
     dataSource,
     entorno,

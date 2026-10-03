@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import type { EnviadorPush, MensajePush } from './puertos.js';
+import type { EnviadorPush, MensajePush } from '../comun/notificaciones/puertos.js';
 
 const TANDA = 100;
 
@@ -12,7 +12,7 @@ interface TicketExpo {
  * Manda las push con `fetch` a la API de Expo, sin SDK (AGENTS §9). Un mensaje por token, en
  * tandas de 100. Los tokens que Expo responde como `DeviceNotRegistered` vuelven como inválidos.
  */
-export class EnviadorExpo implements EnviadorPush {
+export class EnviadorPorHacer implements EnviadorPush {
   private readonly logger = new Logger('Push');
 
   constructor(private readonly url: string) {}

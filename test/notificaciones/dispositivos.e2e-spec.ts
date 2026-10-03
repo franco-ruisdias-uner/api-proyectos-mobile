@@ -1,12 +1,20 @@
-import { Dispositivo } from '../../src/comun/notificaciones/dispositivo.entidad.js';
-import { type AppDePrueba, crearApp } from '../utilidades/crear-app.js';
+import {
+  ALMACEN_TOKENS_PUSH,
+  type AlmacenTokensPush,
+} from '../../src/comun/notificaciones/puertos.js';
+import { type AppDePrueba, crearApp as crearAppBase } from '../utilidades/crear-app.js';
 import { esperarContrato, esperarError } from '../utilidades/contrato.js';
 import { crearUsuario } from '../utilidades/usuarios.js';
+
+// Consigna de notificaciones (AGENTS §19): acá se prueba el almacén de tokens de verdad.
+const crearApp = () => crearAppBase({ almacenReal: true });
+const tokensDe = (t: AppDePrueba, ids: string[]) =>
+  t.app.get<AlmacenTokensPush>(ALMACEN_TOKENS_PUSH).tokensDe(ids);
 
 const TOKEN = 'ExponentPushToken[aaaaaaaaaaaaaaaaaaaaaa]';
 const OTRO_TOKEN = 'ExponentPushToken[bbbbbbbbbbbbbbbbbbbbbb]';
 
-describe('AGENTS §9 — POST /dispositivos', () => {
+describe('Guardar tokens — POST /dispositivos: el alumno tiene que lograr que cada token quede guardado una sola vez y a nombre del usuario actual', () => {
   let t: AppDePrueba;
   beforeEach(async () => {
     t = await crearApp();
@@ -31,7 +39,7 @@ describe('AGENTS §9 — POST /dispositivos', () => {
     const a = await t.http().post('/dispositivos').set(marta.auth).send(cuerpo).expect(201);
     const b = await t.http().post('/dispositivos').set(marta.auth).send(cuerpo).expect(201);
     expect(a.body).toEqual(b.body);
-    expect(await t.dataSource.getRepository(Dispositivo).count()).toBe(1);
+    expect(await tokensDe(t, [marta.id])).toEqual([TOKEN]);
   });
 
   it('dos POST simultáneos del mismo token dejan un solo registro', async () => {
@@ -42,7 +50,7 @@ describe('AGENTS §9 — POST /dispositivos', () => {
       t.http().post('/dispositivos').set(marta.auth).send(cuerpo),
     ]);
     expect(respuestas.map((r) => r.status)).toEqual([201, 201]);
-    expect(await t.dataSource.getRepository(Dispositivo).count()).toBe(1);
+    expect(await tokensDe(t, [marta.id])).toEqual([TOKEN]);
   });
 
   it('si otro usuario tenía el token, pasa al actual', async () => {
@@ -60,8 +68,8 @@ describe('AGENTS §9 — POST /dispositivos', () => {
       .set(jose.auth)
       .send({ tokenExpo: TOKEN, plataforma: 'android' })
       .expect(201);
-    const filas = await t.dataSource.getRepository(Dispositivo).find();
-    expect(filas.map((f) => f.usuarioId)).toEqual([jose.id]);
+    expect(await tokensDe(t, [marta.id])).toEqual([]);
+    expect(await tokensDe(t, [jose.id])).toEqual([TOKEN]);
   });
 
   it.each([
@@ -90,7 +98,7 @@ describe('AGENTS §9 — POST /dispositivos', () => {
   });
 });
 
-describe('AGENTS §9 — DELETE /dispositivos/:tokenExpo', () => {
+describe('Dar de baja — DELETE /dispositivos/:tokenExpo: el alumno tiene que lograr que sólo el dueño pueda borrar su token', () => {
   let t: AppDePrueba;
   beforeEach(async () => {
     t = await crearApp();
@@ -111,7 +119,7 @@ describe('AGENTS §9 — DELETE /dispositivos/:tokenExpo', () => {
       .set(marta.auth)
       .expect(204);
     expect(res.text).toBe('');
-    expect(await t.dataSource.getRepository(Dispositivo).count()).toBe(0);
+    expect(await tokensDe(t, [marta.id])).toEqual([]);
   });
 
   it('204 aunque el token no estuviera registrado', async () => {
@@ -137,7 +145,7 @@ describe('AGENTS §9 — DELETE /dispositivos/:tokenExpo', () => {
       .delete(`/dispositivos/${encodeURIComponent(TOKEN)}`)
       .set(intruso.auth)
       .expect(204);
-    expect(await t.dataSource.getRepository(Dispositivo).count()).toBe(1);
+    expect(await tokensDe(t, [marta.id])).toEqual([TOKEN]);
   });
 
   it('400 VALIDACION_FALLIDA con algo que no es un token de Expo', async () => {
@@ -155,7 +163,7 @@ describe('AGENTS §9 — DELETE /dispositivos/:tokenExpo', () => {
   });
 });
 
-describe('AGENTS §9 — POST /dispositivos/prueba', () => {
+describe('Push de prueba — POST /dispositivos/prueba: el alumno tiene que lograr que se mande a los tokens del usuario y se descarten los inválidos', () => {
   let t: AppDePrueba;
   beforeEach(async () => {
     t = await crearApp();
@@ -214,72 +222,11 @@ describe('AGENTS §9 — POST /dispositivos/prueba', () => {
       .expect(201);
     t.enviador.invalidos.add(TOKEN);
     await t.http().post('/dispositivos/prueba').set(marta.auth).expect(200);
-    expect(await t.dataSource.getRepository(Dispositivo).count()).toBe(0);
+    expect(await tokensDe(t, [marta.id])).toEqual([]);
   });
 
   it('401 NO_AUTENTICADO sin sesión', async () => {
     const res = await t.http().post('/dispositivos/prueba').expect(401);
     esperarError(res.body, 'NO_AUTENTICADO');
-  });
-});
-
-describe('AGENTS §19.2 — Avisos: a quién se avisa', () => {
-  let t: AppDePrueba;
-  beforeEach(async () => {
-    t = await crearApp();
-  });
-  afterEach(() => t.cerrar());
-
-  const registrar = (auth: { Authorization: string }, tokenExpo: string) =>
-    t.http().post('/dispositivos').set(auth).send({ tokenExpo, plataforma: 'android' }).expect(201);
-
-  const aviso = {
-    titulo: 'Promo nueva',
-    cuerpo: '15% en pinturas',
-    datos: { promocionId: 'pro-441' },
-  };
-
-  it('avisa a los usuarios con avisos activos, una sola vez aunque se repitan', async () => {
-    const marta = await crearUsuario(t);
-    await registrar(marta.auth, TOKEN);
-    t.avisos.avisar([marta.id, marta.id], aviso);
-    await t.avisos.esperarPendientes();
-    expect(t.enviador.enviados).toEqual([{ tokens: [TOKEN], ...aviso }]);
-  });
-
-  it('nadie recibe nada si tiene los avisos apagados', async () => {
-    const marta = await crearUsuario(t, { avisosActivos: false });
-    const jose = await crearUsuario(t);
-    await registrar(marta.auth, TOKEN);
-    await registrar(jose.auth, OTRO_TOKEN);
-    t.avisos.avisar([marta.id, jose.id], aviso);
-    await t.avisos.esperarPendientes();
-    expect(t.enviador.enviados).toEqual([{ tokens: [OTRO_TOKEN], ...aviso }]);
-  });
-
-  it('sin tokens no se llama al enviador', async () => {
-    const marta = await crearUsuario(t);
-    t.avisos.avisar([marta.id], aviso);
-    await t.avisos.esperarPendientes();
-    expect(t.enviador.enviados).toEqual([]);
-  });
-
-  it('descarta los tokens que el enviador informa como inválidos', async () => {
-    const marta = await crearUsuario(t);
-    await registrar(marta.auth, TOKEN);
-    await registrar(marta.auth, OTRO_TOKEN);
-    t.enviador.invalidos.add(TOKEN);
-    t.avisos.avisar([marta.id], aviso);
-    await t.avisos.esperarPendientes();
-    const quedan = await t.dataSource.getRepository(Dispositivo).find();
-    expect(quedan.map((d) => d.tokenExpo)).toEqual([OTRO_TOKEN]);
-  });
-
-  it('si el envío falla, no tira error (se loguea)', async () => {
-    const marta = await crearUsuario(t);
-    await registrar(marta.auth, TOKEN);
-    t.enviador.fallarCon = new Error('Expo no responde');
-    expect(() => t.avisos.avisar([marta.id], aviso)).not.toThrow();
-    await expect(t.avisos.esperarPendientes()).resolves.toBeUndefined();
   });
 });

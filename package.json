@@ -14,6 +14,7 @@
     "lint": "oxlint --deny-warnings src/ test/ scripts/ && prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
     "tipos": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
+    "test:notificaciones": "vitest run --config ./vitest.config.notificaciones.ts",
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
     "test:e2e:matriz": "node scripts/matriz.mjs",
     "contrato:esquema": "ts-json-schema-generator --path \"contrato/*.ts\" --type \"*\" --no-type-check --out contrato/esquema.json",

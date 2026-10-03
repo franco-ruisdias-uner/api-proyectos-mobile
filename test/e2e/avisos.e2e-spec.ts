@@ -17,12 +17,7 @@ describe('PRD §7 — Avisos: push por promo nueva de un favorito o de un rubro 
   let ajena: UsuarioDePrueba;
 
   const registrar = (u: UsuarioDePrueba, token: string) =>
-    t
-      .http()
-      .post('/dispositivos')
-      .set(u.auth)
-      .send({ tokenExpo: token, plataforma: 'android' })
-      .expect(201);
+    t.almacen.guardar(u.id, token, 'android');
 
   beforeAll(async () => {
     t = await crearApp();

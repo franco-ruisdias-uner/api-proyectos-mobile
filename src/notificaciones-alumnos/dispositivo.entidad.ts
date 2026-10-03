@@ -1,6 +1,6 @@
 import { Entity, Index, PrimaryColumn } from 'typeorm';
-import { ColumnaEnum, ColumnaInstante, ColumnaRef } from '../db/columnas.js';
-import type { Plataforma } from './puertos.js';
+import { ColumnaEnum, ColumnaInstante, ColumnaRef } from '../comun/db/columnas.js';
+import type { Plataforma } from '../comun/notificaciones/puertos.js';
 
 /** Un teléfono registrado para recibir push. Cada token pertenece a un solo usuario. */
 @Entity('dispositivos')
