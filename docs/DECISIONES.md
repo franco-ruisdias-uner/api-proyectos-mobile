@@ -279,3 +279,9 @@ Reemplaza a A9: el test `test/verificacion/m0.e2e-spec.ts` esperaba 400 para `av
 "hasta M3"; se cambió a un valor no booleano porque ESPECIFICACION M3 lo acepta.
 Semillas: Marta con `com-118` y `com-101` y rubros `rub-ferreteria` y `rub-gastronomia`.
 
+
+### A26 — Id de comercio mal formado en `PUT /yo/favoritos/:comercioId` (M3)
+
+Estado: PROVISORIA (autónomo). Un id sin el prefijo `com-` da 400 `VALIDACION_FALLIDA` (AGENTS §7.3)
+antes de ir a la base. `DELETE` con id mal formado sigue dando 204 (idempotente, A25). Un rubro con
+formato inválido en `rubrosDeInteres` da 422 `RUBRO_NO_ENCONTRADO`. Alternativa descartada: 400 también en `DELETE`.

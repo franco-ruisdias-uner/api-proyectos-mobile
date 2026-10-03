@@ -76,6 +76,9 @@ export class UsuariosServicio {
 
   /** Idempotente: si ya era favorito no hace nada (ni siquiera con dos pedidos simultáneos). */
   async agregarFavorito(id: string, comercioId: string): Promise<UsuarioContrato> {
+    if (!/^com-[A-Za-z0-9_-]{1,36}$/.test(comercioId)) {
+      throw new ErrorApi('VALIDACION_FALLIDA', 'El comercio elegido no es válido.');
+    }
     const usuario = await this.deLaSesion(id);
     if (!(await this.comercios.existsBy({ id: comercioId }))) {
       throw new ErrorApi('COMERCIO_NO_ENCONTRADO');
