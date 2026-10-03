@@ -1,11 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import type { Repository } from 'typeorm';
+import { type Repository } from 'typeorm';
 import type {
   Comercio as ComercioContrato,
   Promocion as PromocionContrato,
 } from '../../../contrato/tipos.js';
 import { ArchivosServicio } from '../../comun/archivos/archivos.servicio.js';
+import { Avisos } from '../../comun/notificaciones/avisos.js';
 import { ErrorApi } from '../../comun/errores/error-api.js';
 import { hoyEnZona, parsearInstante } from '../../comun/fechas/fechas.js';
 import { nuevoId } from '../../comun/ids/ids.js';
@@ -16,9 +17,12 @@ import { comercioAContrato } from '../comercios/comercios.mapeador.js';
 import { Promocion } from '../promociones/promocion.entidad.js';
 import { promocionAContrato } from '../promociones/promociones.mapeador.js';
 import { esIdDePromocion } from '../promociones/reglas/promociones.js';
+import { Favorito } from '../usuarios/favorito.entidad.js';
+import { RubroDeInteres } from '../usuarios/rubro-de-interes.entidad.js';
 import { UsuariosServicio } from '../usuarios/usuarios.servicio.js';
 import type { ActualizarComercioDto } from './dto/actualizar-comercio.dto.js';
 import type { CrearPromocionDto, EditarPromocionDto } from './dto/promocion.dto.js';
+import { avisoDePromocion, destinatariosDePromocion } from './reglas/avisos.js';
 import { horariosInvalidos, horariosSuperpuestos } from './reglas/horarios.js';
 import { sinRepetidos, ventanaDePromocion } from './reglas/panel.js';
 
@@ -30,10 +34,15 @@ function esDiaReal(dia: string): boolean {
 
 @Injectable()
 export class PanelComercioServicio {
+  private readonly logger = new Logger('PanelComercio');
+
   constructor(
     @InjectRepository(Comercio) private readonly comercios: Repository<Comercio>,
     @InjectRepository(Promocion) private readonly promociones: Repository<Promocion>,
+    @InjectRepository(Favorito) private readonly favoritos: Repository<Favorito>,
+    @InjectRepository(RubroDeInteres) private readonly intereses: Repository<RubroDeInteres>,
     private readonly usuarios: UsuariosServicio,
+    private readonly avisos: Avisos,
     private readonly archivos: ArchivosServicio,
     private readonly reloj: Reloj,
   ) {}
@@ -116,7 +125,7 @@ export class PanelComercioServicio {
     return { datos: filas.map(promocionAContrato), total };
   }
 
-  /** R6. El push a favoritos y rubros de interés lo suma M7. */
+  /** R6. Después de guardar, avisa por push (M7). */
   async crearPromocion(usuarioId: string, dto: CrearPromocionDto): Promise<PromocionContrato> {
     const comercio = await this.comercioDe(usuarioId);
     const ahora = this.reloj.ahora();
@@ -140,7 +149,30 @@ export class PanelComercioServicio {
       activa: true,
     };
     await this.promociones.insert(nueva);
+    await this.avisarPromocionNueva(usuarioId, comercio, nueva);
     return promocionAContrato(nueva);
+  }
+
+  /** ESPECIFICACION §7: favoritos y rubro de interés. El envío no bloquea; un error acá no rompe el alta. */
+  private async avisarPromocionNueva(
+    autorId: string,
+    comercio: Comercio,
+    promo: Promocion,
+  ): Promise<void> {
+    try {
+      const [favoritos, interesados] = await Promise.all([
+        this.favoritos.find({ select: { usuarioId: true }, where: { comercioId: comercio.id } }),
+        this.intereses.find({ select: { usuarioId: true }, where: { rubroId: comercio.rubroId } }),
+      ]);
+      const ids = destinatariosDePromocion(
+        favoritos.map((f) => f.usuarioId),
+        interesados.map((i) => i.usuarioId),
+        autorId,
+      );
+      this.avisos.avisar(ids, avisoDePromocion(comercio, promo));
+    } catch (error) {
+      this.logger.error(`No se pudo armar el aviso de la promo: ${(error as Error).message}`);
+    }
   }
 
   /** R6: sólo una no vencida; la ventana se valida con lo guardado más lo que cambia. */
