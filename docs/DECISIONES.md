@@ -144,3 +144,9 @@ Decisión: `ARCHIVOS_PROVEEDOR` acepta sólo `local` y `ENTORNO` sólo `desarrol
 proveedores S3, `ENTORNO=publicado`, `DB_PROVEEDOR` y S3Proxy en `compose.matriz.yaml` llegan con
 el módulo «Nube» (M8), que es donde los ubica `AGENTS.md` §17.5 y §18.4.
 
+
+### A13 — Largo máximo de la contraseña (M0)
+Estado: PROVISORIA (autónomo)
+Hueco: AGENTS §7.2 fija el mínimo (8) pero no un máximo.
+Decisión: hasta 100 caracteres ("La contraseña puede tener como máximo 100 caracteres."). Evita
+que alguien mande textos enormes para que `scrypt` tarde. Alternativa: sin máximo.

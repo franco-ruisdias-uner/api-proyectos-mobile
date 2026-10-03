@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsEmail, IsString, Length, MaxLength } from 'class-validator';
+import { IsEmail, IsString, Length, MaxLength, MinLength } from 'class-validator';
 import { recortar } from '../../../comun/texto/recortar.js';
 
 // class-validator corre primero el decorador más cercano a la propiedad, y con
@@ -19,8 +19,9 @@ export class RegistroDto {
   @IsString({ message: 'Falta el email.' })
   email: string;
 
-  @ApiProperty({ example: 'demo1234', minLength: 8 })
-  @Length(8, 100, { message: 'La contraseña tiene que tener al menos 8 caracteres.' })
+  @ApiProperty({ example: 'demo1234', minLength: 8, maxLength: 100 })
+  @MaxLength(100, { message: 'La contraseña puede tener como máximo 100 caracteres.' })
+  @MinLength(8, { message: 'La contraseña tiene que tener al menos 8 caracteres.' })
   @IsString({ message: 'Falta la contraseña.' })
   contrasena: string;
 }

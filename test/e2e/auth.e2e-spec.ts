@@ -106,6 +106,7 @@ describe('AGENTS §7.1 / ESPECIFICACION §1 — POST /auth/registro', () => {
     [{ contrasena: undefined }, 'Falta la contraseña.'],
     [{ contrasena: '1234567' }, 'La contraseña tiene que tener al menos 8 caracteres.'],
     [{ contrasena: 12345678 }, 'Falta la contraseña.'],
+    [{ contrasena: 'x'.repeat(101) }, 'La contraseña puede tener como máximo 100 caracteres.'],
   ])('400 VALIDACION_FALLIDA con %j', async (cambio, mensaje) => {
     const res = await t.http().post('/auth/registro').send(registro(cambio)).expect(400);
     esperarError(res.body, 'VALIDACION_FALLIDA');

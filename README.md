@@ -117,7 +117,7 @@ Todos tienen la contraseña **`demo1234`**.
 | `tornillo@demo.ar` | comercio | Ferretería El Tornillo (`com-118`). |
 | `otro.comercio@demo.ar` | comercio | Otro comercio, para probar lo que no es tuyo. |
 
-Para crear tu propia cuenta: `POST /auth/registro`. Siempre crea un vecino; las cuentas de
+Para crear tu propia cuenta: `POST /auth/registro` (contraseña de 8 a 100 caracteres). Siempre crea un vecino; las cuentas de
 comercio las da de alta el Centro Comercial.
 
 ## 6. Cómo se usa

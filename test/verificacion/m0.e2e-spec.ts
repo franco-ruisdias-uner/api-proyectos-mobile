@@ -1014,3 +1014,614 @@ describe('AGENTS §11.5 — Swagger documenta los endpoints de M0 (verificación
     expect(reg.responses['400']).toBeTruthy();
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+// Segunda pasada: nulos y tipos raros en cada cuerpo, cargas maliciosas, tokens con formas
+// raras, concurrencia de dispositivos y rangos que faltaban.
+// ---------------------------------------------------------------------------------------------
+
+describe('AGENTS §7.3 — POST /auth/registro con nulos y cuerpos raros (verificación, 2ª pasada)', () => {
+  let t: AppDePrueba;
+  beforeAll(async () => {
+    t = await crearApp();
+  });
+  afterAll(() => t.cerrar());
+
+  const base = { nombre: 'Rosa Benítez', email: 'rosa2@mail.com', contrasena: 'clave-larga' };
+
+  it.each([
+    ['email null', { email: null }],
+    ['contraseña null', { contrasena: null }],
+    ['email vacío', { email: '' }],
+    ['contraseña vacía', { contrasena: '' }],
+    ['nombre objeto', { nombre: { primero: 'Rosa' } }],
+    ['nombre booleano', { nombre: true }],
+    ['email lista', { email: ['rosa2@mail.com'] }],
+    ['nombre con sólo tabulaciones y saltos', { nombre: '\t\n  \n' }],
+    ['campo de más: rol null', { rol: null }],
+    ['campo de más: comercioId null', { comercioId: null }],
+    ['campo de más: sincronizado', { sincronizado: true }],
+  ])('400 VALIDACION_FALLIDA: %s', async (_n, cambio) => {
+    const res = await t
+      .http()
+      .post('/auth/registro')
+      .send({ ...base, ...cambio })
+      .expect(400);
+    esperarError(res.body, 'VALIDACION_FALLIDA');
+    esperarMensajeHumano(res.body);
+  });
+
+  it.each([
+    ['null', 'null'],
+    ['un texto JSON', '"hola"'],
+    ['un número', '42'],
+    ['un booleano', 'true'],
+  ])('400 VALIDACION_FALLIDA si el cuerpo JSON es %s', async (_n, crudo) => {
+    const res = await t
+      .http()
+      .post('/auth/registro')
+      .set('Content-Type', 'application/json')
+      .send(crudo);
+    expect(res.status).toBe(400);
+    esperarError(res.body, 'VALIDACION_FALLIDA');
+    esperarMensajeHumano(res.body);
+  });
+
+  it('__proto__ en el cuerpo no da rol de comercio (400 o vecino, nunca comercio ni 500)', async () => {
+    const crudo = `{"nombre":"Proto","email":"proto@mail.com","contrasena":"clave-larga","__proto__":{"rol":"comercio","comercioId":"com-118"}}`;
+    const res = await t
+      .http()
+      .post('/auth/registro')
+      .set('Content-Type', 'application/json')
+      .send(crudo);
+    expect([201, 400]).toContain(res.status);
+    if (res.status === 201) {
+      esperarContrato(res.body, 'Sesion');
+      expect(res.body.datos.usuario.rol).toBe('vecino');
+      expect(res.body.datos.usuario.comercioId).toBeNull();
+    } else esperarError(res.body, 'VALIDACION_FALLIDA');
+  });
+
+  it('un email larguísimo con forma válida: 400 o 201, nunca 500 (la columna tiene largo)', async () => {
+    const email = `${'a'.repeat(60)}@${'b'.repeat(60)}.${'c'.repeat(60)}.${'d'.repeat(60)}.com`;
+    const res = await t
+      .http()
+      .post('/auth/registro')
+      .send({ ...base, email });
+    expect([201, 400]).toContain(res.status);
+    if (res.status === 400) esperarError(res.body, 'VALIDACION_FALLIDA');
+    else {
+      const yo = await t
+        .http()
+        .get('/yo')
+        .set('Authorization', `Bearer ${res.body.datos.token}`)
+        .expect(200);
+      expect(yo.body.datos.email).toBe(email);
+    }
+  });
+
+  it('una contraseña enorme (50 000 caracteres): 400 o 201, nunca 500', async () => {
+    const res = await t
+      .http()
+      .post('/auth/registro')
+      .send({ ...base, email: 'enorme@mail.com', contrasena: 'x'.repeat(50_000) });
+    expect([201, 400]).toContain(res.status);
+    if (res.status === 400) esperarError(res.body, 'VALIDACION_FALLIDA');
+  });
+
+  it('AGENTS §4.6 / §7.3 — una contraseña larga (200) no se rechaza con un mensaje falso', async () => {
+    const res = await t
+      .http()
+      .post('/auth/registro')
+      .send({ ...base, email: 'larga@mail.com', contrasena: 'x'.repeat(200) });
+    expect([201, 400]).toContain(res.status);
+    if (res.status === 400) {
+      esperarError(res.body, 'VALIDACION_FALLIDA');
+      // 200 caracteres cumplen "al menos 8": el mensaje no puede decir lo contrario.
+      expect(res.body.error.mensaje).not.toMatch(/al menos 8/);
+      expect(res.body.error.mensaje).toMatch(/contraseña/i);
+    }
+  });
+
+  it('el token del registro es HS256, con sub = id, rol vecino, y vence a los 30 días del reloj', async () => {
+    const res = await t
+      .http()
+      .post('/auth/registro')
+      .send({ ...base, email: 'jwt@mail.com' })
+      .expect(201);
+    const { token, usuario } = res.body.datos as { token: string; usuario: { id: string } };
+    expect(usuario.id).toMatch(/^usr-[a-z0-9]{12}$/);
+    const [cab, carga] = token.split('.');
+    const cabecera = JSON.parse(Buffer.from(cab, 'base64url').toString()) as { alg: string };
+    const datos = JSON.parse(Buffer.from(carga, 'base64url').toString()) as Record<string, unknown>;
+    expect(cabecera.alg).toBe('HS256');
+    expect(datos.sub).toBe(usuario.id);
+    expect(datos.rol).toBe('vecino');
+    expect(datos.iat).toBe(segundos('2026-10-03T12:00:00-03:00'));
+    expect((datos.exp as number) - (datos.iat as number)).toBe(30 * 24 * 3600);
+    expect(Object.keys(datos)).not.toContain('contrasena');
+    expect(Object.keys(datos)).not.toContain('email');
+  });
+
+  it('el usuario del registro es idéntico al que devuelve GET /yo', async () => {
+    const res = await t
+      .http()
+      .post('/auth/registro')
+      .send({ ...base, email: 'Igual@Mail.com' })
+      .expect(201);
+    const yo = await t
+      .http()
+      .get('/yo')
+      .set('Authorization', `Bearer ${res.body.datos.token}`)
+      .expect(200);
+    esperarContrato(yo.body, 'Usuario');
+    expect(yo.body.datos).toEqual(res.body.datos.usuario);
+    expect(yo.body.datos).toMatchObject({
+      rol: 'vecino',
+      comercioId: null,
+      favoritos: [],
+      rubrosDeInteres: [],
+      avisosActivos: true,
+    });
+  });
+});
+
+describe('AGENTS §7.1 / §7.3 — POST /auth/ingreso con nulos y cuerpos raros (verificación, 2ª pasada)', () => {
+  let t: AppDePrueba;
+  beforeAll(async () => {
+    t = await crearApp();
+    await crearUsuario(t, { email: 'ana@mail.com' });
+  });
+  afterAll(() => t.cerrar());
+
+  it.each([
+    ['email null', { email: null, contrasena: CONTRASENA_DE_PRUEBA }],
+    ['contraseña null', { email: 'ana@mail.com', contrasena: null }],
+    ['los dos null', { email: null, contrasena: null }],
+    ['email vacío', { email: '', contrasena: CONTRASENA_DE_PRUEBA }],
+    ['email objeto', { email: { $ne: '' }, contrasena: CONTRASENA_DE_PRUEBA }],
+    ['contraseña objeto', { email: 'ana@mail.com', contrasena: { $ne: '' } }],
+    ['cuerpo vacío', {}],
+  ])('400 VALIDACION_FALLIDA: %s', async (_n, cuerpo) => {
+    const res = await t.http().post('/auth/ingreso').send(cuerpo).expect(400);
+    esperarError(res.body, 'VALIDACION_FALLIDA');
+    esperarMensajeHumano(res.body);
+  });
+
+  it.each([
+    ['null', 'null'],
+    ['una lista', '[{"email":"ana@mail.com","contrasena":"clave-de-prueba"}]'],
+    ['un texto JSON', '"ana@mail.com"'],
+  ])('400 VALIDACION_FALLIDA si el cuerpo JSON es %s', async (_n, crudo) => {
+    const res = await t
+      .http()
+      .post('/auth/ingreso')
+      .set('Content-Type', 'application/json')
+      .send(crudo);
+    expect(res.status).toBe(400);
+    esperarError(res.body, 'VALIDACION_FALLIDA');
+  });
+
+  it('un email sin forma de email: 400 o 401, nunca 500', async () => {
+    const res = await t
+      .http()
+      .post('/auth/ingreso')
+      .send({ email: "ana' OR '1'='1", contrasena: CONTRASENA_DE_PRUEBA });
+    expect([400, 401]).toContain(res.status);
+    esperarError(res.body);
+    esperarMensajeHumano(res.body);
+  });
+
+  it('una contraseña enorme: 400 o 401, nunca 500', async () => {
+    const res = await t
+      .http()
+      .post('/auth/ingreso')
+      .send({ email: 'ana@mail.com', contrasena: 'x'.repeat(50_000) });
+    expect([400, 401]).toContain(res.status);
+    esperarError(res.body);
+  });
+
+  it('un comodín de LIKE en el email no ingresa a otra cuenta', async () => {
+    const res = await t
+      .http()
+      .post('/auth/ingreso')
+      .send({ email: '%@mail.com', contrasena: CONTRASENA_DE_PRUEBA });
+    expect([400, 401]).toContain(res.status);
+    esperarError(res.body);
+  });
+
+  it('dos ingresos seguidos dan dos sesiones que sirven las dos', async () => {
+    const pedir = () =>
+      t
+        .http()
+        .post('/auth/ingreso')
+        .send({ email: 'ana@mail.com', contrasena: CONTRASENA_DE_PRUEBA })
+        .expect(200);
+    const [a, b] = await Promise.all([pedir(), pedir()]);
+    for (const r of [a, b]) {
+      esperarContrato(r.body, 'Sesion');
+      await t.http().get('/yo').set('Authorization', `Bearer ${r.body.datos.token}`).expect(200);
+    }
+  });
+});
+
+describe('AGENTS §7.2 — Tokens con cargas y cabeceras raras (verificación, 2ª pasada)', () => {
+  let t: AppDePrueba;
+  let id: string;
+  beforeAll(async () => {
+    t = await crearApp();
+    id = (await crearUsuario(t)).id;
+  });
+  afterAll(() => t.cerrar());
+
+  const ahora = () => segundos('2026-10-03T12:00:00-03:00');
+
+  it.each([
+    ['sub numérico', () => ({ sub: 512, rol: 'vecino', iat: ahora(), exp: ahora() + 3600 })],
+    ['sub null', () => ({ sub: null, rol: 'vecino', iat: ahora(), exp: ahora() + 3600 })],
+    ['sub vacío', () => ({ sub: '', rol: 'vecino', iat: ahora(), exp: ahora() + 3600 })],
+    ['exp como texto', () => ({ sub: id, rol: 'vecino', iat: ahora(), exp: 'mañana' })],
+    ['exp null', () => ({ sub: id, rol: 'vecino', iat: ahora(), exp: null })],
+    [
+      'sub de un usuario inexistente con el prefijo bien',
+      () => ({ sub: 'usr-noexiste00000', rol: 'vecino', iat: ahora(), exp: ahora() + 3600 }),
+    ],
+  ])('401 NO_AUTENTICADO con %s', async (_n, carga) => {
+    const token = jwt(carga());
+    const res = await t.http().get('/yo').set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(401);
+    esperarError(res.body, 'NO_AUTENTICADO');
+    esperarMensajeHumano(res.body);
+  });
+
+  it('401 con un token HS512 aunque use el mismo secreto (la API firma sólo HS256)', async () => {
+    const cabecera = b64url(JSON.stringify({ alg: 'HS512', typ: 'JWT' }));
+    const cuerpo = b64url(
+      JSON.stringify({ sub: id, rol: 'vecino', iat: ahora(), exp: ahora() + 3600 }),
+    );
+    const firma = createHmac('sha512', SECRETO).update(`${cabecera}.${cuerpo}`).digest('base64url');
+    const res = await t
+      .http()
+      .get('/yo')
+      .set('Authorization', `Bearer ${cabecera}.${cuerpo}.${firma}`);
+    expect(res.status).toBe(401);
+    esperarError(res.body, 'NO_AUTENTICADO');
+  });
+
+  it.each([
+    ['Bearer con dos espacios', (tk: string) => `Bearer  ${tk}`],
+    ['dos tokens', (tk: string) => `Bearer ${tk} ${tk}`],
+    ['token con basura al final', (tk: string) => `Bearer ${tk}x`],
+    ['sólo la palabra Bearer', () => 'Bearer'],
+    ['Bearer con un texto no ASCII', () => 'Bearer ñandú.ñandú.ñandú'],
+  ])('%s: 200 o 401, nunca 500', async (_n, armar) => {
+    const token = jwt({ sub: id, rol: 'vecino', iat: ahora(), exp: ahora() + 3600 });
+    const res = await t.http().get('/yo').set('Authorization', armar(token));
+    expect([200, 401]).toContain(res.status);
+    if (res.status === 401) esperarError(res.body, 'NO_AUTENTICADO');
+  });
+
+  it('un token de un usuario inexistente en un endpoint público se ignora (A7)', async () => {
+    const token = jwt({
+      sub: 'usr-noexiste00000',
+      rol: 'vecino',
+      iat: ahora(),
+      exp: ahora() + 3600,
+    });
+    await t.http().get('/salud').set('Authorization', `Bearer ${token}`).expect(200);
+  });
+});
+
+describe('AGENTS §7.1 / A9 — PATCH /yo con nulos y cuerpos raros (verificación, 2ª pasada)', () => {
+  let t: AppDePrueba;
+  beforeEach(async () => {
+    t = await crearApp();
+  });
+  afterEach(() => t.cerrar());
+
+  it.each([
+    ['avisosActivos null', { avisosActivos: null }],
+    ['rubrosDeInteres null', { rubrosDeInteres: null }],
+    ['favoritos null', { favoritos: null }],
+    ['comercioId null', { comercioId: null }],
+    ['rol null', { rol: null }],
+    ['email null', { email: null }],
+    ['nombre objeto', { nombre: { texto: 'Ana' } }],
+    ['nombre booleano', { nombre: false }],
+    ['nombre con sólo tabulaciones', { nombre: '\t\t' }],
+  ])('400 VALIDACION_FALLIDA: %s (y no cambia nada)', async (_n, cuerpo) => {
+    const v = await crearUsuario(t, { nombre: 'Original' });
+    const res = await t.http().patch('/yo').set(v.auth).send(cuerpo).expect(400);
+    esperarError(res.body, 'VALIDACION_FALLIDA');
+    esperarMensajeHumano(res.body);
+    const yo = await t.http().get('/yo').set(v.auth).expect(200);
+    expect(yo.body.datos).toMatchObject({ nombre: 'Original', rol: 'vecino', comercioId: null });
+  });
+
+  it.each([
+    ['null', 'null'],
+    ['una lista', '[{"nombre":"Ana"}]'],
+    ['un texto JSON', '"Ana"'],
+  ])('400 VALIDACION_FALLIDA si el cuerpo JSON es %s', async (_n, crudo) => {
+    const v = await crearUsuario(t, { nombre: 'Original' });
+    const res = await t
+      .http()
+      .patch('/yo')
+      .set(v.auth)
+      .set('Content-Type', 'application/json')
+      .send(crudo);
+    expect(res.status).toBe(400);
+    esperarError(res.body, 'VALIDACION_FALLIDA');
+  });
+
+  it('__proto__ con rol no convierte al vecino en comercio', async () => {
+    const v = await crearUsuario(t, { nombre: 'Original' });
+    const res = await t
+      .http()
+      .patch('/yo')
+      .set(v.auth)
+      .set('Content-Type', 'application/json')
+      .send('{"nombre":"Cambiada","__proto__":{"rol":"comercio","comercioId":"com-118"}}');
+    expect([200, 400]).toContain(res.status);
+    const yo = await t.http().get('/yo').set(v.auth).expect(200);
+    expect(yo.body.datos).toMatchObject({ rol: 'vecino', comercioId: null });
+  });
+
+  it('la respuesta del PATCH cumple el contrato y es igual a GET /yo (cuenta de comercio)', async () => {
+    const c = await crearUsuario(t, {
+      rol: 'comercio',
+      comercioId: 'com-118',
+      avisosActivos: false,
+    });
+    const res = await t.http().patch('/yo').set(c.auth).send({ nombre: 'El Tornillo' }).expect(200);
+    esperarContrato(res.body, 'Usuario');
+    const yo = await t.http().get('/yo').set(c.auth).expect(200);
+    expect(res.body.datos).toEqual(yo.body.datos);
+    expect(yo.body.datos).toMatchObject({
+      nombre: 'El Tornillo',
+      rol: 'comercio',
+      comercioId: 'com-118',
+      avisosActivos: false,
+    });
+  });
+
+  it('PATCH /yo con un token firmado con otro secreto: 401 y no cambia', async () => {
+    const v = await crearUsuario(t, { nombre: 'Original' });
+    const ahora = segundos('2026-10-03T12:00:00-03:00');
+    const falso = jwt(
+      { sub: v.id, rol: 'vecino', iat: ahora, exp: ahora + 3600 },
+      { secreto: 'otro' },
+    );
+    const res = await t
+      .http()
+      .patch('/yo')
+      .set('Authorization', `Bearer ${falso}`)
+      .send({ nombre: 'Hackeada' })
+      .expect(401);
+    esperarError(res.body, 'NO_AUTENTICADO');
+    const yo = await t.http().get('/yo').set(v.auth).expect(200);
+    expect(yo.body.datos.nombre).toBe('Original');
+  });
+});
+
+describe('AGENTS §9 / A1–A4 — /dispositivos con nulos, cuerpos raros y concurrencia (verificación, 2ª pasada)', () => {
+  let t: AppDePrueba;
+  beforeEach(async () => {
+    t = await crearApp();
+  });
+  afterEach(() => t.cerrar());
+
+  it.each([
+    ['token null', { tokenExpo: null, plataforma: 'ios' }],
+    ['plataforma null', { tokenExpo: TOKEN, plataforma: null }],
+    ['los dos null', { tokenExpo: null, plataforma: null }],
+    ['cuerpo vacío', {}],
+    ['token lista', { tokenExpo: [TOKEN], plataforma: 'ios' }],
+    ['plataforma numérica', { tokenExpo: TOKEN, plataforma: 1 }],
+    ['plataforma vacía', { tokenExpo: TOKEN, plataforma: '' }],
+    ['sincronizado de más', { tokenExpo: TOKEN, plataforma: 'ios', sincronizado: true }],
+  ])('POST 400 VALIDACION_FALLIDA: %s', async (_n, cuerpo) => {
+    const v = await crearUsuario(t);
+    const res = await t.http().post('/dispositivos').set(v.auth).send(cuerpo).expect(400);
+    esperarError(res.body, 'VALIDACION_FALLIDA');
+    esperarMensajeHumano(res.body);
+    const prueba = await t.http().post('/dispositivos/prueba').set(v.auth).expect(200);
+    expect(prueba.body.datos.dispositivos).toBe(0);
+  });
+
+  it.each([
+    ['null', 'null'],
+    ['una lista', `[{"tokenExpo":"${TOKEN}","plataforma":"ios"}]`],
+  ])('POST 400 VALIDACION_FALLIDA si el cuerpo JSON es %s', async (_n, crudo) => {
+    const v = await crearUsuario(t);
+    const res = await t
+      .http()
+      .post('/dispositivos')
+      .set(v.auth)
+      .set('Content-Type', 'application/json')
+      .send(crudo);
+    expect(res.status).toBe(400);
+    esperarError(res.body, 'VALIDACION_FALLIDA');
+  });
+
+  it('un token con espacios alrededor: 400 o se guarda sin los espacios, nunca otra cosa', async () => {
+    const v = await crearUsuario(t);
+    const res = await t
+      .http()
+      .post('/dispositivos')
+      .set(v.auth)
+      .send({ tokenExpo: `  ${TOKEN} `, plataforma: 'ios' });
+    expect([201, 400]).toContain(res.status);
+    if (res.status === 201) {
+      esperarContrato(res.body, 'Dispositivo');
+      expect(res.body.datos.tokenExpo).toBe(TOKEN);
+    } else esperarError(res.body, 'VALIDACION_FALLIDA');
+  });
+
+  it('AGENTS §9 — dos usuarios registran el mismo token a la vez: queda de uno solo, nunca 500', async () => {
+    const a = await crearUsuario(t);
+    const b = await crearUsuario(t);
+    const [ra, rb] = await Promise.all([
+      t.http().post('/dispositivos').set(a.auth).send({ tokenExpo: TOKEN, plataforma: 'ios' }),
+      t.http().post('/dispositivos').set(b.auth).send({ tokenExpo: TOKEN, plataforma: 'android' }),
+    ]);
+    expect(ra.status).toBe(201);
+    expect(rb.status).toBe(201);
+    const pa = await t.http().post('/dispositivos/prueba').set(a.auth).expect(200);
+    const pb = await t.http().post('/dispositivos/prueba').set(b.auth).expect(200);
+    expect(pa.body.datos.dispositivos + pb.body.datos.dispositivos).toBe(1);
+  });
+
+  it('AGENTS §10.5 — el mismo POST cinco veces a la vez: todos 201 iguales y un solo teléfono', async () => {
+    const v = await crearUsuario(t);
+    const respuestas = await Promise.all(
+      Array.from({ length: 5 }, () =>
+        t.http().post('/dispositivos').set(v.auth).send({ tokenExpo: TOKEN, plataforma: 'ios' }),
+      ),
+    );
+    for (const r of respuestas) {
+      expect(r.status).toBe(201);
+      esperarContrato(r.body, 'Dispositivo');
+      expect(r.body).toEqual(respuestas[0].body);
+    }
+    const prueba = await t.http().post('/dispositivos/prueba').set(v.auth).expect(200);
+    expect(prueba.body.datos.dispositivos).toBe(1);
+  });
+
+  it('A1 — la prueba con dos teléfonos cuenta 2 y manda a los dos tokens', async () => {
+    const v = await crearUsuario(t);
+    await t
+      .http()
+      .post('/dispositivos')
+      .set(v.auth)
+      .send({ tokenExpo: TOKEN, plataforma: 'ios' })
+      .expect(201);
+    await t
+      .http()
+      .post('/dispositivos')
+      .set(v.auth)
+      .send({ tokenExpo: OTRO_TOKEN, plataforma: 'android' })
+      .expect(201);
+    const res = await t.http().post('/dispositivos/prueba').set(v.auth).expect(200);
+    esperarContrato(res.body, 'PruebaPush');
+    expect(res.body.datos).toEqual({ dispositivos: 2 });
+    await t.avisos.esperarPendientes();
+    expect(t.enviador.enviados.flatMap((m) => m.tokens).sort()).toEqual([OTRO_TOKEN, TOKEN].sort());
+  });
+
+  it('A2 — DELETE con algo que no es un token de Expo: 204 o 400, nunca 500', async () => {
+    const v = await crearUsuario(t);
+    const res = await t.http().delete('/dispositivos/cualquier-cosa').set(v.auth);
+    expect([204, 400]).toContain(res.status);
+    if (res.status === 400) esperarError(res.body, 'VALIDACION_FALLIDA');
+  });
+
+  it('A2 — DELETE del token de otro con un token de sesión de comercio: el otro lo conserva', async () => {
+    const vecino = await crearUsuario(t);
+    const comercio = await crearUsuario(t, { rol: 'comercio', comercioId: 'com-118' });
+    await t
+      .http()
+      .post('/dispositivos')
+      .set(vecino.auth)
+      .send({ tokenExpo: TOKEN, plataforma: 'ios' })
+      .expect(201);
+    await t
+      .http()
+      .delete(`/dispositivos/${encodeURIComponent(TOKEN)}`)
+      .set(comercio.auth)
+      .expect(204);
+    const prueba = await t.http().post('/dispositivos/prueba').set(vecino.auth).expect(200);
+    expect(prueba.body.datos.dispositivos).toBe(1);
+  });
+});
+
+describe('AGENTS §8 / A5 — Archivos: rangos y subidas que faltaban (verificación, 2ª pasada)', () => {
+  let t: AppDePrueba;
+  let auth: { Authorization: string };
+  let ruta: string;
+  let video: Buffer;
+  beforeAll(async () => {
+    t = await crearApp();
+    auth = (await crearUsuario(t)).auth;
+    video = conPatron(mp4(1000));
+    const res = await t
+      .http()
+      .post('/archivos')
+      .set(auth)
+      .attach('archivo', video, 'v.mp4')
+      .expect(201);
+    ruta = new URL(res.body.datos.url).pathname;
+  });
+  afterAll(() => t.cerrar());
+
+  it('206 con bytes=0- (todo el archivo como rango), con Content-Type de video', async () => {
+    const res = await t.http().get(ruta).set('Range', 'bytes=0-').buffer(true).expect(206);
+    expect(res.headers['content-range']).toBe('bytes 0-999/1000');
+    expect(res.headers['content-type']).toBe('video/mp4');
+    expect(res.headers['accept-ranges']).toBe('bytes');
+    expect(Buffer.compare(res.body as Buffer, video)).toBe(0);
+  });
+
+  it('bytes=-0 (sufijo vacío): 416 o 200, nunca 206 vacío ni 500', async () => {
+    const res = await t.http().get(ruta).set('Range', 'bytes=-0').buffer(true);
+    expect([200, 416]).toContain(res.status);
+  });
+
+  it('una unidad que no es bytes se ignora: 200 entero', async () => {
+    const res = await t.http().get(ruta).set('Range', 'items=0-5').buffer(true).expect(200);
+    expect((res.body as Buffer).length).toBe(1000);
+  });
+
+  it('If-None-Match con el ETag: 304 o 200, nunca 500', async () => {
+    const primero = await t.http().get(ruta).buffer(true).expect(200);
+    const etag = primero.headers.etag as string;
+    expect(etag).toBeTruthy();
+    const res = await t.http().get(ruta).set('If-None-Match', etag).buffer(true);
+    expect([200, 304]).toContain(res.status);
+  });
+
+  it('413 con un PNG de 5 MB + 1 byte', async () => {
+    const grande = Buffer.alloc(5 * MB + 1, 0x22);
+    grande.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], 0);
+    const res = await t
+      .http()
+      .post('/archivos')
+      .set(auth)
+      .attach('archivo', grande, 'g.png')
+      .expect(413);
+    esperarError(res.body, 'ARCHIVO_DEMASIADO_GRANDE');
+  });
+
+  it('un multipart roto: 400, nunca 500', async () => {
+    const res = await t
+      .http()
+      .post('/archivos')
+      .set(auth)
+      .set('Content-Type', 'multipart/form-data; boundary=----xyz')
+      .send(
+        '------xyz\r\nContent-Disposition: form-data; name="archivo"; filename="a.jpg"\r\n\r\nsin cierre',
+      );
+    expect(res.status).toBeGreaterThanOrEqual(400);
+    expect(res.status).toBeLessThan(500);
+    esperarError(res.body);
+  });
+
+  it('el campo archivo como texto (no como archivo): 400 VALIDACION_FALLIDA', async () => {
+    const res = await t.http().post('/archivos').set(auth).field('archivo', 'hola').expect(400);
+    esperarError(res.body, 'VALIDACION_FALLIDA');
+    esperarMensajeHumano(res.body);
+  });
+
+  it('la URL subida a las 00:00 del 1/1 usa el año nuevo (zona de Buenos Aires)', async () => {
+    t.reloj.fijar('2027-01-01T00:00:00-03:00');
+    const v = await crearUsuario(t);
+    const res = await t
+      .http()
+      .post('/archivos')
+      .set(v.auth)
+      .attach('archivo', jpeg(), 'f.jpg')
+      .expect(201);
+    expect(res.body.datos.url).toMatch(/\/archivos\/imagenes\/2027\/01\//);
+    t.reloj.fijar('2026-10-03T12:00:00-03:00');
+  });
+});
