@@ -4,7 +4,7 @@ import type {
 } from '../../../contrato/tipos.js';
 import { urlDeArchivo } from '../../comun/archivos/archivos.servicio.js';
 import type { Comercio } from './comercio.entidad.js';
-import { codigoQrDe, horariosVisibles } from './reglas/comercios.js';
+import { codigoQrDe, horariosVisibles, ordenarHorarios } from './reglas/comercios.js';
 import type { Rubro } from './rubro.entidad.js';
 
 export function rubroAContrato(r: Rubro): RubroContrato {
@@ -20,12 +20,12 @@ export function comercioAContrato(c: Comercio, hoy: string): ComercioContrato {
     descripcion: c.descripcion,
     direccion: c.direccion,
     coordenadas: { latitud: c.latitud, longitud: c.longitud },
-    telefono: c.telefono ?? null,
-    whatsapp: c.whatsapp ?? null,
-    instagram: c.instagram ?? null,
+    telefono: c.telefono || null,
+    whatsapp: c.whatsapp || null,
+    instagram: c.instagram || null,
     imagenes: c.imagenes.map(urlDeArchivo),
     videoUrl: c.videoClave ? urlDeArchivo(c.videoClave) : null,
-    horarios: horariosVisibles(c.horarios, c.cerradoHasta ?? null, hoy),
+    horarios: ordenarHorarios(horariosVisibles(c.horarios, c.cerradoHasta ?? null, hoy)),
     mediosDePago: c.mediosDePago,
     puntaje: c.puntaje,
     cantidadResenas: c.cantidadResenas,

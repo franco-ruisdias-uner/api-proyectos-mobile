@@ -234,3 +234,10 @@ Estado: PROVISORIA (autónomo)
 Decisión: tres PNG lisos generados por `scripts/generar-medios.mjs` (sin derechos de terceros), que se
 suben por el puerto `AlmacenArchivos` al sembrar. Todavía no hay video de muestra (un `.mp4` real
 pesa y no se puede generar sin dependencias): `videoUrl` queda en `null` en toda la semilla; M9 lo revisa.
+
+### A22 — Desempates y orden de `horarios` (M1)
+Estado: PROVISORIA (autónomo)
+Decisión: `orden=puntaje` y `orden=distancia` desempatan por nombre y, si sigue el empate, por `id` (el
+verificador notó que AGENTS §4.2 dice sólo `id`; el orden total sigue siendo determinístico). Los tramos
+de `horarios` salen ordenados por día y hora de apertura. Un `telefono`, `whatsapp` o `instagram` vacío
+sale `null`, nunca `""`.

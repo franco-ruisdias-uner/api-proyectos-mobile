@@ -4,6 +4,7 @@ import {
   comercioIdDeQr,
   horariosVisibles,
   ordenarComercios,
+  ordenarHorarios,
   type ComercioOrdenable,
 } from './comercios.js';
 
@@ -114,5 +115,21 @@ describe('D2 — Comercio cerrado por vacaciones: horarios vacíos mientras dura
     ['cruzando el fin de año, ya pasó', '2026-12-31', '2027-01-01', true],
   ])('%s', (_caso, cerradoHasta, hoy, vuelven) => {
     expect(horariosVisibles(horarios, cerradoHasta, hoy)).toEqual(vuelven ? horarios : []);
+  });
+});
+
+describe('R2 — Los tramos de horarios salen ordenados por día y apertura', () => {
+  it('ordena sin tocar la lista original', () => {
+    const lista: Horario[] = [
+      { dia: 2, abre: '16:30', cierra: '20:30' },
+      { dia: 0, abre: '10:00', cierra: '14:00' },
+      { dia: 2, abre: '08:00', cierra: '12:00' },
+    ];
+    expect(ordenarHorarios(lista).map((h) => [h.dia, h.abre])).toEqual([
+      [0, '10:00'],
+      [2, '08:00'],
+      [2, '16:30'],
+    ]);
+    expect(lista[0].dia).toBe(2);
   });
 });

@@ -66,3 +66,8 @@ export function horariosVisibles(
 ): Horario[] {
   return cerradoHasta !== null && hoy <= cerradoHasta ? [] : horarios;
 }
+
+/** Los tramos salen ordenados por día y hora de apertura, sea cual sea el orden en que se guardaron. */
+export function ordenarHorarios(horarios: Horario[]): Horario[] {
+  return [...horarios].sort((a, b) => a.dia - b.dia || comparar(a.abre, b.abre));
+}
