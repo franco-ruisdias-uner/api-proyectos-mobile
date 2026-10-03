@@ -1771,3 +1771,147 @@ describe('AGENTS §8 — URLs de archivos con cabeceras Host raras (verificació
     }
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+
+describe('AGENTS §8 / A14 — Host inválido: 400 VALIDACION_FALLIDA (verificación, 4ª pasada)', () => {
+  let t: AppDePrueba;
+  let auth: { Authorization: string };
+  beforeAll(async () => {
+    t = await crearApp();
+    auth = (await crearUsuario(t)).auth;
+  });
+  afterAll(() => t.cerrar());
+
+  it.each([
+    ['comillas y etiquetas', 'mala"<script>'],
+    ['con usuario embebido', 'usuario@evil.com'],
+    ['con barra', 'evil.com/ruta'],
+    ['con espacio', 'mi compu:3000'],
+    ['puerto no numérico', '192.168.0.10:abc'],
+  ])(
+    'POST /archivos con Host %s → 400 VALIDACION_FALLIDA con mensaje humano, nunca una URL rara',
+    async (_n, host) => {
+      const res = await t
+        .http()
+        .post('/archivos')
+        .set(auth)
+        .set('Host', host)
+        .attach('archivo', jpeg(), 'foto.jpg');
+      if (res.status === 201) {
+        // Si se aceptara, la URL tiene que ser válida y apuntar al mismo host que se pidió.
+        esperarContrato(res.body, 'ArchivoSubido');
+        const url = new URL(res.body.datos.url);
+        expect(url.username).toBe('');
+        expect(url.pathname.startsWith('/archivos/')).toBe(true);
+        expect(res.body.datos.url).not.toMatch(/evil\.com\/ruta|<|"|\s/);
+      } else {
+        expect(res.status).toBe(400);
+        esperarError(res.body, 'VALIDACION_FALLIDA');
+        esperarMensajeHumano(res.body);
+      }
+    },
+  );
+
+  it('con un Host inválido, un endpoint que no arma URLs (GET /salud) no da 500', async () => {
+    const res = await t.http().get('/salud').set('Host', 'mala"<script>');
+    expect(res.status).toBeLessThan(500);
+  });
+
+  it('A14: con URL_PUBLICA definida, un Host inválido no importa (201 con URL_PUBLICA)', async () => {
+    const t2 = await crearApp({ variables: { URL_PUBLICA: 'https://api.ejemplo.com' } });
+    try {
+      const v = await crearUsuario(t2);
+      const res = await t2
+        .http()
+        .post('/archivos')
+        .set(v.auth)
+        .set('Host', 'mala"<script>')
+        .attach('archivo', jpeg(), 'foto.jpg')
+        .expect(201);
+      esperarContrato(res.body, 'ArchivoSubido');
+      expect(res.body.datos.url.startsWith('https://api.ejemplo.com/archivos/')).toBe(true);
+    } finally {
+      await t2.cerrar();
+    }
+  });
+
+  it('con CONFIAR_PROXY=true, un X-Forwarded-Host inválido no termina en la URL ni da 500', async () => {
+    const t2 = await crearApp({ variables: { CONFIAR_PROXY: 'true' } });
+    try {
+      const v = await crearUsuario(t2);
+      const res = await t2
+        .http()
+        .post('/archivos')
+        .set(v.auth)
+        .set('X-Forwarded-Proto', 'https')
+        .set('X-Forwarded-Host', 'mala"<script>')
+        .attach('archivo', jpeg(), 'foto.jpg');
+      expect([201, 400]).toContain(res.status);
+      if (res.status === 201) {
+        esperarContrato(res.body, 'ArchivoSubido');
+        expect(res.body.datos.url).not.toMatch(/<|"/);
+      } else {
+        esperarError(res.body, 'VALIDACION_FALLIDA');
+      }
+    } finally {
+      await t2.cerrar();
+    }
+  });
+
+  it('con CONFIAR_PROXY=true, X-Forwarded-Proto raro (javascript) no produce una URL que no sea http/https', async () => {
+    const t2 = await crearApp({ variables: { CONFIAR_PROXY: 'true' } });
+    try {
+      const v = await crearUsuario(t2);
+      const res = await t2
+        .http()
+        .post('/archivos')
+        .set(v.auth)
+        .set('X-Forwarded-Proto', 'javascript')
+        .set('X-Forwarded-Host', 'mi-api.onrender.com')
+        .attach('archivo', jpeg(), 'foto.jpg');
+      expect(res.status).toBeLessThan(500);
+      if (res.status === 201) {
+        esperarContrato(res.body, 'ArchivoSubido');
+        expect(['http:', 'https:']).toContain(new URL(res.body.datos.url).protocol);
+      } else {
+        esperarError(res.body, 'VALIDACION_FALLIDA');
+      }
+    } finally {
+      await t2.cerrar();
+    }
+  });
+});
+
+describe('AGENTS §11.4 / A15 — X-Simular con valores raros (verificación, 4ª pasada)', () => {
+  let t: AppDePrueba;
+  beforeAll(async () => {
+    t = await crearApp({ variables: { SIMULACION_HABILITADA: 'true' } });
+  });
+  afterAll(() => t.cerrar());
+
+  it.each([
+    'demora--5',
+    'demora-abc',
+    'demora-',
+    'demora-1.5e9',
+    'demora-0x10',
+    'error-404',
+    'cualquier-cosa',
+  ])('X-Simular: %s se ignora: responde 200 enseguida', async (valor) => {
+    const inicio = performance.now();
+    const res = await t.http().get('/salud').set('X-Simular', valor).expect(200);
+    expect(performance.now() - inicio).toBeLessThan(1000);
+    esperarContrato(res.body, 'Salud');
+  });
+
+  it('sin SIMULACION_HABILITADA, X-Simular: error-500 se ignora', async () => {
+    const t2 = await crearApp();
+    try {
+      const res = await t2.http().get('/salud').set('X-Simular', 'error-500').expect(200);
+      esperarContrato(res.body, 'Salud');
+    } finally {
+      await t2.cerrar();
+    }
+  });
+});

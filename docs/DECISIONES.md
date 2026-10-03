@@ -155,7 +155,9 @@ que alguien mande textos enormes para que `scrypt` tarde. Alternativa: sin máxi
 Estado: PROVISORIA (autónomo)
 Hueco: AGENTS §8 arma las URLs con el `Host` del pedido pero no dice qué hacer si no es una dirección.
 Decisión: 400 `VALIDACION_FALLIDA` ("La dirección a la que se hizo el pedido no es válida."),
-salvo que esté `URL_PUBLICA`, que no depende del pedido. Alternativa: usar un origen por defecto
+salvo que esté `URL_PUBLICA`, que no depende del pedido. Vale para cualquier endpoint (también
+`/salud`): un Host así no lo manda ningún teléfono. Con `CONFIAR_PROXY=true`, un
+`X-Forwarded-Proto` que no es `https` se toma como `http`. Alternativa: usar un origen por defecto
 (daría URLs que el teléfono no puede abrir).
 
 ### A15 — `X-Simular: demora-N` fuera de rango (M0)
