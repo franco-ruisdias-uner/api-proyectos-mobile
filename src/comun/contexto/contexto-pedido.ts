@@ -1,5 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import type { NextFunction, Request, Response } from 'express';
+import { ErrorApi } from '../errores/error-api.js';
+import { enviarError } from '../errores/filtro-excepciones.js';
 
 interface ContextoPedido {
   /** "http://192.168.0.10:3000": la dirección que usó el teléfono para llegar. */
@@ -14,8 +16,15 @@ const almacen = new AsyncLocalStorage<ContextoPedido>();
  * toma el protocolo y el host de X-Forwarded-Proto / X-Forwarded-Host (`trust proxy`).
  */
 export function middlewareContexto(urlPublica: string | null) {
-  return (req: Request, _res: Response, next: NextFunction) => {
-    const origen = urlPublica ?? `${req.protocol}://${req.host}`;
+  return (req: Request, res: Response, next: NextFunction) => {
+    const origen = urlPublica ?? origenDelPedido(req);
+    if (origen === null) {
+      // Un Host que no es una dirección terminaría adentro de las URLs de las fotos.
+      return enviarError(
+        res,
+        new ErrorApi('VALIDACION_FALLIDA', 'La dirección a la que se hizo el pedido no es válida.'),
+      );
+    }
     almacen.run({ origen }, () => next());
   };
 }
@@ -28,4 +37,14 @@ export function origenActual(): string {
 /** Corre `fn` como si fuera un pedido con ese origen (semillas, tests). */
 export function conOrigen<T>(origen: string, fn: () => T): T {
   return almacen.run({ origen }, fn);
+}
+
+const HOST_VALIDO = /^(\[[0-9a-fA-F:.]+\]|[A-Za-z0-9.-]+)(:\d{1,5})?$/;
+
+/** `protocolo://host[:puerto]` del pedido, o null si el Host no es una dirección válida. */
+export function origenDelPedido(req: Pick<Request, 'protocol' | 'host'>): string | null {
+  const host = req.host;
+  if (!host || !HOST_VALIDO.test(host)) return null;
+  const protocolo = req.protocol === 'https' ? 'https' : 'http';
+  return `${protocolo}://${host}`;
 }

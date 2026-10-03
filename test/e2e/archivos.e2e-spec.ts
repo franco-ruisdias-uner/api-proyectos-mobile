@@ -168,6 +168,20 @@ describe('AGENTS §8 — Las URLs usan el origen del pedido', () => {
     await t.cerrar();
   });
 
+  it('400 VALIDACION_FALLIDA si el Host no es una dirección válida', async () => {
+    const t = await crearApp();
+    const vecina = await crearUsuario(t);
+    const res = await t
+      .http()
+      .post('/archivos')
+      .set(vecina.auth)
+      .set('Host', 'mala"<script>')
+      .attach('archivo', jpeg(), 'f.jpg')
+      .expect(400);
+    esperarError(res.body, 'VALIDACION_FALLIDA');
+    await t.cerrar();
+  });
+
   it('con URL_PUBLICA definida gana ésa', async () => {
     const t = await crearApp({ variables: { URL_PUBLICA: 'https://api.ejemplo.com/' } });
     const vecina = await crearUsuario(t);

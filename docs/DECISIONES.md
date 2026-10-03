@@ -150,3 +150,15 @@ Estado: PROVISORIA (autónomo)
 Hueco: AGENTS §7.2 fija el mínimo (8) pero no un máximo.
 Decisión: hasta 100 caracteres ("La contraseña puede tener como máximo 100 caracteres."). Evita
 que alguien mande textos enormes para que `scrypt` tarde. Alternativa: sin máximo.
+
+### A14 — Pedido con un `Host` inválido (M0)
+Estado: PROVISORIA (autónomo)
+Hueco: AGENTS §8 arma las URLs con el `Host` del pedido pero no dice qué hacer si no es una dirección.
+Decisión: 400 `VALIDACION_FALLIDA` ("La dirección a la que se hizo el pedido no es válida."),
+salvo que esté `URL_PUBLICA`, que no depende del pedido. Alternativa: usar un origen por defecto
+(daría URLs que el teléfono no puede abrir).
+
+### A15 — `X-Simular: demora-N` fuera de rango (M0)
+Estado: PROVISORIA (autónomo)
+Decisión: la demora tiene un tope de 30 segundos (`demora-99999999` espera 30 s); un valor que
+no es un número entero positivo (`demora--5`) se ignora, como cualquier valor que no se entiende.

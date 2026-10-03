@@ -1625,3 +1625,149 @@ describe('AGENTS §8 / A5 — Archivos: rangos y subidas que faltaban (verificac
     t.reloj.fijar('2026-10-03T12:00:00-03:00');
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+// 3ª pasada
+
+describe('AGENTS §7.1 / §7.2 / A13 — Registro e ingreso: bordes de contraseña y email (verificación, 3ª pasada)', () => {
+  let t: AppDePrueba;
+  beforeEach(async () => {
+    t = await crearApp();
+  });
+  afterEach(() => t.cerrar());
+
+  async function registrarEIngresar(email: string, contrasena: string, emailIngreso = email) {
+    const reg = await t
+      .http()
+      .post('/auth/registro')
+      .send({ nombre: 'Lidia Sosa', email, contrasena })
+      .expect(201);
+    esperarContrato(reg.body, 'Sesion');
+    const ing = await t
+      .http()
+      .post('/auth/ingreso')
+      .send({ email: emailIngreso, contrasena })
+      .expect(200);
+    esperarContrato(ing.body, 'Sesion');
+    expect(ing.body.datos.usuario.id).toBe(reg.body.datos.usuario.id);
+    return reg;
+  }
+
+  it('A13 — una contraseña de 100 caracteres justos se registra y después ingresa', async () => {
+    await registrarEIngresar('cien@mail.com', 'a'.repeat(99) + 'Z');
+  });
+
+  it('una contraseña con espacios al principio y al final ingresa escrita igual', async () => {
+    await registrarEIngresar('espacios@mail.com', '  clave con espacios  ');
+  });
+
+  it('una contraseña con eñes, tildes y emoji ingresa escrita igual', async () => {
+    await registrarEIngresar('unicode@mail.com', 'contraseñá-ÑANDÚ-🔒');
+  });
+
+  it('una contraseña con espacios no ingresa si se manda recortada (no se recorta en silencio sólo de un lado)', async () => {
+    await t
+      .http()
+      .post('/auth/registro')
+      .send({
+        nombre: 'Lidia Sosa',
+        email: 'recorte@mail.com',
+        contrasena: '  clave con espacios  ',
+      })
+      .expect(201);
+    const res = await t
+      .http()
+      .post('/auth/ingreso')
+      .send({ email: 'recorte@mail.com', contrasena: 'clave con espacios' });
+    // O se recorta en los dos lados (200) o en ninguno (401). Nunca 500 ni 400.
+    expect([200, 401]).toContain(res.status);
+    if (res.status === 401) esperarError(res.body, 'CREDENCIALES_INVALIDAS');
+  });
+
+  it('AGENTS §7.1 — ingresa con el email escrito en mayúsculas', async () => {
+    const reg = await registrarEIngresar('lidia@mail.com', 'clave-larga', 'LIDIA@MAIL.COM');
+    expect(reg.body.datos.usuario.email).toBe('lidia@mail.com');
+  });
+
+  it('AGENTS §7.1 — ingreso con una contraseña de 101 caracteres contra una cuenta real: 401 o 400, nunca 500', async () => {
+    await t
+      .http()
+      .post('/auth/registro')
+      .send({ nombre: 'Lidia Sosa', email: 'largo@mail.com', contrasena: 'clave-larga' })
+      .expect(201);
+    const res = await t
+      .http()
+      .post('/auth/ingreso')
+      .send({ email: 'largo@mail.com', contrasena: 'x'.repeat(101) });
+    expect([400, 401]).toContain(res.status);
+    esperarError(res.body, res.status === 401 ? 'CREDENCIALES_INVALIDAS' : 'VALIDACION_FALLIDA');
+    esperarMensajeHumano(res.body);
+  });
+
+  it('AGENTS §5.5 / §7.1 — cinco registros simultáneos con el mismo email (mayúsculas distintas): uno 201 y cuatro 409', async () => {
+    const emails = [
+      'par@mail.com',
+      'PAR@mail.com',
+      'Par@Mail.com',
+      ' par@mail.com',
+      'pAR@MAIL.COM',
+    ];
+    const respuestas = await Promise.all(
+      emails.map((email) =>
+        t.http().post('/auth/registro').send({ nombre: 'Par', email, contrasena: 'clave-larga' }),
+      ),
+    );
+    const estados = respuestas.map((r) => r.status).sort();
+    expect(estados).toEqual([201, 409, 409, 409, 409]);
+    for (const r of respuestas.filter((x) => x.status === 409)) {
+      esperarError(r.body, 'EMAIL_YA_REGISTRADO');
+      esperarMensajeHumano(r.body);
+    }
+  });
+});
+
+describe('AGENTS §8 — URLs de archivos con cabeceras Host raras (verificación, 3ª pasada)', () => {
+  let t: AppDePrueba;
+  let auth: { Authorization: string };
+  beforeAll(async () => {
+    t = await crearApp();
+    auth = (await crearUsuario(t)).auth;
+  });
+  afterAll(() => t.cerrar());
+
+  it.each([
+    ['IPv6', '[::1]:3000'],
+    ['sin puerto', '192.168.0.10'],
+    ['un nombre con mayúsculas', 'MiCompu.local:3000'],
+  ])('Host %s: la URL es absoluta, con ese origen, y se puede bajar', async (_n, host) => {
+    const res = await t
+      .http()
+      .post('/archivos')
+      .set(auth)
+      .set('Host', host)
+      .attach('archivo', jpeg(), 'foto.jpg')
+      .expect(201);
+    esperarContrato(res.body, 'ArchivoSubido');
+    const url = new URL(res.body.datos.url);
+    expect(url.protocol).toBe('http:');
+    expect(url.host.toLowerCase()).toBe(new URL(`http://${host}`).host.toLowerCase());
+    await t.http().get(url.pathname).expect(200);
+  });
+
+  it('un Host con caracteres inválidos no rompe la subida (201 con URL válida, o 400), nunca 500', async () => {
+    const res = await t
+      .http()
+      .post('/archivos')
+      .set(auth)
+      .set('Host', 'mala"<script>')
+      .attach('archivo', jpeg(), 'foto.jpg');
+    expect([201, 400]).toContain(res.status);
+    if (res.status === 201) {
+      esperarContrato(res.body, 'ArchivoSubido');
+      expect(() => new URL(res.body.datos.url)).not.toThrow();
+      expect(res.body.datos.url).not.toContain('<script>');
+    } else {
+      esperarError(res.body);
+    }
+  });
+});
