@@ -1,41 +1,41 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { In, type Repository } from 'typeorm';
-import { Reloj } from '../comun/reloj/reloj.js';
-import { Dispositivo } from './dispositivo.entidad.js';
+import { ErrorApi } from '../comun/errores/error-api.js';
 import type { AlmacenTokensPush, Plataforma } from '../comun/notificaciones/puertos.js';
 
-/** Tokens de Expo en la tabla `dispositivos`. */
+/**
+ * TODO(alumnos): acá viven los tokens de Expo de cada usuario. Mirá docs/NOTIFICACIONES.md.
+ *
+ * Mientras los métodos tiren `NO_IMPLEMENTADO`, los endpoints de /dispositivos responden 501 y
+ * `Avisos` sólo escribe en el log que la push quedó pendiente. Cuando completen un método, saquen
+ * el `throw`: el resto de la API no hay que tocarlo.
+ */
 @Injectable()
 export class AlmacenTokensPorHacer implements AlmacenTokensPush {
-  constructor(
-    @InjectRepository(Dispositivo) private readonly repo: Repository<Dispositivo>,
-    private readonly reloj: Reloj,
-  ) {}
-
-  async guardar(usuarioId: string, tokenExpo: string, plataforma: Plataforma): Promise<void> {
-    // upsert: si otro usuario tenía el token (cambió la cuenta en el teléfono), pasa al actual.
-    await this.repo.upsert(
-      { tokenExpo, usuarioId, plataforma, actualizadoEn: this.reloj.ahora() },
-      ['tokenExpo'],
-    );
+  /**
+   * TODO(alumnos): guardar que `tokenExpo` pertenece a `usuarioId` (con su plataforma).
+   * - Si el token ya existía, se actualiza: no se duplica.
+   * - Si lo tenía otro usuario (cambiaron de cuenta en el mismo teléfono), pasa al usuario actual.
+   * - Dos pedidos simultáneos con el mismo token no pueden dejar dos filas ni tirar un error.
+   */
+  guardar(_usuarioId: string, _tokenExpo: string, _plataforma: Plataforma): Promise<void> {
+    throw new ErrorApi('NO_IMPLEMENTADO');
   }
 
-  async borrar(tokenExpo: string): Promise<void> {
-    await this.repo.delete({ tokenExpo });
+  /** TODO(alumnos): borrar el token. Si no estaba guardado, no es un error. */
+  borrar(_tokenExpo: string): Promise<void> {
+    throw new ErrorApi('NO_IMPLEMENTADO');
   }
 
-  async tokensDe(usuarioIds: string[]): Promise<string[]> {
-    if (usuarioIds.length === 0) return [];
-    const filas = await this.repo.find({
-      where: { usuarioId: In(usuarioIds) },
-      order: { tokenExpo: 'ASC' },
-    });
-    return filas.map((f) => f.tokenExpo);
+  /**
+   * TODO(alumnos): devolver los tokens de todos esos usuarios, sin repetir y en un orden estable.
+   * Con una lista vacía, devolver una lista vacía.
+   */
+  tokensDe(_usuarioIds: string[]): Promise<string[]> {
+    throw new ErrorApi('NO_IMPLEMENTADO');
   }
 
-  async descartar(tokens: string[]): Promise<void> {
-    if (tokens.length === 0) return;
-    await this.repo.delete({ tokenExpo: In(tokens) });
+  /** TODO(alumnos): borrar estos tokens, que Expo informó como inválidos. */
+  descartar(_tokens: string[]): Promise<void> {
+    throw new ErrorApi('NO_IMPLEMENTADO');
   }
 }

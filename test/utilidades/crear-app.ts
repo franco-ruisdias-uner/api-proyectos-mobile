@@ -37,7 +37,12 @@ export interface AppDePrueba {
  * consigna de notificaciones usa `almacenReal: true` para probar el almacén de verdad.
  */
 export async function crearApp(
-  opciones: { ahora?: string; variables?: Record<string, string>; almacenReal?: boolean } = {},
+  opciones: {
+    ahora?: string;
+    variables?: Record<string, string>;
+    almacenReal?: boolean;
+    enviadorReal?: boolean;
+  } = {},
 ): Promise<AppDePrueba> {
   const directorioArchivos = await mkdtemp(join(tmpdir(), 'api-archivos-'));
   const motor = process.env.DB_MOTOR ?? 'better-sqlite3';
@@ -59,9 +64,10 @@ export async function crearApp(
   const almacen = new AlmacenTokensMemoria();
   let constructor = Test.createTestingModule({ imports: [AppModule.crear(entorno)] })
     .overrideProvider(Reloj)
-    .useValue(reloj)
-    .overrideProvider(ENVIADOR_PUSH)
-    .useValue(enviador);
+    .useValue(reloj);
+  if (!opciones.enviadorReal) {
+    constructor = constructor.overrideProvider(ENVIADOR_PUSH).useValue(enviador);
+  }
   if (!opciones.almacenReal) {
     constructor = constructor.overrideProvider(ALMACEN_TOKENS_PUSH).useValue(almacen);
   }

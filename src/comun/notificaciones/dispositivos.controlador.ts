@@ -17,8 +17,9 @@ export class DispositivosControlador {
   @Post()
   @HttpCode(201)
   @ApiOperation({
-    summary: 'Registrar el teléfono para recibir push',
+    summary: 'Registrar el teléfono para recibir push (lo completan ustedes)',
     description:
+      'Responde 501 hasta que los alumnos completen el guardado de tokens (docs/NOTIFICACIONES.md). ' +
       'Con sesión. Manda el token de `expo-notifications`. Repetirlo no duplica nada; si el token ' +
       'era de otra cuenta (se cambió de usuario en el teléfono), pasa a la tuya.',
   })
@@ -29,7 +30,7 @@ export class DispositivosControlador {
       meta: null,
     },
   })
-  @DocErrores('VALIDACION_FALLIDA', 'NO_AUTENTICADO')
+  @DocErrores('VALIDACION_FALLIDA', 'NO_AUTENTICADO', 'NO_IMPLEMENTADO')
   async registrar(
     @UsuarioActual() usuario: UsuarioSesion,
     @Body() cuerpo: RegistrarDispositivoDto,
@@ -42,12 +43,13 @@ export class DispositivosControlador {
   @Post('prueba')
   @HttpCode(200)
   @ApiOperation({
-    summary: 'Mandarme una push de prueba',
+    summary: 'Mandarme una push de prueba (lo completan ustedes)',
     description:
+      'Responde 501 hasta que los alumnos completen el guardado y el envío (docs/NOTIFICACIONES.md). ' +
       'Con sesión. Manda una notificación a todos tus teléfonos registrados. Sirve para depurar.',
   })
   @ApiResponse({ status: 200, example: { datos: { dispositivos: 1 }, meta: null } })
-  @DocErrores('NO_AUTENTICADO')
+  @DocErrores('NO_AUTENTICADO', 'NO_IMPLEMENTADO')
   async probar(@UsuarioActual() usuario: UsuarioSesion): Promise<RespuestaUno<PruebaPush>> {
     return respuestaUno(await this.dispositivos.probar(usuario.id));
   }
@@ -55,12 +57,13 @@ export class DispositivosControlador {
   @Delete(':tokenExpo')
   @HttpCode(204)
   @ApiOperation({
-    summary: 'Dar de baja el teléfono',
+    summary: 'Dar de baja el teléfono (lo completan ustedes)',
     description:
+      'Responde 501 hasta que los alumnos completen el guardado de tokens (docs/NOTIFICACIONES.md). ' +
       'Con sesión. Al cerrar sesión. Si el token no estaba registrado, igual responde 204.',
   })
   @ApiResponse({ status: 204, description: 'Dado de baja (sin cuerpo)' })
-  @DocErrores('VALIDACION_FALLIDA', 'NO_AUTENTICADO')
+  @DocErrores('VALIDACION_FALLIDA', 'NO_AUTENTICADO', 'NO_IMPLEMENTADO')
   async darDeBaja(
     @UsuarioActual() usuario: UsuarioSesion,
     @Param('tokenExpo') tokenExpo: string,

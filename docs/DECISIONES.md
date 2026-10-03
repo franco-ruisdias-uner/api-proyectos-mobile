@@ -446,3 +446,23 @@ Además `com-118` suma `pro-451` (vencida) y `pro-452` (dada de baja) para que e
 Alternativas descartadas: dejar `videoUrl` en `null` en todos (no deja probar ese camino); versionar un
 video real (pesa y trae derechos). Resuelve lo que A21 dejaba para M9. Los medios de audio no se siembran: el contrato no
 tiene campos de audio.
+
+### A33 — Notificaciones para completar (M10)
+Estado: PROVISORIA (autónomo)
+Decisión: el repo ya estaba en los dos puertos de AGENTS §19.2 (`AlmacenTokensPush`, `EnviadorPush`,
+servicio `Avisos`): no hubo que refactorizar. Las dos piezas viven en `src/notificaciones-alumnos/`
+(`AlmacenTokensPorHacer`, `EnviadorPorHacer`, `NotificacionesAlumnosModulo`) y en la rama
+`solucion-notificaciones` están completas (tabla `dispositivos` con `upsert`, `fetch` a Expo en tandas de 100).
+En `main`, cada método tira `ErrorApi('NO_IMPLEMENTADO')` (501): los tres endpoints de `/dispositivos`
+responden 501 sin cambiar el servicio ni el controlador, porque pasan por el almacén; `Avisos` captura ese
+error y escribe `Push pendiente de implementar: <título> → <n> usuarios` (n = usuarios con avisos activos).
+El filtro de excepciones registra el 501 en una línea de `warn`, sin stack.
+- `EnviadorRegistro` (`NOTIFICACIONES=registro`) queda del lado de la API: con ese valor el envío anda sin Expo.
+- Los tests que registraban tokens por `POST /dispositivos` para probar `Avisos` (avisos e2e, verificación de M7) ahora usan
+  el almacén en memoria (`t.almacen`, `crearApp` lo inyecta por defecto): prueban qué decide `Avisos`, no el guardado.
+- Se mudaron a `test/notificaciones/` (la consigna): los e2e de `/dispositivos`, el test del enviador contra el servidor
+  falso de Expo y los dos bloques de `/dispositivos` de `test/verificacion/m0.e2e-spec.ts` (uso de `crearApp({ almacenReal: true })`).
+  El test de Swagger y el 404 de `GET /dispositivos` de M0 quedan donde estaban.
+- `pnpm test:notificaciones` usa `vitest.config.notificaciones.ts` y queda afuera de `pnpm verificar` (y de la matriz).
+Alternativas descartadas: que los 501 salgan del controlador (obligaría a los alumnos a tocar más archivos);
+borrar la entidad `Dispositivo` del contrato `api.ts` (los tipos del contrato no se tocan).

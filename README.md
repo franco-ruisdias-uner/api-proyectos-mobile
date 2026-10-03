@@ -189,8 +189,13 @@ comercio las da de alta el Centro Comercial.
   (`CCU-7KQ4-M9XH`, `uso-7781`) desde `tornillo@demo.ar`.
 - **Fotos y videos:** primero subís el archivo con `POST /archivos` (`multipart/form-data`,
   campo `archivo`) y la API te devuelve una `url`; después mandás esa `url` en el recurso.
-- **Notificaciones push:** registrá el token de `expo-notifications` con `POST /dispositivos`
-  y probalo con `POST /dispositivos/prueba`. La API manda una push cuando un comercio crea una
+- **Notificaciones push — la programan ustedes:** guardar los tokens de Expo y mandar las push es
+  parte del trabajo de ustedes. Mientras no lo completen, `POST /dispositivos`,
+  `DELETE /dispositivos/:tokenExpo` y `POST /dispositivos/prueba` responden `501 NO_IMPLEMENTADO` y el
+  resto de la app anda igual (la API sólo anota en el log «Push pendiente de implementar»). Qué
+  tocar, qué tabla crear y cómo probar con `pnpm test:notificaciones`: `docs/NOTIFICACIONES.md`.
+  Una vez completo: registrás el token de `expo-notifications` con `POST /dispositivos` y lo probás con
+  `POST /dispositivos/prueba`. La API manda una push cuando un comercio crea una
   promoción: les llega a quienes lo tienen en favoritos o tienen su rubro en `rubrosDeInteres`, si
   tienen `avisosActivos`. Trae `datos: { tipo: "promocion", promocionId, comercioId }` para abrir la
   pantalla de la promo. Los recordatorios de "promo por vencer" son notificaciones locales del teléfono.
@@ -211,9 +216,9 @@ comercio las da de alta el Centro Comercial.
 | `GET` | `/comercios/:id/resenas` | 🌐 público | Reseñas de un comercio |
 | `POST` | `/comercios/:id/resenas` | 🔒 con sesión | Dejar una reseña |
 | `GET` | `/comercios/qr/:codigo` | 🌐 público | Comercio por código QR |
-| `POST` | `/dispositivos` | 🔒 con sesión | Registrar el teléfono para recibir push |
-| `DELETE` | `/dispositivos/:tokenExpo` | 🔒 con sesión | Dar de baja el teléfono |
-| `POST` | `/dispositivos/prueba` | 🔒 con sesión | Mandarme una push de prueba |
+| `POST` | `/dispositivos` | 🔒 con sesión | Registrar el teléfono para recibir push (lo completan ustedes) |
+| `DELETE` | `/dispositivos/:tokenExpo` | 🔒 con sesión | Dar de baja el teléfono (lo completan ustedes) |
+| `POST` | `/dispositivos/prueba` | 🔒 con sesión | Mandarme una push de prueba (lo completan ustedes) |
 | `GET` | `/mi-comercio` | 🔒 con sesión | Mi comercio |
 | `PATCH` | `/mi-comercio` | 🔒 con sesión | Editar mi comercio |
 | `GET` | `/mi-comercio/promociones` | 🔒 con sesión | Mis promociones |
@@ -272,6 +277,7 @@ comercio las da de alta el Centro Comercial.
 | 422 | `FECHA_EN_EL_FUTURO` | La fecha no puede ser posterior a este momento. |
 | 422 | `ARCHIVO_NO_SUBIDO` | Primero hay que subir la foto o el video. |
 | 500 | `ERROR_INTERNO` | Algo salió mal de nuestro lado. Probá de nuevo en un rato. |
+| 501 | `NO_IMPLEMENTADO` | Esta parte la programan ustedes. Mirá docs/NOTIFICACIONES.md. |
 | 503 | `ALMACEN_NO_DISPONIBLE` | No pudimos acceder a los archivos. Probá de nuevo en un rato. |
 <!-- /tabla:errores -->
 
@@ -392,6 +398,7 @@ Cosas que conviene saber:
 ### Para la cátedra
 
 `pnpm verificar` (tipos + lint + unitarios + e2e en SQLite), `pnpm test:e2e:matriz` (los
-cuatro motores y S3Proxy, con Docker), `pnpm docker:probar` (los compose de punta a punta, también con S3Proxy) y
+cuatro motores y S3Proxy, con Docker), `pnpm test:notificaciones` (la consigna de los alumnos: en
+`main` da rojo a propósito, en la rama `solucion-notificaciones` da verde), `pnpm docker:probar` (los compose de punta a punta, también con S3Proxy) y
 `pnpm docs:readme` (regenera las tablas de arriba). Las reglas del proyecto están en
 `AGENTS.md` y `docs/ESPECIFICACION.md`; las decisiones, en `docs/DECISIONES.md`.

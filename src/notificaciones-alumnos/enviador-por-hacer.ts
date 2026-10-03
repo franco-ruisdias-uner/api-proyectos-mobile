@@ -1,52 +1,23 @@
-import { Logger } from '@nestjs/common';
 import type { EnviadorPush, MensajePush } from '../comun/notificaciones/puertos.js';
-
-const TANDA = 100;
-
-interface TicketExpo {
-  status?: string;
-  details?: { error?: string };
-}
+import { ErrorApi } from '../comun/errores/error-api.js';
 
 /**
- * Manda las push con `fetch` a la API de Expo, sin SDK (AGENTS §9). Un mensaje por token, en
- * tandas de 100. Los tokens que Expo responde como `DeviceNotRegistered` vuelven como inválidos.
+ * TODO(alumnos): manda las push a la API de Expo. Mirá docs/NOTIFICACIONES.md.
+ *
+ * `url` es la dirección de la API de Expo (`EXPO_PUSH_URL`); en los tests es un servidor falso.
+ * Mientras `enviar` tire `NO_IMPLEMENTADO`, `Avisos` escribe en el log que la push quedó pendiente.
  */
 export class EnviadorPorHacer implements EnviadorPush {
-  private readonly logger = new Logger('Push');
+  constructor(protected readonly url: string) {}
 
-  constructor(private readonly url: string) {}
-
-  async enviar(mensajes: MensajePush[]): Promise<{ tokensInvalidos: string[] }> {
-    const individuales = mensajes.flatMap((m) =>
-      m.tokens.map((to) => ({
-        to,
-        title: m.titulo,
-        body: m.cuerpo,
-        data: m.datos,
-        sound: 'default',
-      })),
-    );
-    const tokensInvalidos: string[] = [];
-
-    for (let i = 0; i < individuales.length; i += TANDA) {
-      const tanda = individuales.slice(i, i + TANDA);
-      const respuesta = await fetch(this.url, {
-        method: 'POST',
-        headers: { accept: 'application/json', 'content-type': 'application/json' },
-        body: JSON.stringify(tanda),
-      });
-      if (!respuesta.ok) {
-        this.logger.warn(`Expo respondió ${respuesta.status} a una tanda de ${tanda.length} push.`);
-        continue;
-      }
-      const cuerpo = (await respuesta.json()) as { data?: TicketExpo[] };
-      (cuerpo.data ?? []).forEach((ticket, j) => {
-        if (ticket.status === 'error' && ticket.details?.error === 'DeviceNotRegistered') {
-          tokensInvalidos.push(tanda[j].to);
-        }
-      });
-    }
-    return { tokensInvalidos };
+  /**
+   * TODO(alumnos): hacer un `fetch` POST a `url` con los mensajes.
+   * - Cada token es un mensaje de Expo (`to`, `title`, `body`, `data`, `sound`).
+   * - Expo acepta hasta 100 mensajes por pedido: mandar en tandas.
+   * - Leer la respuesta y devolver en `tokensInvalidos` los que Expo marca como `DeviceNotRegistered`.
+   * - Si Expo responde con un error HTTP, no tirar: loguearlo y seguir con la tanda que sigue.
+   */
+  enviar(_mensajes: MensajePush[]): Promise<{ tokensInvalidos: string[] }> {
+    throw new ErrorApi('NO_IMPLEMENTADO');
   }
 }

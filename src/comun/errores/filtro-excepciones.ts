@@ -57,7 +57,10 @@ export class FiltroExcepciones implements ExceptionFilter {
   catch(excepcion: unknown, host: ArgumentsHost): void {
     const res = host.switchToHttp().getResponse<Response>();
     const error = aErrorApi(excepcion);
-    if (error.estado >= 500) {
+    if (error.codigo === 'NO_IMPLEMENTADO') {
+      // Esperado mientras los alumnos no completen su parte: una línea, sin stack.
+      this.logger.warn(`${res.req.method} ${res.req.originalUrl}: ${error.codigo}`);
+    } else if (error.estado >= 500) {
       this.logger.error(
         excepcion instanceof Error ? (excepcion.stack ?? excepcion.message) : String(excepcion),
       );

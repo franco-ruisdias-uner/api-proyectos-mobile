@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { type DataSource, In } from 'typeorm';
+import { ErrorApi } from '../errores/error-api.js';
 import { Usuario } from '../../modulos/usuarios/usuario.entidad.js';
 import {
   ALMACEN_TOKENS_PUSH,
@@ -38,8 +39,8 @@ export class Avisos {
   }
 
   private async procesar(usuarioIds: string[], aviso: Aviso): Promise<void> {
+    const unicos = [...new Set(usuarioIds)];
     try {
-      const unicos = [...new Set(usuarioIds)];
       if (unicos.length === 0) return;
       const conAvisos = await this.dataSource.getRepository(Usuario).find({
         select: { id: true },
@@ -50,6 +51,13 @@ export class Avisos {
       const { tokensInvalidos } = await this.enviador.enviar([{ tokens, ...aviso }]);
       if (tokensInvalidos.length > 0) await this.almacen.descartar(tokensInvalidos);
     } catch (error) {
+      if (error instanceof ErrorApi && error.codigo === 'NO_IMPLEMENTADO') {
+        // Las piezas de los alumnos todavía están vacías: el flujo de la app sigue igual.
+        this.logger.log(
+          `Push pendiente de implementar: ${aviso.titulo} → ${unicos.length} usuarios`,
+        );
+        return;
+      }
       this.logger.error(
         `No se pudo mandar el aviso "${aviso.titulo}": ${(error as Error).message}`,
       );

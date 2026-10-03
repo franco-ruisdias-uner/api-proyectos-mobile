@@ -4,6 +4,18 @@ Lo que cambia en la API, contado para quienes la usan desde la app. Lo más nuev
 
 ## [Sin publicar]
 
+### M10 — Notificaciones para completar
+
+- **No cambia ninguna respuesta que ya andaba.** Cambia lo que hacen tres rutas que antes funcionaban:
+  `POST /dispositivos`, `DELETE /dispositivos/:tokenExpo` y `POST /dispositivos/prueba` responden
+  **501 `NO_IMPLEMENTADO`** («Esta parte la programan ustedes. Mirá docs/NOTIFICACIONES.md.») hasta que
+  ustedes programen el guardado de tokens y el envío. Mismas rutas y mismo contrato (`Dispositivo`,
+  `PruebaPush`) cuando estén completas.
+- Nuevo código de error `NO_IMPLEMENTADO` (501).
+- Crear una promo, favoritos, etc. siguen andando: la API sólo escribe en el log
+  `Push pendiente de implementar`.
+- Nuevo: `docs/NOTIFICACIONES.md` y `pnpm test:notificaciones` (la consigna: da rojo hasta que la completen).
+
 ### M9 — Semillas completas
 
 - **No cambia ninguna respuesta ni ruta.** Sólo datos de demo.
