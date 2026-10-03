@@ -436,3 +436,13 @@ porcentaje de descuento en el texto.
 Alternativas descartadas: un adaptador por proveedor; aceptar `DB_URL` con `?sslmode=` para decidir el SSL;
 reintentar siempre el bucket inexistente.
 
+### A32 — Video de muestra y cierre de semillas (M9)
+Estado: PROVISORIA (autónomo)
+Decisión: `scripts/generar-medios.mjs` genera `src/semillas/medios/muestra.mp4`, un contenedor MP4
+mínimo (ftyp + moov/mvhd + mdat, ~2 KB) sin derechos de terceros, que se sube por el puerto al sembrar y
+queda como `videoUrl` de `com-118` y `com-201`. Pasa el chequeo de firma y se sirve con `Range`, pero
+**no se reproduce** (no tiene pistas): no se puede generar un video real sin ffmpeg ni dependencias.
+Además `com-118` suma `pro-451` (vencida) y `pro-452` (dada de baja) para que el panel muestre todos los estados.
+Alternativas descartadas: dejar `videoUrl` en `null` en todos (no deja probar ese camino); versionar un
+video real (pesa y trae derechos). Resuelve lo que A21 dejaba para M9. Los medios de audio no se siembran: el contrato no
+tiene campos de audio.

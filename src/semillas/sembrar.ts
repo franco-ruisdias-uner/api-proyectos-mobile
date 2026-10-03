@@ -54,10 +54,21 @@ async function subirMedios(almacen: AlmacenArchivos, reloj: Reloj): Promise<Map<
   return claves;
 }
 
+const VIDEO_DE_MUESTRA = 'muestra';
+
+/** Sube el video de muestra una sola vez y devuelve su clave. */
+async function subirVideo(almacen: AlmacenArchivos, reloj: Reloj): Promise<string> {
+  const contenido = await readFile(join(import.meta.dirname, 'medios', `${VIDEO_DE_MUESTRA}.mp4`));
+  const clave = nuevaClave('video', 'mp4', reloj.ahora());
+  await almacen.guardar(clave, contenido, 'video/mp4');
+  return clave;
+}
+
 /** Carga los datos de demo. Supone la base vacía (ver `db:reiniciar` y SEMBRAR_SI_VACIA). */
 export async function sembrar({ dataSource, reloj, almacen }: DependenciasSemillas): Promise<void> {
   const hash = await hashearContrasena(CONTRASENA_DEMO);
   const medios = await subirMedios(almacen, reloj);
+  const claveVideo = await subirVideo(almacen, reloj);
   const ahora = reloj.ahora();
 
   const { resenas, reportes } = generarResenas(COMERCIOS);
@@ -75,12 +86,12 @@ export async function sembrar({ dataSource, reloj, almacen }: DependenciasSemill
       );
     await m.getRepository(Rubro).insert(RUBROS);
     await m.getRepository(Comercio).insert(
-      COMERCIOS.map(({ vacacionesDias, imagenes, ...c }) => ({
+      COMERCIOS.map(({ vacacionesDias, imagenes, video, ...c }) => ({
         ...c,
         nombreBusqueda: normalizarParaBusqueda(c.nombre),
         descripcionBusqueda: normalizarParaBusqueda(c.descripcion),
         imagenes: imagenes.map((nombre) => medios.get(nombre)!),
-        videoClave: null,
+        videoClave: video ? claveVideo : null,
         cerradoHasta:
           vacacionesDias === null
             ? null

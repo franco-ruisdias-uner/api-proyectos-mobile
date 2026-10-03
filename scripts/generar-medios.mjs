@@ -39,3 +39,25 @@ const COLORES = { fachada: [196, 90, 60], vidriera: [60, 120, 170], interior: [9
 for (const [nombre, color] of Object.entries(COLORES)) {
   writeFileSync(join(import.meta.dirname, '../src/semillas/medios', `${nombre}.png`), png(320, 200, color));
 }
+
+// Video de muestra: un contenedor MP4 mínimo y válido por dentro (ftyp + moov/mvhd + mdat), sin
+// pistas de imagen ni de sonido. Sirve para probar la URL, el tipo y los rangos; no se reproduce.
+function caja(tipo, ...partes) {
+  const cuerpo = Buffer.concat(partes);
+  const cabecera = Buffer.alloc(8);
+  cabecera.writeUInt32BE(cuerpo.length + 8);
+  cabecera.write(tipo, 4, 'latin1');
+  return Buffer.concat([cabecera, cuerpo]);
+}
+const mvhd = Buffer.alloc(100);
+mvhd.writeUInt32BE(1000, 12); // timescale
+mvhd.writeUInt32BE(3000, 16); // duración: 3 s
+mvhd.writeUInt32BE(0x00010000, 20); // velocidad 1.0
+mvhd.writeUInt16BE(0x0100, 24); // volumen 1.0
+mvhd.writeUInt32BE(0x00010000, 36); // matriz identidad
+mvhd.writeUInt32BE(0x00010000, 52);
+mvhd.writeUInt32BE(0x40000000, 68);
+mvhd.writeUInt32BE(2, 96); // próximo id de pista
+const ftyp = caja('ftyp', Buffer.from('isom'), Buffer.from([0, 0, 2, 0]), Buffer.from('isomiso2mp41'));
+const mp4 = Buffer.concat([ftyp, caja('moov', caja('mvhd', mvhd)), caja('mdat', Buffer.alloc(2048))]);
+writeFileSync(join(import.meta.dirname, '../src/semillas/medios', 'muestra.mp4'), mp4);

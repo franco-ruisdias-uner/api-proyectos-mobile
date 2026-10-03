@@ -13,6 +13,8 @@ export interface ComercioSemilla {
   instagram: string | null;
   /** Nombres de archivo de `src/semillas/medios/` (sin extensión). */
   imagenes: string[];
+  /** `true` si lleva el video de muestra de `src/semillas/medios/`. */
+  video: boolean;
   horarios: Horario[];
   mediosDePago: string[];
   puntaje: number;
@@ -207,6 +209,7 @@ const FILAS: Fila[] = [
       whatsapp: '5493442421234',
       ig: '@eltornillo',
       imagenes: ['fachada', 'vidriera'],
+      video: true,
       mediosDePago: ['efectivo', 'debito', 'credito', 'transferencia'],
       puntaje: 4.6,
       cantidadResenas: 12,
@@ -392,6 +395,7 @@ const FILAS: Fila[] = [
       ig: '@santarita',
       mediosDePago: ['efectivo', 'billetera_virtual'],
       imagenes: ['vidriera', 'interior'],
+      video: true,
       puntaje: 4,
       cantidadResenas: 2,
     },
@@ -416,6 +420,7 @@ export const COMERCIOS: ComercioSemilla[] = FILAS.map(
       whatsapp: null,
       instagram: ig ?? null,
       imagenes: [],
+      video: false,
       horarios: CORTADO,
       mediosDePago: ['efectivo', 'debito'],
       puntaje: 0,

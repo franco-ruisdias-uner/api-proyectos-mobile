@@ -4,6 +4,14 @@ Lo que cambia en la API, contado para quienes la usan desde la app. Lo más nuev
 
 ## [Sin publicar]
 
+### M9 — Semillas completas
+
+- **No cambia ninguna respuesta ni ruta.** Sólo datos de demo.
+- `com-118` y `com-201` traen `videoUrl` (un `.mp4` de muestra que no se reproduce, sirve para probar
+  rangos). El resto sigue en `null`.
+- `com-118` suma una promoción vencida (`pro-451`) y una dada de baja (`pro-452`): se ven en
+  `GET /mi-comercio/promociones` y no en `/promociones`.
+
 ### M8 — Nube
 
 - **No cambia ninguna respuesta de la API.** Las URLs de los archivos siguen siendo

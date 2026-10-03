@@ -117,6 +117,19 @@ Todos tienen la contraseña **`demo1234`**.
 | `tornillo@demo.ar` | comercio | Ferretería El Tornillo (`com-118`). |
 | `otro.comercio@demo.ar` | comercio | Otro comercio, para probar lo que no es tuyo. |
 
+### Qué trae la demo
+
+- 9 rubros y 40 comercios en calles reales del centro (39 en el listado y uno dado de baja).
+- Casos para probar pantallas raras: un comercio sin fotos ni video (`com-104`), uno sin reseñas, uno con
+  muchas, uno cerrado por vacaciones, uno de corrido y otro que abre los domingos, un rubro sin promociones.
+- Promociones vigentes, por vencer, próximas, vencida (su detalle da 410), dada de baja, con y sin
+  descuento, con y sin código (`soloApp`). `tornillo@demo.ar` las ve todas en `/mi-comercio/promociones`.
+- Usos validados y pendientes, una reseña reportada y reseñas sin respuesta.
+- `com-118` y `com-201` tienen un **video de muestra** (`videoUrl`). Es un `.mp4` mínimo que sirve para
+  probar la URL y el adelantado por rangos; **no se reproduce** (no tiene imagen). Para ver un video de
+  verdad, subí uno con `POST /archivos` y asignalo con `PATCH /mi-comercio`.
+- Las fechas de las promociones son relativas a hoy (o a `RELOJ_FIJO`): siempre hay de cada estado.
+
 Para crear tu propia cuenta: `POST /auth/registro` (contraseña de 8 a 100 caracteres). Siempre crea un vecino; las cuentas de
 comercio las da de alta el Centro Comercial.
 
