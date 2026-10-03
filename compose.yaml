@@ -1,0 +1,26 @@
+# API + SQLite (en un volumen) + datos de demo: `docker compose up`.
+# Volver a cero: `docker compose down -v` y `docker compose up` de nuevo.
+name: api-directorio-comercios
+services:
+  api:
+    build: .
+    ports:
+      - "${PUERTO:-3000}:3000"
+    environment:
+      PUERTO: "3000"
+      DB_MOTOR: better-sqlite3
+      DB_ARCHIVO: /app/datos/api.sqlite
+      DB_SINCRONIZAR: "true"
+      SEMBRAR_SI_VACIA: "true"
+      JWT_SECRETO: solo-para-desarrollo-no-usar-en-produccion
+      DIRECTORIO_ARCHIVOS: /app/archivos
+      NOTIFICACIONES: expo
+      SIMULACION_HABILITADA: "true"
+      URL_PUBLICA: ${URL_PUBLICA:-}
+    volumes:
+      - datos:/app/datos
+      - archivos:/app/archivos
+    restart: unless-stopped
+volumes:
+  datos:
+  archivos:

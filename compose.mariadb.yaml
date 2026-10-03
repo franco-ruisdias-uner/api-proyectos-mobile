@@ -1,0 +1,29 @@
+# API + MariaDB 11 + datos de demo: `docker compose -f compose.mariadb.yaml up`.
+# La base queda en el puerto 3308 de tu computadora (usuario api, clave api, base api).
+name: api-directorio-comercios-mariadb
+services:
+  api:
+    extends: { file: compose.yaml, service: api }
+    environment:
+      DB_MOTOR: mariadb
+      DB_URL: mysql://api:api@mariadb:3306/api
+    depends_on:
+      mariadb: { condition: service_healthy }
+  mariadb:
+    image: mariadb:11
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_USER: api
+      MARIADB_PASSWORD: api
+      MARIADB_DATABASE: api
+    ports: ["${PUERTO_DB:-3308}:3306"]
+    volumes: [mariadb:/var/lib/mysql]
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 3s
+      timeout: 3s
+      retries: 60
+volumes:
+  datos:
+  archivos:
+  mariadb:
