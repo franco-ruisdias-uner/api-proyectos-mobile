@@ -4,6 +4,20 @@ Lo que cambia en la API, contado para quienes la usan desde la app. Lo más nuev
 
 ## [Sin publicar]
 
+### M4 — Reseñas
+
+- `GET /comercios/:id/resenas`: público, de la más nueva a la más vieja.
+- `POST /comercios/:id/resenas`: sólo vecinos. `{ id?, estrellas, comentario, creadaEn? }`. Si mandás el
+  mismo `id` otra vez (cola offline) devuelve 200 con la reseña ya creada, sin duplicar. Una por vecino
+  y comercio. Recalcula `puntaje` y `cantidadResenas` del comercio.
+- `PATCH /resenas/:id` y `DELETE /resenas/:id` (204): sólo el autor.
+- `POST /resenas/:id/reportes`: cualquier cuenta menos el autor; la reseña sigue visible con
+  `reportada: true`.
+- `POST /resenas/:id/respuesta`: sólo el comercio reseñado, una vez.
+- Errores nuevos: `RESENA_NO_ENCONTRADA`, `RESENA_YA_EXISTE`, `RESENA_YA_RESPONDIDA`, `REPORTE_PROPIO`,
+  `FECHA_EN_EL_FUTURO` e `ID_EN_USO`.
+- Datos de demo: reseñas reales detrás de cada puntaje (`res-2210` es la del PRD) y 60 vecinos de relleno.
+
 ### M3 — Cuenta y favoritos
 
 - `PUT /yo/favoritos/:comercioId`: agrega un favorito y devuelve tu `Usuario`. Se puede repetir sin

@@ -285,3 +285,35 @@ Semillas: Marta con `com-118` y `com-101` y rubros `rub-ferreteria` y `rub-gastr
 Estado: PROVISORIA (autónomo). Un id sin el prefijo `com-` da 400 `VALIDACION_FALLIDA` (AGENTS §7.3)
 antes de ir a la base. `DELETE` con id mal formado sigue dando 204 (idempotente, A25). Un rubro con
 formato inválido en `rubrosDeInteres` da 422 `RUBRO_NO_ENCONTRADO`. Alternativa descartada: 400 también en `DELETE`.
+
+
+### D5, D6 y D7 — Reseñas (M4)
+Estado: PROVISORIA. D5: una reseña por vecino y comercio (índice único); las cuentas `comercio` no
+reseñan (403 `SIN_PERMISO`). D6: una reseña reportada sigue visible con `reportada: true`; no hay
+moderación ni ocultamiento automático (en `ESPECIFICACION.md` figura PENDIENTE: se implementó su
+default). D7: `puntaje` con un decimal y `0` sin reseñas.
+
+### A27 — Reseñas: forma de las respuestas y bordes (M4)
+Estado: PROVISORIA (autónomo)
+Hueco: R7–R10 y R15 no dicen todos los códigos de estado ni algunos bordes.
+Decisión:
+- `POST /comercios/:id/resenas` → 201 al crear y 200 con la existente si se reenvía el mismo `id` del
+  mismo usuario (aunque el cuerpo difiera: no se pisa). `id` de otro usuario → 409 `ID_EN_USO`.
+  Dos pedidos simultáneos con el mismo `id` devuelven la misma reseña; con ids distintos para el mismo
+  comercio, uno gana y el otro recibe 409 `RESENA_YA_EXISTE`.
+- `POST /resenas/:id/respuesta` → 200 con la `Resena` (no 201), igual que `/reportes`.
+- `PATCH /resenas/:id` con `{}` → 200 sin cambios; sólo `estrellas` y `comentario` (cualquier otro
+  campo, 400). La respuesta del comercio se conserva al editar.
+- Se puede reseñar y editar la reseña de un comercio dado de baja (el detalle lo devuelve, D12).
+- Largo máximo de `respuesta`: 1000, como el comentario. El largo se cuenta en unidades UTF-16
+  (un emoji cuenta 2). `creadaEn: null` → 400. `sincronizada` se acepta y se ignora.
+- Ids mal formados en la ruta → 404 (`RESENA_NO_ENCONTRADA` / `COMERCIO_NO_ENCONTRADO`). El orden de
+  validación es: sesión y rol, cuerpo (400), comercio (404), reenvío por `id`, fecha futura (422),
+  `RESENA_YA_EXISTE`. Un comercio ajeno o un vecino que responde → 403.
+- El listado va por `creadaEn` descendente y desempata por `id` descendente. Reportar guarda quién
+  reportó en `reportes_de_resenas`; borrar la reseña borra sus reportes.
+- Crear, reportar o responder no manda push (ESPECIFICACION §7 no lo pide).
+Alternativas descartadas: 404 para el reenvío con distinto cuerpo; 201 en la respuesta del comercio;
+400 con `{}` en PATCH.
+Semillas (resuelve A20): `puntaje` y `cantidadResenas` salen de reseñas reales, hasta 60 por comercio
+(el de «muchas», com-125, queda en 60 en vez de 87); 60 vecinos de relleno (`vecino01@demo.ar`…).
