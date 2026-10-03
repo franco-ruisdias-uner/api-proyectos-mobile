@@ -46,3 +46,14 @@ export const USUARIOS: UsuarioSemilla[] = [
     avisosActivos: true,
   },
 ];
+
+/** Listas de Marta (ESPECIFICACION §8): `nuevo@demo.ar` no tiene ninguna y los comercios tampoco. */
+export const FAVORITOS_DEMO: { usuarioId: string; comercioId: string }[] = [
+  { usuarioId: 'usr-512', comercioId: 'com-118' },
+  { usuarioId: 'usr-512', comercioId: 'com-101' },
+];
+
+export const RUBROS_DE_INTERES_DEMO: { usuarioId: string; rubroId: string }[] = [
+  { usuarioId: 'usr-512', rubroId: 'rub-ferreteria' },
+  { usuarioId: 'usr-512', rubroId: 'rub-gastronomia' },
+];

@@ -383,7 +383,7 @@ describe('AGENTS §7.1 / A9 — GET /yo y PATCH /yo (verificación)', () => {
     ['nombre null', { nombre: null }],
     ['nombre lista', { nombre: ['Ana'] }],
     ['A9 — favoritos todavía no se aceptan', { favoritos: [] }],
-    ['A9 — avisosActivos todavía no se acepta', { avisosActivos: false }],
+    ['avisosActivos no booleano (se acepta desde M3)', { avisosActivos: 'no' }],
     ['id de más', { id: 'usr-otro' }],
     ['contrasena de más', { contrasena: 'nueva-clave-larga' }],
     ['sincronizado de más', { sincronizado: true }],

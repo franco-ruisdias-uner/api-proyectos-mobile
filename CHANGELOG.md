@@ -4,6 +4,16 @@ Lo que cambia en la API, contado para quienes la usan desde la app. Lo más nuev
 
 ## [Sin publicar]
 
+### M3 — Cuenta y favoritos
+
+- `PUT /yo/favoritos/:comercioId`: agrega un favorito y devuelve tu `Usuario`. Se puede repetir sin
+  problema. Sólo cuentas de vecino (las de comercio reciben 403 `SIN_PERMISO`). Si el comercio no
+  existe, 404 `COMERCIO_NO_ENCONTRADO`.
+- `DELETE /yo/favoritos/:comercioId`: lo quita (204), también si no estaba.
+- `PATCH /yo` ahora acepta `rubrosDeInteres` (reemplaza la lista entera; un id que no existe da 422
+  `RUBRO_NO_ENCONTRADO`) y `avisosActivos`. `favoritos` y `rubrosDeInteres` del `Usuario` ya vienen
+  completos; `favoritos` en el orden en que se agregaron.
+
 ### M2 — Promociones (lectura)
 
 - `GET /promociones`: `estado=vigentes` (default), `proximas` (empiezan en los próximos 7 días) o
@@ -39,5 +49,4 @@ Lo que cambia en la API, contado para quienes la usan desde la app. Lo más nuev
 - Toda respuesta viene en el sobre `{ datos, meta }` o `{ error: { codigo, mensaje } }`.
 - Cabecera `X-Simular` para probar errores y demoras; `RELOJ_FIJO` para congelar la hora.
 - Usuarios de demo con la contraseña `demo1234` (ver README).
-- Por ahora `favoritos` y `rubrosDeInteres` vienen siempre vacíos: se completan con el módulo
-  de cuenta y favoritos.
+- (M0) `favoritos` y `rubrosDeInteres` venían vacíos hasta el módulo de cuenta y favoritos (M3).

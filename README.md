@@ -182,6 +182,8 @@ comercio las da de alta el Centro Comercial.
 | `GET` | `/salud` | 🌐 público | ¿Anda la API? |
 | `GET` | `/yo` | 🔒 con sesión | Mi cuenta |
 | `PATCH` | `/yo` | 🔒 con sesión | Cambiar datos de mi cuenta |
+| `PUT` | `/yo/favoritos/:comercioId` | 🔒 con sesión | Agregar un favorito |
+| `DELETE` | `/yo/favoritos/:comercioId` | 🔒 con sesión | Quitar un favorito |
 <!-- /tabla:endpoints -->
 
 ### Códigos de error
@@ -203,6 +205,7 @@ comercio las da de alta el Centro Comercial.
 | 413 | `ARCHIVO_DEMASIADO_GRANDE` | El archivo es demasiado grande. Las fotos pueden pesar hasta 5 MB, los audios 10 MB y los videos 30 MB. |
 | 415 | `TIPO_DE_ARCHIVO_NO_PERMITIDO` | Ese tipo de archivo no se puede subir. Usá una foto JPG, PNG o WEBP, un audio M4A, AAC o MP3, o un video MP4. |
 | 416 | `RANGO_NO_SATISFACIBLE` | No pudimos leer esa parte del archivo. |
+| 422 | `RUBRO_NO_ENCONTRADO` | Alguno de los rubros elegidos no existe. |
 | 422 | `ARCHIVO_NO_SUBIDO` | Primero hay que subir la foto o el video. |
 | 500 | `ERROR_INTERNO` | Algo salió mal de nuestro lado. Probá de nuevo en un rato. |
 | 503 | `ALMACEN_NO_DISPONIBLE` | No pudimos acceder a los archivos. Probá de nuevo en un rato. |

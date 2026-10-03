@@ -263,3 +263,19 @@ Decisión: 10 promociones con fechas relativas a "ahora" (`pro-441` a `pro-450`)
 siembra con números fijos (como A20): M6 tiene que respaldarlos con `UsoDePromocion` validados y
 recalcularlos (R13). Los textos y fechas de `pro-441` salvo el título y el comercio son inventados
 (no se pudo leer el PRD).
+
+### A25 — Favoritos y rubros de interés (M3)
+Estado: PROVISORIA (autónomo)
+Decisión: dos tablas (`favoritos`, `rubros_de_interes`) con clave compuesta, que garantiza la
+idempotencia aun con pedidos simultáneos. `favoritos` sale en el orden en que se agregaron
+(`creadoEn`, desempate por id); `rubrosDeInteres` en el orden en que se mandaron (columna
+`posicion`), sin repetidos. `PATCH /yo` con `rubrosDeInteres` reemplaza la lista entera, en una
+transacción: si alguno no existe, 422 `RUBRO_NO_ENCONTRADO` y no se cambia nada (ni el nombre).
+Se puede marcar favorito un comercio dado de baja (el detalle lo devuelve, D12). Favoritos es sólo
+para `vecino` (403 `SIN_PERMISO` para `comercio`, ESPECIFICACION §1); `PATCH /yo` lo pueden
+usar los dos roles. Quitar un favorito que no existe (o un comercio inexistente) da 204.
+Descartado: 404 al quitar un inexistente (no es idempotente); aceptar `favoritos` en `PATCH /yo`.
+Reemplaza a A9: el test `test/verificacion/m0.e2e-spec.ts` esperaba 400 para `avisosActivos`
+"hasta M3"; se cambió a un valor no booleano porque ESPECIFICACION M3 lo acepta.
+Semillas: Marta con `com-118` y `com-101` y rubros `rub-ferreteria` y `rub-gastronomia`.
+

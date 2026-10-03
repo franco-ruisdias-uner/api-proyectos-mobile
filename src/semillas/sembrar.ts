@@ -10,11 +10,18 @@ import { normalizarParaBusqueda } from '../comun/texto/texto.js';
 import { Comercio } from '../modulos/comercios/comercio.entidad.js';
 import { Promocion } from '../modulos/promociones/promocion.entidad.js';
 import { Rubro } from '../modulos/comercios/rubro.entidad.js';
+import { Favorito } from '../modulos/usuarios/favorito.entidad.js';
+import { RubroDeInteres } from '../modulos/usuarios/rubro-de-interes.entidad.js';
 import { Usuario } from '../modulos/usuarios/usuario.entidad.js';
 import { COMERCIOS } from './datos/comercios.js';
 import { PROMOCIONES } from './datos/promociones.js';
 import { RUBROS } from './datos/rubros.js';
-import { CONTRASENA_DEMO, USUARIOS } from './datos/usuarios.js';
+import {
+  CONTRASENA_DEMO,
+  FAVORITOS_DEMO,
+  RUBROS_DE_INTERES_DEMO,
+  USUARIOS,
+} from './datos/usuarios.js';
 
 export interface DependenciasSemillas {
   dataSource: DataSource;
@@ -65,6 +72,15 @@ export async function sembrar({ dataSource, reloj, almacen }: DependenciasSemill
             : hoyEnZona(new Date(ahora.getTime() + vacacionesDias * MILISEGUNDOS_POR_DIA)),
       })),
     );
+    await m.getRepository(Favorito).insert(
+      FAVORITOS_DEMO.map((f, i) => ({
+        ...f,
+        creadoEn: new Date(ahora.getTime() - (FAVORITOS_DEMO.length - i) * MILISEGUNDOS_POR_DIA),
+      })),
+    );
+    await m
+      .getRepository(RubroDeInteres)
+      .insert(RUBROS_DE_INTERES_DEMO.map((r, posicion) => ({ ...r, posicion })));
     await m.getRepository(Promocion).insert(
       PROMOCIONES.map(({ desdeDias, hastaDias, imagen, ...p }) => ({
         ...p,
