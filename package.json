@@ -19,7 +19,8 @@
     "contrato:esquema": "ts-json-schema-generator --path \"contrato/*.ts\" --type \"*\" --no-type-check --out contrato/esquema.json",
     "db:reiniciar": "nest build && node dist/src/semillas/reiniciar.js",
     "verificar": "pnpm contrato:esquema && pnpm tipos && pnpm lint && pnpm test && pnpm test:e2e",
-    "docker:probar": "node scripts/probar-docker.mjs"
+    "docker:probar": "node scripts/probar-docker.mjs",
+    "docs:readme": "ACTUALIZAR_README=1 vitest run --config ./vitest.config.e2e.ts test/e2e/readme.e2e-spec.ts"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",

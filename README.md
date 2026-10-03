@@ -1,0 +1,230 @@
+# API — Directorio de Comercios · Concepción del Uruguay
+
+Esta es la API que va a usar tu app del **Directorio de Comercios**, el pedido del Centro
+Comercial, Industrial y de Servicios de Concepción del Uruguay (el PRD está en `docs/prd.pdf`).
+La armó la cátedra de Desarrollo para Móviles (UNER) para el Trabajo Final 2026.
+
+Hasta ahora trabajaste con datos inventados detrás de `src/servicios/comercios.ts`. Cuando
+quieras pasar a datos de verdad, cambiás esos servicios por `fetch` a esta API. **Tus tipos de
+`src/tipos/` no se tocan**: la API devuelve exactamente la forma del PRD.
+
+> **Estado:** esta versión trae la base (cuenta, archivos, notificaciones y `/salud`). Los
+> comercios, las promociones y las reseñas se van sumando: mirá `CHANGELOG.md`.
+
+---
+
+## 1. Con Docker: un solo comando (recomendado)
+
+Si tenés [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado y abierto,
+no necesitás instalar Node ni una base de datos. En la carpeta de este proyecto:
+
+```bash
+docker compose up
+```
+
+La primera vez tarda unos minutos (arma la imagen). Cuando veas `Escuchando en el puerto 3000`,
+abrí <http://localhost:3000/salud> en el navegador. La API arranca con los **datos de demo**
+cargados.
+
+Si querés probar con otra base de datos:
+
+| Comando | Qué levanta | La base en tu compu |
+|---|---|---|
+| `docker compose up` | API + SQLite | — (queda en un volumen) |
+| `docker compose -f compose.postgres.yaml up` | API + PostgreSQL 17 | puerto 5433 |
+| `docker compose -f compose.mysql.yaml up` | API + MySQL 8.4 | puerto 3307 |
+| `docker compose -f compose.mariadb.yaml up` | API + MariaDB 11 | puerto 3308 |
+
+Las bases usan usuario `api`, contraseña `api` y base `api`: las podés mirar con DBeaver.
+
+- **Frenar:** `Ctrl+C`, o `docker compose down`.
+- **Volver a cero** (borra todo lo que cargaste y vuelve a los datos de demo):
+  `docker compose down -v` y después `docker compose up` de nuevo. Con otro archivo, agregá
+  el mismo `-f compose.postgres.yaml` a los dos comandos.
+- Si el puerto 3000 está ocupado: `PUERTO=3001 docker compose up`.
+
+## 2. Sin Docker, con SQLite (tres comandos)
+
+Necesitás **Node.js 24** y **pnpm 10**.
+
+1. Instalá Node 24 desde <https://nodejs.org> (la versión LTS). Si usás `nvm`, en esta carpeta
+   alcanza con `nvm use`.
+2. Activá pnpm, que ya viene con Node: `corepack enable` (en Windows, en una terminal como
+   administrador). Comprobalo con `pnpm -v`.
+3. Copiá `.env.example` a `.env` (en Windows: `copy .env.example .env`).
+
+Y después:
+
+```bash
+pnpm install
+pnpm db:reiniciar
+pnpm dev
+```
+
+`pnpm db:reiniciar` crea la base (un archivo en `datos/api.sqlite`) y carga los datos de demo.
+`pnpm dev` levanta la API en el puerto 3000 y se reinicia sola si cambiás algo.
+
+> Usá **pnpm**, no npm: con npm la instalación falla.
+
+## 3. Sin Docker, con PostgreSQL, MySQL o MariaDB instalados a mano
+
+1. Creá una base vacía llamada `api` y un usuario con permiso sobre ella.
+2. En `.env`, comentá el bloque de SQLite y descomentá el de tu motor, con tus datos en
+   `DB_URL`. Por ejemplo:
+
+   ```
+   DB_MOTOR=postgres
+   DB_URL=postgres://usuario:clave@localhost:5432/api
+   ```
+
+3. `pnpm db:reiniciar` y `pnpm dev`, como antes.
+
+> **Ojo con XAMPP:** XAMPP instala **MariaDB**, no MySQL, aunque el panel diga "MySQL". Usá
+> `DB_MOTOR=mariadb` (por defecto el usuario es `root` sin contraseña:
+> `DB_URL=mysql://root:@localhost:3306/api`). Con `DB_MOTOR=mysql` contra MariaDB la API no
+> queda estable.
+
+## 4. Conectarse desde el teléfono
+
+El teléfono con Expo Go **no llega a `localhost`**: `localhost` es el propio teléfono. Tiene que
+entrar por la IP de tu computadora.
+
+1. El teléfono y la computadora tienen que estar **en la misma red wifi**.
+2. Al arrancar, la API te muestra las direcciones que encontró:
+   `Desde el teléfono (misma red wifi): http://192.168.0.10:3000/salud`. Con Docker no las
+   puede ver: buscá la IP con `ipconfig` (Windows) o `ifconfig` / Preferencias de red (Mac).
+3. Abrí esa dirección **en el navegador del teléfono**. Si ves `"estado":"ok"`, ya está: en tu
+   app usá `http://192.168.0.10:3000` como dirección base.
+4. Si no carga:
+   - **Windows:** la primera vez, el firewall pregunta si dejás que Node (o Docker) use la red.
+     Marcá "Redes privadas" y aceptá. Si ya dijiste que no, buscá "Permitir una aplicación a
+     través del Firewall de Windows" y habilitá Node.js.
+   - Algunos **antivirus** tienen su propio firewall: permití el puerto 3000.
+   - La red de la facultad o de un bar puede aislar los dispositivos entre sí. Probá con el
+     hotspot del teléfono.
+
+Las URLs de las fotos que devuelve la API se arman con la misma dirección que usó el teléfono,
+así que no hay que configurar nada más.
+
+## 5. Usuarios de demo
+
+Todos tienen la contraseña **`demo1234`**.
+
+| Email | Rol | Para qué sirve |
+|---|---|---|
+| `marta@mail.com` | vecino | La usuaria del PRD (`usr-512`). |
+| `nuevo@demo.ar` | vecino | Una cuenta sin nada cargado. |
+| `tornillo@demo.ar` | comercio | Ferretería El Tornillo (`com-118`). |
+| `otro.comercio@demo.ar` | comercio | Otro comercio, para probar lo que no es tuyo. |
+
+Para crear tu propia cuenta: `POST /auth/registro`. Siempre crea un vecino; las cuentas de
+comercio las da de alta el Centro Comercial.
+
+## 6. Cómo se usa
+
+- Toda respuesta viene en un **sobre**:
+
+  ```jsonc
+  // una lista
+  { "datos": [ ... ], "meta": { "total": 42, "pagina": 1, "porPagina": 20 } }
+  // un solo recurso
+  { "datos": { ... }, "meta": null }
+  // un error
+  { "error": { "codigo": "PROMO_VENCIDA", "mensaje": "Esa promoción ya no está vigente." } }
+  ```
+
+- El `mensaje` de error está pensado para **mostrarlo tal cual** en pantalla. El `codigo` es
+  para que tu app decida qué hacer; no cambia nunca.
+- Un `DELETE` que sale bien responde **204 sin cuerpo**.
+- La sesión: `POST /auth/ingreso` devuelve un `token` que dura 30 días. Guardalo en
+  `expo-secure-store` y mandalo en cada pedido: `Authorization: Bearer <token>`.
+- Las fechas con hora vienen así: `"2026-11-14T21:00:00-03:00"`. Los ids son texto
+  (`"com-118"`), nunca números. Un campo sin valor viene en `null`.
+- Las listas aceptan `?pagina=1&porPagina=20`.
+- **Fotos y videos:** primero subís el archivo con `POST /archivos` (`multipart/form-data`,
+  campo `archivo`) y la API te devuelve una `url`; después mandás esa `url` en el recurso.
+- **Notificaciones push:** registrá el token de `expo-notifications` con `POST /dispositivos`
+  y probalo con `POST /dispositivos/prueba`.
+- **Documentación completa, con ejemplos:** <http://localhost:3000/docs> (Swagger). Desde ahí
+  podés probar cada endpoint.
+
+### Endpoints
+
+<!-- tabla:endpoints -->
+| Método | Ruta | Acceso | Qué hace |
+|---|---|---|---|
+| `POST` | `/archivos` | 🔒 con sesión | Subir una foto, un audio o un video |
+| `GET` | `/archivos/:clave` | 🌐 público | Descargar un archivo |
+| `POST` | `/auth/ingreso` | 🌐 público | Ingresar |
+| `POST` | `/auth/registro` | 🌐 público | Crear una cuenta de vecino |
+| `POST` | `/dispositivos` | 🔒 con sesión | Registrar el teléfono para recibir push |
+| `DELETE` | `/dispositivos/:tokenExpo` | 🔒 con sesión | Dar de baja el teléfono |
+| `POST` | `/dispositivos/prueba` | 🔒 con sesión | Mandarme una push de prueba |
+| `GET` | `/salud` | 🌐 público | ¿Anda la API? |
+| `GET` | `/yo` | 🔒 con sesión | Mi cuenta |
+| `PATCH` | `/yo` | 🔒 con sesión | Cambiar datos de mi cuenta |
+<!-- /tabla:endpoints -->
+
+### Códigos de error
+
+<!-- tabla:errores -->
+| HTTP | Código | Mensaje (se puede mostrar tal cual) |
+|---|---|---|
+| 400 | `VALIDACION_FALLIDA` | Hay datos que faltan o no son válidos. |
+| 401 | `NO_AUTENTICADO` | Tenés que ingresar con tu cuenta para hacer esto. |
+| 401 | `CREDENCIALES_INVALIDAS` | El email o la contraseña no son correctos. |
+| 403 | `SIN_PERMISO` | No tenés permiso para hacer esto. |
+| 404 | `RUTA_NO_ENCONTRADA` | No encontramos lo que buscabas. |
+| 404 | `ARCHIVO_NO_ENCONTRADO` | No encontramos ese archivo. |
+| 409 | `EMAIL_YA_REGISTRADO` | Ya hay una cuenta con ese email. Probá ingresar. |
+| 413 | `ARCHIVO_DEMASIADO_GRANDE` | El archivo es demasiado grande. Las fotos pueden pesar hasta 5 MB, los audios 10 MB y los videos 30 MB. |
+| 415 | `TIPO_DE_ARCHIVO_NO_PERMITIDO` | Ese tipo de archivo no se puede subir. Usá una foto JPG, PNG o WEBP, un audio M4A, AAC o MP3, o un video MP4. |
+| 416 | `RANGO_NO_SATISFACIBLE` | No pudimos leer esa parte del archivo. |
+| 422 | `ARCHIVO_NO_SUBIDO` | Primero hay que subir la foto o el video. |
+| 500 | `ERROR_INTERNO` | Algo salió mal de nuestro lado. Probá de nuevo en un rato. |
+| 503 | `ALMACEN_NO_DISPONIBLE` | No pudimos acceder a los archivos. Probá de nuevo en un rato. |
+<!-- /tabla:errores -->
+
+## 7. Simular errores, demoras y otra hora
+
+El PRD les pide manejar errores de red y estados de carga. Para probarlo sin apagar el wifi,
+mandá la cabecera `X-Simular` en cualquier pedido:
+
+| Cabecera | Qué pasa |
+|---|---|
+| `X-Simular: error-500` | Responde 500 con `ERROR_INTERNO`. |
+| `X-Simular: demora-3000` | Responde bien, pero 3 segundos tarde (máximo 30000). |
+
+En la app, por ejemplo: `fetch(url, { headers: { 'X-Simular': 'demora-3000' } })`. Se apaga
+con `SIMULACION_HABILITADA=false` en `.env`.
+
+**Congelar el reloj:** con `RELOJ_FIJO=2026-11-14T21:00:00-03:00` en `.env` (o en
+`environment:` del compose), la API cree que es ese momento. Sirve para probar promociones
+vencidas o por vencer sin esperar.
+
+## 8. Volver los datos al estado inicial
+
+- Sin Docker: `pnpm db:reiniciar`.
+- Con Docker: `docker compose down -v` y `docker compose up`.
+
+## 9. Problemas frecuentes
+
+| Qué pasa | Qué hacer |
+|---|---|
+| `La API no puede arrancar porque la configuración tiene problemas` | Leé la lista que muestra: dice qué variable falta. Casi siempre es que no copiaste `.env.example` a `.env`. |
+| `npm install` falla con `Cannot read properties of null` | Usá `pnpm install`, no npm. |
+| `Could not locate the bindings file` (better-sqlite3) | Borrá `node_modules` y corré `pnpm install` de nuevo, con Node 24. |
+| El teléfono no conecta | Sección 4: misma wifi, IP de la compu, firewall. |
+| `EADDRINUSE: address already in use :::3000` | Ya hay algo en el puerto 3000 (¿otra API abierta?). Cerralo o usá `PUERTO=3001`. |
+| Con XAMPP, errores raros al crear tablas | Usá `DB_MOTOR=mariadb` (sección 3). |
+| `401 NO_AUTENTICADO` | Falta `Authorization: Bearer <token>` o el token venció (dura 30 días): volvé a ingresar. |
+| Docker: `port is already allocated` | Otro programa usa ese puerto: `PUERTO=3001 docker compose up`. |
+
+---
+
+### Para la cátedra
+
+`pnpm verificar` (tipos + lint + unitarios + e2e en SQLite), `pnpm test:e2e:matriz` (los
+cuatro motores, con Docker), `pnpm docker:probar` (los cuatro compose de punta a punta) y
+`pnpm docs:readme` (regenera las tablas de arriba). Las reglas del proyecto están en
+`AGENTS.md` y `docs/ESPECIFICACION.md`; las decisiones, en `docs/DECISIONES.md`.
