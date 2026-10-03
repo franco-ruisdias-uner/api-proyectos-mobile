@@ -12,9 +12,13 @@ import { Promocion } from '../modulos/promociones/promocion.entidad.js';
 import { Rubro } from '../modulos/comercios/rubro.entidad.js';
 import { Favorito } from '../modulos/usuarios/favorito.entidad.js';
 import { RubroDeInteres } from '../modulos/usuarios/rubro-de-interes.entidad.js';
+import { ReporteDeResena } from '../modulos/resenas/reporte-de-resena.entidad.js';
+import { Resena } from '../modulos/resenas/resena.entidad.js';
+import { promedioDeEstrellas } from '../modulos/resenas/reglas/resenas.js';
 import { Usuario } from '../modulos/usuarios/usuario.entidad.js';
 import { COMERCIOS } from './datos/comercios.js';
 import { PROMOCIONES } from './datos/promociones.js';
+import { generarResenas, VECINOS_DE_RELLENO } from './datos/resenas.js';
 import { RUBROS } from './datos/rubros.js';
 import {
   CONTRASENA_DEMO,
@@ -54,10 +58,19 @@ export async function sembrar({ dataSource, reloj, almacen }: DependenciasSemill
   const medios = await subirMedios(almacen, reloj);
   const ahora = reloj.ahora();
 
+  const { resenas, reportes } = generarResenas(COMERCIOS);
+
   await dataSource.transaction(async (m) => {
     await m
       .getRepository(Usuario)
-      .insert(USUARIOS.map((u) => ({ ...u, hashContrasena: hash, creadoEn: ahora })));
+
+      .insert(
+        [...USUARIOS, ...VECINOS_DE_RELLENO].map((u) => ({
+          ...u,
+          hashContrasena: hash,
+          creadoEn: ahora,
+        })),
+      );
     await m.getRepository(Rubro).insert(RUBROS);
     await m.getRepository(Comercio).insert(
       COMERCIOS.map(({ vacacionesDias, imagenes, ...c }) => ({
@@ -89,6 +102,25 @@ export async function sembrar({ dataSource, reloj, almacen }: DependenciasSemill
         imagenClave: imagen === null ? null : medios.get(imagen)!,
       })),
     );
+    await m.getRepository(Resena).insert(
+      resenas.map(({ haceDias, ...r }) => ({
+        ...r,
+        reportada: reportes.some((x) => x.resenaId === r.id),
+        creadaEn: new Date(ahora.getTime() - haceDias * MILISEGUNDOS_POR_DIA),
+      })),
+    );
+    await m
+      .getRepository(ReporteDeResena)
+      .insert(
+        reportes.map((r) => ({ ...r, creadoEn: new Date(ahora.getTime() - MILISEGUNDOS_POR_DIA) })),
+      );
+    // R8 (A20): puntaje y cantidad salen de las reseñas sembradas, no de números fijos.
+    for (const { id } of COMERCIOS) {
+      const propias = resenas.filter((r) => r.comercioId === id).map((r) => r.estrellas);
+      await m
+        .getRepository(Comercio)
+        .update({ id }, { puntaje: promedioDeEstrellas(propias), cantidadResenas: propias.length });
+    }
   });
 }
 

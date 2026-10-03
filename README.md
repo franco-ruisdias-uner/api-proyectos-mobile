@@ -172,12 +172,18 @@ comercio las da de alta el Centro Comercial.
 | `POST` | `/auth/registro` | 🌐 público | Crear una cuenta de vecino |
 | `GET` | `/comercios` | 🌐 público | Comercios |
 | `GET` | `/comercios/:id` | 🌐 público | Detalle de un comercio |
+| `GET` | `/comercios/:id/resenas` | 🌐 público | Reseñas de un comercio |
+| `POST` | `/comercios/:id/resenas` | 🔒 con sesión | Dejar una reseña |
 | `GET` | `/comercios/qr/:codigo` | 🌐 público | Comercio por código QR |
 | `POST` | `/dispositivos` | 🔒 con sesión | Registrar el teléfono para recibir push |
 | `DELETE` | `/dispositivos/:tokenExpo` | 🔒 con sesión | Dar de baja el teléfono |
 | `POST` | `/dispositivos/prueba` | 🔒 con sesión | Mandarme una push de prueba |
 | `GET` | `/promociones` | 🌐 público | Promociones |
 | `GET` | `/promociones/:id` | 🌐 público | Detalle de una promoción |
+| `PATCH` | `/resenas/:id` | 🔒 con sesión | Editar mi reseña |
+| `DELETE` | `/resenas/:id` | 🔒 con sesión | Borrar mi reseña |
+| `POST` | `/resenas/:id/reportes` | 🔒 con sesión | Reportar una reseña como ofensiva |
+| `POST` | `/resenas/:id/respuesta` | 🔒 con sesión | Responder una reseña |
 | `GET` | `/rubros` | 🌐 público | Rubros |
 | `GET` | `/salud` | 🌐 público | ¿Anda la API? |
 | `GET` | `/yo` | 🔒 con sesión | Mi cuenta |
@@ -199,13 +205,19 @@ comercio las da de alta el Centro Comercial.
 | 404 | `COMERCIO_NO_ENCONTRADO` | No existe ese comercio. |
 | 404 | `QR_NO_RECONOCIDO` | Ese código no es de un comercio asociado. |
 | 404 | `PROMOCION_NO_ENCONTRADA` | No existe esa promoción. |
+| 404 | `RESENA_NO_ENCONTRADA` | No existe esa reseña. |
 | 404 | `ARCHIVO_NO_ENCONTRADO` | No encontramos ese archivo. |
 | 409 | `EMAIL_YA_REGISTRADO` | Ya hay una cuenta con ese email. Probá ingresar. |
+| 409 | `RESENA_YA_EXISTE` | Ya dejaste una reseña para este comercio. Podés editarla. |
+| 409 | `RESENA_YA_RESPONDIDA` | Ya respondiste esta reseña. |
+| 409 | `ID_EN_USO` | Ese identificador ya está en uso. |
 | 410 | `PROMO_VENCIDA` | Esa promoción ya no está vigente. |
 | 413 | `ARCHIVO_DEMASIADO_GRANDE` | El archivo es demasiado grande. Las fotos pueden pesar hasta 5 MB, los audios 10 MB y los videos 30 MB. |
 | 415 | `TIPO_DE_ARCHIVO_NO_PERMITIDO` | Ese tipo de archivo no se puede subir. Usá una foto JPG, PNG o WEBP, un audio M4A, AAC o MP3, o un video MP4. |
 | 416 | `RANGO_NO_SATISFACIBLE` | No pudimos leer esa parte del archivo. |
 | 422 | `RUBRO_NO_ENCONTRADO` | Alguno de los rubros elegidos no existe. |
+| 422 | `REPORTE_PROPIO` | No podés reportar tu propia reseña. |
+| 422 | `FECHA_EN_EL_FUTURO` | La fecha no puede ser posterior a este momento. |
 | 422 | `ARCHIVO_NO_SUBIDO` | Primero hay que subir la foto o el video. |
 | 500 | `ERROR_INTERNO` | Algo salió mal de nuestro lado. Probá de nuevo en un rato. |
 | 503 | `ALMACEN_NO_DISPONIBLE` | No pudimos acceder a los archivos. Probá de nuevo en un rato. |

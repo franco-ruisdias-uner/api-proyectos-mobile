@@ -8,7 +8,6 @@ import { DEFINICIONES } from '../utilidades/contrato.js';
  * `esperarContrato(…, '<Tipo>')` en test/.
  */
 const TODAVIA_NO_DEVUELTOS: Record<string, string> = {
-  Resena: 'M4',
   UsoDePromocion: 'M6',
 };
 

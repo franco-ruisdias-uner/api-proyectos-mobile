@@ -4,6 +4,7 @@ import { Usuario } from '../../src/modulos/usuarios/usuario.entidad.js';
 import { UsuariosServicio } from '../../src/modulos/usuarios/usuarios.servicio.js';
 import { baseVacia, sembrar } from '../../src/semillas/sembrar.js';
 import { SemillasModulo } from '../../src/semillas/semillas.modulo.js';
+import { VECINOS_DE_RELLENO } from '../../src/semillas/datos/resenas.js';
 import { CONTRASENA_DEMO, USUARIOS } from '../../src/semillas/datos/usuarios.js';
 import { type AppDePrueba, crearApp } from '../utilidades/crear-app.js';
 import { esperarContrato } from '../utilidades/contrato.js';
@@ -86,7 +87,7 @@ describe('AGENTS §16.2 — SEMBRAR_SI_VACIA', () => {
     const repo = t.dataSource.getRepository(Usuario);
     await repo.update({ id: 'usr-512' }, { nombre: 'Marta cambiada' });
     await t.app.get(SemillasModulo).onApplicationBootstrap();
-    expect(await repo.count()).toBe(USUARIOS.length);
+    expect(await repo.count()).toBe(USUARIOS.length + VECINOS_DE_RELLENO.length);
     expect((await repo.findOneByOrFail({ id: 'usr-512' })).nombre).toBe('Marta cambiada');
     await t.cerrar();
   });

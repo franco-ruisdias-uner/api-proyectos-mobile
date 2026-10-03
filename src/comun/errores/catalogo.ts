@@ -44,6 +44,17 @@ export const CATALOGO = {
   // 410 al pedir el detalle; 422 al intentar usarla, validarla o editarla.
   PROMO_VENCIDA: { estado: 410, mensaje: 'Esa promoción ya no está vigente.' },
 
+  // Reseñas
+  RESENA_NO_ENCONTRADA: { estado: 404, mensaje: 'No existe esa reseña.' },
+  RESENA_YA_EXISTE: {
+    estado: 409,
+    mensaje: 'Ya dejaste una reseña para este comercio. Podés editarla.',
+  },
+  RESENA_YA_RESPONDIDA: { estado: 409, mensaje: 'Ya respondiste esta reseña.' },
+  REPORTE_PROPIO: { estado: 422, mensaje: 'No podés reportar tu propia reseña.' },
+  FECHA_EN_EL_FUTURO: { estado: 422, mensaje: 'La fecha no puede ser posterior a este momento.' },
+  ID_EN_USO: { estado: 409, mensaje: 'Ese identificador ya está en uso.' },
+
   // Archivos
   ARCHIVO_NO_ENCONTRADO: { estado: 404, mensaje: 'No encontramos ese archivo.' },
   ARCHIVO_NO_SUBIDO: { estado: 422, mensaje: 'Primero hay que subir la foto o el video.' },
