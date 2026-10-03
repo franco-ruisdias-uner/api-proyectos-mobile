@@ -1,0 +1,542 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ArchivoSubido": {
+      "additionalProperties": false,
+      "description": "Respuesta de POST /archivos.",
+      "properties": {
+        "bytes": {
+          "type": "number"
+        },
+        "tipo": {
+          "enum": [
+            "imagen",
+            "audio",
+            "video"
+          ],
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "tipo",
+        "bytes"
+      ],
+      "type": "object"
+    },
+    "Comercio": {
+      "additionalProperties": false,
+      "properties": {
+        "activo": {
+          "type": "boolean"
+        },
+        "cantidadResenas": {
+          "type": "number"
+        },
+        "codigoQr": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "coordenadas": {
+          "$ref": "#/definitions/Coordenadas"
+        },
+        "descripcion": {
+          "type": "string"
+        },
+        "direccion": {
+          "type": "string"
+        },
+        "horarios": {
+          "items": {
+            "$ref": "#/definitions/Horario"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "imagenes": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "instagram": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mediosDePago": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "nombre": {
+          "type": "string"
+        },
+        "puntaje": {
+          "type": "number"
+        },
+        "rubroId": {
+          "type": "string"
+        },
+        "telefono": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "videoUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "whatsapp": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "nombre",
+        "rubroId",
+        "descripcion",
+        "direccion",
+        "coordenadas",
+        "telefono",
+        "whatsapp",
+        "instagram",
+        "imagenes",
+        "videoUrl",
+        "horarios",
+        "mediosDePago",
+        "puntaje",
+        "cantidadResenas",
+        "codigoQr",
+        "activo"
+      ],
+      "type": "object"
+    },
+    "Coordenadas": {
+      "additionalProperties": false,
+      "properties": {
+        "latitud": {
+          "type": "number"
+        },
+        "longitud": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "latitud",
+        "longitud"
+      ],
+      "type": "object"
+    },
+    "Dispositivo": {
+      "additionalProperties": false,
+      "description": "Respuesta de POST /dispositivos: el teléfono quedó registrado para recibir push.",
+      "properties": {
+        "plataforma": {
+          "enum": [
+            "ios",
+            "android"
+          ],
+          "type": "string"
+        },
+        "tokenExpo": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "tokenExpo",
+        "plataforma"
+      ],
+      "type": "object"
+    },
+    "Horario": {
+      "additionalProperties": false,
+      "properties": {
+        "abre": {
+          "type": "string"
+        },
+        "cierra": {
+          "type": "string"
+        },
+        "dia": {
+          "enum": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "type": "number"
+        }
+      },
+      "required": [
+        "dia",
+        "abre",
+        "cierra"
+      ],
+      "type": "object"
+    },
+    "Meta": {
+      "additionalProperties": false,
+      "description": "Paginación de toda respuesta de lista.",
+      "properties": {
+        "pagina": {
+          "type": "number"
+        },
+        "porPagina": {
+          "type": "number"
+        },
+        "total": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "total",
+        "pagina",
+        "porPagina"
+      ],
+      "type": "object"
+    },
+    "Promocion": {
+      "additionalProperties": false,
+      "properties": {
+        "activa": {
+          "type": "boolean"
+        },
+        "comercioId": {
+          "type": "string"
+        },
+        "descuento": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "desde": {
+          "type": "string"
+        },
+        "detalle": {
+          "type": "string"
+        },
+        "hasta": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "imagenUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "soloApp": {
+          "type": "boolean"
+        },
+        "titulo": {
+          "type": "string"
+        },
+        "usos": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "comercioId",
+        "titulo",
+        "detalle",
+        "descuento",
+        "desde",
+        "hasta",
+        "imagenUrl",
+        "soloApp",
+        "usos",
+        "activa"
+      ],
+      "type": "object"
+    },
+    "PruebaPush": {
+      "additionalProperties": false,
+      "description": "Respuesta de POST /dispositivos/prueba: a cuántos teléfonos tuyos se mandó la push de prueba.",
+      "properties": {
+        "dispositivos": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "dispositivos"
+      ],
+      "type": "object"
+    },
+    "Resena": {
+      "additionalProperties": false,
+      "properties": {
+        "comentario": {
+          "type": "string"
+        },
+        "comercioId": {
+          "type": "string"
+        },
+        "creadaEn": {
+          "type": "string"
+        },
+        "estrellas": {
+          "enum": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "type": "number"
+        },
+        "id": {
+          "type": "string"
+        },
+        "reportada": {
+          "type": "boolean"
+        },
+        "respuesta": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sincronizada": {
+          "type": "boolean"
+        },
+        "usuarioId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "comercioId",
+        "usuarioId",
+        "estrellas",
+        "comentario",
+        "respuesta",
+        "reportada",
+        "creadaEn",
+        "sincronizada"
+      ],
+      "type": "object"
+    },
+    "RespuestaError": {
+      "additionalProperties": false,
+      "description": "Error: { error: { codigo, mensaje } } — sin otros campos.",
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "codigo": {
+              "type": "string"
+            },
+            "mensaje": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "codigo",
+            "mensaje"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "error"
+      ],
+      "type": "object"
+    },
+    "Rol": {
+      "enum": [
+        "vecino",
+        "comercio"
+      ],
+      "type": "string"
+    },
+    "Rubro": {
+      "additionalProperties": false,
+      "properties": {
+        "color": {
+          "type": "string"
+        },
+        "icono": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "nombre": {
+          "type": "string"
+        },
+        "orden": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "nombre",
+        "icono",
+        "color",
+        "orden"
+      ],
+      "type": "object"
+    },
+    "Salud": {
+      "additionalProperties": false,
+      "description": "Respuesta de GET /salud.",
+      "properties": {
+        "almacen": {
+          "enum": [
+            "local",
+            "aws",
+            "supabase",
+            "r2",
+            "b2",
+            "s3proxy",
+            "localstack"
+          ],
+          "type": "string"
+        },
+        "estado": {
+          "const": "ok",
+          "type": "string"
+        },
+        "motor": {
+          "enum": [
+            "better-sqlite3",
+            "postgres",
+            "mysql",
+            "mariadb"
+          ],
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "estado",
+        "motor",
+        "almacen",
+        "version"
+      ],
+      "type": "object"
+    },
+    "Sesion": {
+      "additionalProperties": false,
+      "description": "Respuesta de POST /auth/registro y POST /auth/ingreso.",
+      "properties": {
+        "token": {
+          "type": "string"
+        },
+        "usuario": {
+          "$ref": "#/definitions/Usuario"
+        }
+      },
+      "required": [
+        "token",
+        "usuario"
+      ],
+      "type": "object"
+    },
+    "UsoDePromocion": {
+      "additionalProperties": false,
+      "properties": {
+        "codigo": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "promocionId": {
+          "type": "string"
+        },
+        "usuarioId": {
+          "type": "string"
+        },
+        "validadoEn": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "promocionId",
+        "usuarioId",
+        "codigo",
+        "validadoEn"
+      ],
+      "type": "object"
+    },
+    "Usuario": {
+      "additionalProperties": false,
+      "properties": {
+        "avisosActivos": {
+          "type": "boolean"
+        },
+        "comercioId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "email": {
+          "type": "string"
+        },
+        "favoritos": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "nombre": {
+          "type": "string"
+        },
+        "rol": {
+          "$ref": "#/definitions/Rol"
+        },
+        "rubrosDeInteres": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "nombre",
+        "email",
+        "rol",
+        "comercioId",
+        "favoritos",
+        "rubrosDeInteres",
+        "avisosActivos"
+      ],
+      "type": "object"
+    }
+  }
+}

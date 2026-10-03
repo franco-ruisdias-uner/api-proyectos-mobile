@@ -39,14 +39,25 @@ export interface Sesion {
 /** Respuesta de POST /archivos. */
 export interface ArchivoSubido {
   url: string;
-  tipo: "imagen" | "audio" | "video";
+  tipo: 'imagen' | 'audio' | 'video';
   bytes: number;
 }
 
 /** Respuesta de GET /salud. */
 export interface Salud {
-  estado: "ok";
-  motor: "better-sqlite3" | "postgres" | "mysql" | "mariadb";
-  almacen: "local" | "aws" | "supabase" | "r2" | "b2" | "s3proxy" | "localstack";
+  estado: 'ok';
+  motor: 'better-sqlite3' | 'postgres' | 'mysql' | 'mariadb';
+  almacen: 'local' | 'aws' | 'supabase' | 'r2' | 'b2' | 's3proxy' | 'localstack';
   version: string;
+}
+
+/** Respuesta de POST /dispositivos: el teléfono quedó registrado para recibir push. */
+export interface Dispositivo {
+  tokenExpo: string;
+  plataforma: 'ios' | 'android';
+}
+
+/** Respuesta de POST /dispositivos/prueba: a cuántos teléfonos tuyos se mandó la push de prueba. */
+export interface PruebaPush {
+  dispositivos: number;
 }
