@@ -356,3 +356,12 @@ Decisión:
 - El push por promo nueva (ESPECIFICACION M5 «Dispara push») lo agrega M7; M5 no manda nada.
 Alternativas descartadas: dejar editar el rubro; 400 para `hasta` pasado al crear; `PATCH` con `activa`
 para reactivar; 403 al crear promos desde un comercio dado de baja.
+
+Bordes que dejó el verificador de M5 (comportamiento actual, queda fijado):
+- `videoUrl: ""` e `imagenUrl: ""` → 422 `ARCHIVO_NO_SUBIDO` (no es una URL de `/archivos`).
+- Fotos repetidas en `imagenes` se aceptan tal cual (a diferencia de `mediosDePago`, que se juntan).
+- `hasta == ahora` en una promo guardada: todavía no está vencida (vence con `hasta < ahora`); en cambio
+  poner `hasta ≤ ahora` en un `PATCH` da 422 `PROMO_VENCIDA`.
+- En `PATCH` y `DELETE` de promos, el orden es: sesión y rol, formato del cuerpo (400), promo inexistente (404), dueño (403), y recién ahí las reglas de fechas y archivos.
+  Sin `desde`, un `hasta ≤ ahora` da 400 porque `desde` toma «ahora» y `hasta ≤ desde` se chequea primero.
+- `GET /mi-comercio/promociones` ignora filtros desconocidos como `?estado=`.
