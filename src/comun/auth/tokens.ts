@@ -29,10 +29,12 @@ export class Tokens {
   /** Devuelve el usuario del token, o null si es inválido o venció. */
   verificar(token: string): UsuarioSesion | null {
     try {
-      const datos = this.jwt.verify<{ sub?: unknown; rol?: unknown }>(token, {
+      const datos = this.jwt.verify<{ sub?: unknown; rol?: unknown; exp?: unknown }>(token, {
         algorithms: ['HS256'],
         clockTimestamp: Math.floor(this.reloj.ahora().getTime() / 1000),
       });
+      // jsonwebtoken acepta un token sin `exp`; acá no hay tokens eternos (AGENTS §7.2).
+      if (typeof datos.exp !== 'number') return null;
       if (typeof datos.sub !== 'string' || typeof datos.rol !== 'string') return null;
       if (!ROLES.includes(datos.rol)) return null;
       return { id: datos.sub, rol: datos.rol as Rol };

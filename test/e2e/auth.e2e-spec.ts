@@ -1,3 +1,4 @@
+import { JwtService } from '@nestjs/jwt';
 import { Usuario } from '../../src/modulos/usuarios/usuario.entidad.js';
 import { type AppDePrueba, crearApp } from '../utilidades/crear-app.js';
 import { esperarContrato, esperarError } from '../utilidades/contrato.js';
@@ -233,6 +234,13 @@ describe('AGENTS §7.1 — GET /yo y PATCH /yo', () => {
     esperarError(res.body, 'NO_AUTENTICADO');
   });
 
+  it('AGENTS §7.2 — 401 con un token sin vencimiento (no hay tokens eternos)', async () => {
+    const marta = await crearUsuario(t);
+    const sinExp = t.app.get(JwtService).sign({ sub: marta.id, rol: 'vecino' });
+    const res = await t.http().get('/yo').set('Authorization', `Bearer ${sinExp}`).expect(401);
+    esperarError(res.body, 'NO_AUTENTICADO');
+  });
+
   it('401 si la cuenta del token ya no existe', async () => {
     const marta = await crearUsuario(t);
     await t.dataSource.getRepository(Usuario).delete({ id: marta.id });
@@ -267,6 +275,7 @@ describe('AGENTS §7.1 — GET /yo y PATCH /yo', () => {
   it.each([
     [{ nombre: '' }, 'El nombre tiene que tener entre 1 y 80 letras.'],
     [{ nombre: 7 }, 'El nombre tiene que ser un texto.'],
+    [{ nombre: null }, 'El nombre tiene que ser un texto.'],
     [{ rol: 'comercio' }, 'No se esperaba el dato «rol».'],
     [{ email: 'otro@mail.com' }, 'No se esperaba el dato «email».'],
     [{ comercioId: 'com-118' }, 'No se esperaba el dato «comercioId».'],
