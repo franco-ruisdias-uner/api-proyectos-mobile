@@ -391,3 +391,7 @@ Decisión:
   dos pendientes. Las promos sin `soloApp` también traen usos sembrados (dato de demo, la API no los genera).
 Alternativas descartadas: 403 en `GET /yo/usos` para comercios; permitir reusar un código tras vencer
 la promo; códigos con número de promo y de usuario (adivinables, D8).
+
+Bordes que dejó el verificador de M6 (comportamiento actual, queda fijado):
+- `POST /promociones/:id/usos` no declara cuerpo: si llega uno, se ignora (no hay 400 por campos de más).
+- `codigo` vacío o sólo espacios en `POST /mi-comercio/usos/validar` da 400; un texto cualquiera, 404 `CODIGO_INVALIDO`.
