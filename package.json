@@ -25,6 +25,7 @@
     "test:cov": "vitest run --coverage",
     "test:debug": "vitest --inspect-brk --no-file-parallelism",
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
+    "test:notificaciones": "vitest run --config ./vitest.config.notificaciones.ts",
     "test:e2e:matriz": "node scripts/matriz.mjs",
     "test:watch": "vitest",
     "verificar": "tsc --noEmit && pnpm lint && pnpm test && pnpm test:e2e"

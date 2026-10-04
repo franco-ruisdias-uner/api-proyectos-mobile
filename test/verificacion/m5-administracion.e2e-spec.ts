@@ -152,12 +152,7 @@ describe('M5 verificación — administración', () => {
       'Reserva',
     );
   const registrarPush = (u: UsuarioDePrueba, token: string) =>
-    a
-      .http()
-      .post('/dispositivos')
-      .set(con(u))
-      .send({ tokenExpo: token, plataforma: 'android' })
-      .expect(201);
+    a.almacenTokens.guardar(u.usuario.id, token, 'android');
   const espera = () => new Promise((r) => setTimeout(r, 150));
 
   // ---------------------------------------------------------------- permisos

@@ -46,12 +46,7 @@ describe('M6 — Favoritos y avisos', () => {
       'Usuario',
     );
   const registrarPush = async (u: UsuarioDePrueba, token: string) => {
-    await a
-      .http()
-      .post('/dispositivos')
-      .set(con(u))
-      .send({ tokenExpo: token, plataforma: 'android' })
-      .expect(201);
+    await a.almacenTokens.guardar(u.usuario.id, token, 'android');
   };
   const reservaDe = (
     inicio: string,

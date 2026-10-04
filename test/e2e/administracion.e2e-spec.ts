@@ -85,12 +85,7 @@ describe('M5 — Administración', () => {
       ...datos,
     });
   const registrarPush = async (u: UsuarioDePrueba, token: string) => {
-    await a
-      .http()
-      .post('/dispositivos')
-      .set(con(u))
-      .send({ tokenExpo: token, plataforma: 'android' })
-      .expect(201);
+    await a.almacenTokens.guardar(u.usuario.id, token, 'android');
   };
   const grilla = async (fecha: string): Promise<Turno[]> => {
     const res = await a

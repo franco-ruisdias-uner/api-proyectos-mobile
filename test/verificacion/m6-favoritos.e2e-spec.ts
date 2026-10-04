@@ -75,11 +75,8 @@ describe('M6 verificación — favoritos y avisos', () => {
       (await pedir('get', '/yo', u).expect(200)).body,
       'Usuario',
     );
-  const push = async (u: UsuarioDePrueba, token: string) =>
-    pedir('post', '/dispositivos', u, {
-      tokenExpo: token,
-      plataforma: 'ios',
-    }).expect(201);
+  const push = (u: UsuarioDePrueba, token: string) =>
+    a.almacenTokens.guardar(u.usuario.id, token, 'ios');
   const reservar = (inicio: string, u = jugador, fecha = MANANA) =>
     crearReserva(a, {
       espacioId,

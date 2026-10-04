@@ -12,15 +12,23 @@ import { AppModule } from '../../src/app.module.js';
 import { configurarApp } from '../../src/app.configurar.js';
 import { Reloj, RelojFijo } from '../../src/comun/reloj/reloj.js';
 import { AlmacenArchivos } from '../../src/comun/archivos/almacen-archivos.js';
-import { EnviadorPush } from '../../src/comun/notificaciones/puertos.js';
+import {
+  AlmacenTokensPush,
+  EnviadorPush,
+} from '../../src/comun/notificaciones/puertos.js';
 import { Avisos } from '../../src/comun/notificaciones/avisos.servicio.js';
-import { EnviadorMemoria } from './notificaciones.js';
+import { AlmacenTokensMemoria, EnviadorMemoria } from './notificaciones.js';
 
 export interface OpcionesApp {
   /** Instante inicial del reloj. Default: sábado 19/09/2026 10:00 en Villaguay. */
   ahora?: string;
   /** Variables de entorno que pisan las de prueba. */
   entorno?: Record<string, string>;
+  /**
+   * Usa el almacén de tokens y el enviador de verdad (los que programan los alumnos)
+   * en vez de los dobles en memoria. Sólo lo usa test/notificaciones/.
+   */
+  notificacionesReales?: boolean;
 }
 
 export interface AppDePrueba {
@@ -28,6 +36,7 @@ export interface AppDePrueba {
   http: () => TestAgent;
   reloj: RelojFijo;
   enviador: EnviadorMemoria;
+  almacenTokens: AlmacenTokensMemoria;
   avisos: Avisos;
   dataSource: DataSource;
   almacen: AlmacenArchivos;
@@ -61,8 +70,9 @@ export async function crearApp(
   };
   const reloj = new RelojFijo(opciones.ahora ?? AHORA_POR_DEFECTO);
   const enviador = new EnviadorMemoria();
+  const almacenTokens = new AlmacenTokensMemoria();
 
-  const modulo = await Test.createTestingModule({
+  let constructor = Test.createTestingModule({
     imports: [
       AppModule.registrar({
         entorno,
@@ -72,10 +82,15 @@ export async function crearApp(
     ],
   })
     .overrideProvider(Reloj)
-    .useValue(reloj)
-    .overrideProvider(EnviadorPush)
-    .useValue(enviador)
-    .compile();
+    .useValue(reloj);
+  if (!opciones.notificacionesReales) {
+    constructor = constructor
+      .overrideProvider(EnviadorPush)
+      .useValue(enviador)
+      .overrideProvider(AlmacenTokensPush)
+      .useValue(almacenTokens);
+  }
+  const modulo = await constructor.compile();
 
   const app = modulo.createNestApplication<NestExpressApplication>({
     logger: false,
@@ -88,6 +103,7 @@ export async function crearApp(
     http: () => request.agent(app.getHttpServer()),
     reloj,
     enviador,
+    almacenTokens,
     avisos: app.get(Avisos),
     dataSource: app.get(DataSource),
     almacen: app.get(AlmacenArchivos),
