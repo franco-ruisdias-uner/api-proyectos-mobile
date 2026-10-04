@@ -323,9 +323,12 @@ describe('ESPECIFICACION §8 — Reservas de demo (M3)', () => {
       'res-1196',
     ]);
     const pasadas = await mias(token, 'cuando=pasadas');
-    expect(pasadas.map((r) => r.estado).toSorted()).toEqual(
-      ['ausente', 'cancelada', 'confirmada', 'cumplida'],
-    );
+    expect(pasadas.map((r) => r.estado).toSorted()).toEqual([
+      'ausente',
+      'cancelada',
+      'confirmada',
+      'cumplida',
+    ]);
   });
 
   it('lleno@demo.ar tiene tres reservas activas y la cuarta da LIMITE_DE_RESERVAS', async () => {

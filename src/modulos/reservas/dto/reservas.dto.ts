@@ -1,9 +1,17 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import {
+  IsIn,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 import { PaginacionDto } from '../../../comun/respuesta/paginacion.js';
 
 export class CrearReservaDto {
   @ApiProperty({ example: 'tur-esp-02-20260919-19' })
+  @IsNotEmpty({ message: 'Falta el turno que querés reservar.' })
   @IsString({ message: 'Falta el turno que querés reservar.' })
   turnoId: string;
 
@@ -28,3 +36,6 @@ export class MisReservasDto extends PaginacionDto {
   })
   cuando: (typeof MOMENTOS)[number] = 'proximas';
 }
+
+/** La cancelación no lleva cuerpo: el DTO vacío hace que el pipe rechace campos de más. */
+export class CancelarReservaDto {}

@@ -99,11 +99,7 @@ export class ReservasServicio {
         fecha,
         inicio,
         cantidadPersonas: dto.cantidadPersonas,
-        codigoQr: codigoQrDe(
-          fecha,
-          inicio,
-          textoAleatorio(6, ALFABETO_QR),
-        ),
+        codigoQr: codigoQrDe(fecha, inicio, textoAleatorio(6, ALFABETO_QR)),
         estado: 'confirmada',
         ingresoEn: null,
         creadaEn: ahora,

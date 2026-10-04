@@ -55,7 +55,8 @@ export const CATALOGO = {
   },
   CANCELACION_FUERA_DE_PLAZO: {
     estado: 422,
-    mensaje: 'Faltan menos de cuatro horas: avisale al encargado para cancelar.',
+    mensaje:
+      'Faltan menos de cuatro horas: avisale al encargado para cancelar.',
   },
   RESERVA_NO_CANCELABLE: {
     estado: 409,

@@ -23,7 +23,11 @@ import {
   type UsuarioSesion,
 } from '../../comun/auth/decoradores.js';
 import { respuestaUno } from '../../comun/respuesta/respuesta.js';
-import { CrearReservaDto, MisReservasDto } from './dto/reservas.dto.js';
+import {
+  CancelarReservaDto,
+  CrearReservaDto,
+  MisReservasDto,
+} from './dto/reservas.dto.js';
 import { ReservasServicio } from './reservas.servicio.js';
 
 const EJEMPLO_RESERVA = {
@@ -122,8 +126,8 @@ export class ReservasControlador {
       'administrador puede cancelar aunque haya pasado el plazo (mientras el turno no haya ' +
       'empezado) y en ese caso suma 1 a `cancelacionesTardias` del dueño. Cancelar una ya ' +
       'cancelada responde 200 sin cambios.\n\n' +
-      'Errores: NO_AUTENTICADO (401), SIN_PERMISO (403), RESERVA_NO_ENCONTRADA (404), ' +
-      'RESERVA_NO_CANCELABLE (409), CANCELACION_FUERA_DE_PLAZO (422).',
+      'Errores: VALIDACION_FALLIDA (400), NO_AUTENTICADO (401), SIN_PERMISO (403), ' +
+      'RESERVA_NO_ENCONTRADA (404), RESERVA_NO_CANCELABLE (409), CANCELACION_FUERA_DE_PLAZO (422).',
   })
   @ApiResponse({
     status: 200,
@@ -137,6 +141,7 @@ export class ReservasControlador {
   async cancelar(
     @Param('id') id: string,
     @SesionActual() sesion: UsuarioSesion,
+    @Body() _cuerpo: CancelarReservaDto,
   ): Promise<RespuestaUno<Reserva>> {
     return respuestaUno(await this.servicio.cancelar(id, sesion));
   }
