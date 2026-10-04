@@ -1,7 +1,13 @@
 // AGENTS §5.2 y §10.4: el esquema queda estable después de sincronizar, y cada
 // registro sembrado cumple el contrato. Corre en los cuatro motores.
 import type { Sesion } from '../../contrato/api.js';
-import type { Deporte, Espacio, Turno, Usuario } from '../../contrato/tipos.js';
+import type {
+  Deporte,
+  Espacio,
+  Reserva,
+  Turno,
+  Usuario,
+} from '../../contrato/tipos.js';
 import {
   CONTRASENA_DEMO,
   USUARIOS,
@@ -9,7 +15,7 @@ import {
 import { DEPORTES, ESPACIOS } from '../../src/semillas/datos/espacios.js';
 import { sembrar } from '../../src/semillas/sembrar.js';
 import { type AppDePrueba, crearApp } from '../utilidades/crear-app.js';
-import { esperarContrato } from '../utilidades/contrato.js';
+import { esperarContrato, esperarError } from '../utilidades/contrato.js';
 
 describe('AGENTS §5.2 — Estabilidad del esquema', () => {
   let a: AppDePrueba;
@@ -267,5 +273,80 @@ describe('ESPECIFICACION §8 — Grilla de demo (casos feos de M2)', () => {
       );
       expect(t, x.id).toMatchObject({ estado: 'reservado', reservaId: x.id });
     }
+  });
+});
+
+describe('ESPECIFICACION §8 — Reservas de demo (M3)', () => {
+  let a: AppDePrueba;
+  const ingresar = async (email: string): Promise<string> => {
+    const res = await a
+      .http()
+      .post('/auth/ingreso')
+      .send({ email, contrasena: CONTRASENA_DEMO })
+      .expect(200);
+    return esperarContrato<Sesion>(res.body, 'Sesion').token;
+  };
+  const mias = async (token: string, q: string): Promise<Reserva[]> => {
+    const res = await a
+      .http()
+      .get(`/yo/reservas?${q}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    return esperarContrato<Reserva[]>(res.body, 'Reserva');
+  };
+  beforeAll(async () => {
+    a = await crearApp();
+    await sembrar(a.dataSource, a.reloj);
+  });
+  afterAll(() => a.cerrar());
+
+  it('cada reserva sembrada cumple el contrato y se puede leer como encargado', async () => {
+    const encargado = await ingresar('marcelo@villaguay.demo.ar');
+    const filas = (await a.dataSource.query('SELECT id FROM reservas')) as {
+      id: string;
+    }[];
+    expect(filas.length).toBeGreaterThan(8);
+    for (const { id } of filas) {
+      const res = await a
+        .http()
+        .get(`/reservas/${id}`)
+        .set('Authorization', `Bearer ${encargado}`)
+        .expect(200);
+      esperarContrato<Reserva>(res.body, 'Reserva');
+    }
+  });
+
+  it('emiliano: res-1180 y res-1196 próximas; la cancelada, la cumplida y la ausente, pasadas', async () => {
+    const token = await ingresar('emiliano@mail.com');
+    expect((await mias(token, 'cuando=proximas')).map((r) => r.id)).toEqual([
+      'res-1180',
+      'res-1196',
+    ]);
+    const pasadas = await mias(token, 'cuando=pasadas');
+    expect(pasadas.map((r) => r.estado).toSorted()).toEqual(
+      ['ausente', 'cancelada', 'confirmada', 'cumplida'],
+    );
+  });
+
+  it('lleno@demo.ar tiene tres reservas activas y la cuarta da LIMITE_DE_RESERVAS', async () => {
+    const token = await ingresar('lleno@demo.ar');
+    expect(await mias(token, 'cuando=proximas')).toHaveLength(3);
+    const res = await a
+      .http()
+      .post('/reservas')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ turnoId: 'tur-esp-01-20260922-10', cantidadPersonas: 4 });
+    esperarError(res, 422, 'LIMITE_DE_RESERVAS');
+  });
+
+  it('nuevo@demo.ar no tiene nada y puede reservar', async () => {
+    const token = await ingresar('nuevo@demo.ar');
+    expect(await mias(token, 'cuando=proximas')).toEqual([]);
+    await a
+      .http()
+      .post('/reservas')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ turnoId: 'tur-esp-01-20260920-10', cantidadPersonas: 4 })
+      .expect(201);
   });
 });

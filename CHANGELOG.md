@@ -2,6 +2,26 @@
 
 Lo que cambia en la API, escrito para quienes la usan desde la app.
 
+## 0.4.0 — Reservas (M3)
+
+- `POST /reservas` `{ turnoId, cantidadPersonas }` (sólo jugadores): 201 con la `Reserva`.
+  Si el mismo jugador vuelve a pedir un turno que ya tiene, responde **200** con la misma
+  reserva (sirve para reintentar con mala señal). Nunca hay dos reservas en un mismo turno,
+  ni con pedidos simultáneos: el que llega segundo recibe `TURNO_OCUPADO`.
+- `GET /yo/reservas?cuando=proximas|pasadas`: `proximas` (default) son las confirmadas cuyo
+  turno no terminó, de la más cercana a la más lejana; `pasadas`, todas las demás, de la más
+  reciente a la más vieja. Con paginación como toda lista.
+- `GET /reservas/<id>`: la reserva, para su dueño (o un encargado).
+- `POST /reservas/<id>/cancelacion`: cancela. El jugador puede hasta `cancelableHasta`
+  (4 horas antes); después, `CANCELACION_FUERA_DE_PLAZO` y hay que avisar al encargado.
+  Cancelar una reserva que ya estaba cancelada responde 200 sin cambios.
+- El `codigoQr` tiene la forma `VGY-0919-19-K3X9QM`.
+- Máximo tres reservas activas (confirmadas cuyo turno no terminó) por jugador.
+- Nuevos errores: `TURNO_NO_ENCONTRADO`, `TURNO_PASADO`, `TURNO_OCUPADO`,
+  `TURNO_NO_DISPONIBLE`, `CAPACIDAD_EXCEDIDA`, `LIMITE_DE_RESERVAS`,
+  `RESERVA_NO_ENCONTRADA`, `CANCELACION_FUERA_DE_PLAZO` y `RESERVA_NO_CANCELABLE`.
+- Una `cantidadPersonas` menor que 1 o con decimales es un error 400 (`VALIDACION_FALLIDA`).
+
 ## 0.3.0 — Grilla (M2)
 
 - `GET /espacios/<id>/turnos?fecha=AAAA-MM-DD`: los 16 turnos del día (de `08:00` a `24:00`),

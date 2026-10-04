@@ -188,3 +188,41 @@ Consecuencia en el contrato: ninguna.
 Estado: PROVISORIA (autónomo)
 Decisión: se resuelve por la prioridad de R2. Con varios bloqueos sobre el mismo turno, se muestra el motivo del de id menor. R19 (M5) evita fijas superpuestas.
 
+### D2 — Código QR de la reserva
+Estado: PROVISORIA
+Decisión: `VGY-<MMDD>-<HH>-<6 caracteres>` con el alfabeto `A-Z2-9` sin `I`, `O`, `0` ni `1`, para que Marcelo no los confunda. Si el código generado se repitiera (índice único), se reintenta con otro.
+
+### D3 — Cancelar fuera de plazo
+Estado: PENDIENTE (se implementó el default de la especificación, PROVISORIA)
+Decisión: el jugador no puede cancelar pasado `cancelableHasta` (`CANCELACION_FUERA_DE_PLAZO`); el encargado y el administrador sí, mientras el turno no haya empezado, y en ese caso suma 1 a `cancelacionesTardias` del dueño (con un `UPDATE … SET n = n + 1` atómico; si dos cancelaciones llegan juntas sólo suma una). Cancelar por un bloqueo no cuenta como tardía (M5).
+
+### M3-1 — Cancelar lo que no se puede cancelar
+Estado: PROVISORIA (autónomo)
+Hueco: R12 sólo cancela una `confirmada` de un turno que no empezó, pero no dice qué código sale para una `cumplida`/`ausente`, ni para el personal con el turno ya empezado.
+Opciones: A) código nuevo `RESERVA_NO_CANCELABLE` (409); B) reutilizar `CANCELACION_FUERA_DE_PLAZO`, cuyo mensaje («avisale al encargado») no tiene sentido cuando es el encargado.
+Decisión: A. Para el dueño con una `confirmada` ya empezada se mantiene `CANCELACION_FUERA_DE_PLAZO` (es lo que dice R12); para el dueño con una `cumplida`/`ausente`, `RESERVA_NO_CANCELABLE`.
+Consecuencia en el contrato: un código de error nuevo (agregar códigos está permitido).
+
+### M3-2 — `cantidadPersonas` menor que 1
+Estado: PROVISORIA (autónomo)
+Hueco: R7 dice «entre 1 y capacidad» y asocia `CAPACIDAD_EXCEDIDA`, cuyo mensaje habla de «más personas».
+Decisión: 0, negativos, decimales o texto son un 400 `VALIDACION_FALLIDA` («Tiene que ir al menos una persona.»); sólo pasarse de la capacidad es 422 `CAPACIDAD_EXCEDIDA`.
+
+### M3-3 — Orden de las validaciones de `POST /reservas` y reintentos (R11)
+Estado: PROVISORIA (autónomo)
+Decisión: se sigue el orden de R7 (existencia, rango, pasado, estado del turno, capacidad, límite). El reintento de R11 se resuelve justo después de comprobar que el turno existe, antes del rango y del límite: si el jugador ya tiene ese turno, responde 200 con su reserva aunque el turno ya haya pasado o ya tenga tres activas. Un id de turno mal formado, de un espacio que no existe o dado de baja, o de una hora fuera de la grilla es `TURNO_NO_ENCONTRADO` (404). Un bloqueo o una fija tapan a una reserva: `TURNO_NO_DISPONIBLE` y no `TURNO_OCUPADO` (prioridad de R2).
+Dos pedidos simultáneos del mismo jugador por el mismo turno: uno recibe 201 y el otro 200 con la misma reserva.
+
+### M3-4 — «Turno que no terminó»
+Estado: PROVISORIA (autónomo)
+Decisión: un turno termina una hora después de su `inicio`. Una reserva en curso sigue siendo «próxima» y cuenta para el límite de tres; al terminar el turno pasa a «pasadas» y deja de contar. El corte se calcula en hora argentina.
+
+### M3-5 — El límite de tres no tiene índice único
+Estado: PROVISORIA (autónomo)
+Hueco: AGENTS §5.5 pide garantizar con la base toda regla «no puede haber dos»; el límite de tres reservas por jugador no se puede expresar con un índice único portable.
+Decisión: se comprueba en el servicio. Dos reservas simultáneas del mismo jugador a turnos distintos podrían, en teoría, pasar de tres. El PRD sólo exige la garantía fuerte para el cruce de turnos (R8), que sí tiene índice único. Alternativa descartada: una tabla de contadores con bloqueo de fila (SQL distinto por motor).
+
+### M3-6 — Avisos al cancelar
+Estado: PROVISORIA (autónomo)
+Decisión: la push a los favoritos por un turno liberado (R21) es de M6; M3 no avisa a nadie.
+

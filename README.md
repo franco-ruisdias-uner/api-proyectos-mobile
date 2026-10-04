@@ -9,8 +9,9 @@ Tu app ya tiene sus tipos en `src/tipos/`, copiados del PRD. **Esta API devuelve
 esos tipos**: no tenés que cambiar nada cuando pases del mock a `fetch`. Lo que agrega la API
 (el sobre de las respuestas, la sesión, los archivos) está en `contrato/api.ts`.
 
-> **Estado:** están terminadas la base (M0), los espacios (M1) y la grilla de turnos (M2).
-> Las reservas llegan en los módulos siguientes. Los
+> **Estado:** están terminadas la base (M0), los espacios (M1), la grilla de turnos (M2) y las
+> reservas (M3). El ingreso con QR, la administración y los favoritos llegan en los módulos
+> siguientes. Los
 > cambios para ustedes se anotan en [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
@@ -129,7 +130,7 @@ Todos tienen la contraseña **`villaguay2026`**.
 | Email | Rol | Para probar |
 |---|---|---|
 | `emiliano@mail.com` | jugador | El usuario del PRD (`usr-207`), con una cancelación tardía. |
-| `lleno@demo.ar` | jugador | Un jugador con tres reservas activas (llega con las reservas). |
+| `lleno@demo.ar` | jugador | Un jugador con tres reservas activas: la cuarta da `LIMITE_DE_RESERVAS`. |
 | `nuevo@demo.ar` | jugador | Una cuenta sin nada. |
 | `marcelo@villaguay.demo.ar` | encargado | Agenda, ingresos, bloqueos. |
 | `nahuel@villaguay.demo.ar` | administrador | Todo, más reservas fijas y precios. |
@@ -152,6 +153,10 @@ encargado ubica a quien no vino).
 | `GET` | `/espacios` | 🌐 | Los espacios activos. Filtros: `deporteId`, `complejo`, `iluminacion`, `techado`. |
 | `GET` | `/espacios/<id>` | 🌐 | El detalle de un espacio. |
 | `GET` | `/espacios/<id>/turnos` | 🌐 | Los 16 turnos (08:00 a 24:00) de un día: `?fecha=AAAA-MM-DD` (default hoy, hasta hoy + 6). Estado `libre`, `reservado`, `fijo` o `mantenimiento`. |
+| `POST` | `/reservas` | 🔒 jugador | Reserva un turno: `{ turnoId, cantidadPersonas }`. 201 con la `Reserva`; **200** con la misma si ya la tenías (reintento por mala señal). |
+| `GET` | `/yo/reservas` | 🔒 | Tus reservas: `?cuando=proximas` (default) o `pasadas`. |
+| `GET` | `/reservas/<id>` | 🔒 | Una reserva (la tuya, o cualquiera si sos encargado). |
+| `POST` | `/reservas/<id>/cancelacion` | 🔒 | Cancela hasta 4 horas antes del turno (`cancelableHasta`). Fuera de plazo: `CANCELACION_FUERA_DE_PLAZO`, hay que avisarle al encargado. |
 | `POST` | `/archivos` | 🔒 | Sube una foto, un audio o un video. 201 con `{ url, tipo, bytes }`. |
 | `GET` | `/archivos/<clave>` | 🌐 | Baja un archivo (admite `Range` para adelantar audio y video). |
 | `POST` | `/dispositivos` | 🔒 | Anota el token de Expo del teléfono para recibir push. |
@@ -169,12 +174,21 @@ encargado ubica a quien no vino).
 | `SIN_PERMISO` | 403 | No tenés permiso para hacer esto. |
 | `ARCHIVO_NO_ENCONTRADO` | 404 | No encontramos ese archivo. |
 | `ESPACIO_NO_ENCONTRADO` | 404 | No existe ese espacio. |
+| `RESERVA_NO_ENCONTRADA` | 404 | No encontramos esa reserva. |
 | `RUTA_NO_ENCONTRADA` | 404 | Esa dirección no existe en la API. |
+| `TURNO_NO_ENCONTRADO` | 404 | No existe ese turno. |
 | `EMAIL_YA_REGISTRADO` | 409 | Ya hay una cuenta con ese email. |
+| `RESERVA_NO_CANCELABLE` | 409 | Esa reserva ya no se puede cancelar. |
+| `TURNO_NO_DISPONIBLE` | 409 | Ese turno no está disponible. |
+| `TURNO_OCUPADO` | 409 | Ese turno ya fue reservado. |
 | `ARCHIVO_DEMASIADO_GRANDE` | 413 | El archivo es demasiado grande. |
 | `TIPO_DE_ARCHIVO_NO_PERMITIDO` | 415 | Ese tipo de archivo no se puede subir. Usá una foto, un audio o un video. |
 | `RANGO_NO_VALIDO` | 416 | No pudimos leer esa parte del archivo. |
+| `CANCELACION_FUERA_DE_PLAZO` | 422 | Faltan menos de cuatro horas: avisale al encargado para cancelar. |
+| `CAPACIDAD_EXCEDIDA` | 422 | Son más personas de las que entran en este espacio. |
 | `FECHA_FUERA_DE_RANGO` | 422 | Sólo se pueden ver y reservar los próximos siete días. |
+| `LIMITE_DE_RESERVAS` | 422 | Ya tenés tres reservas activas. Cancelá una para reservar otra. |
+| `TURNO_PASADO` | 422 | Ese turno ya pasó. |
 | `ERROR_INTERNO` | 500 | Algo salió mal de nuestro lado. Probá de nuevo en un rato. |
 | `ALMACEN_NO_DISPONIBLE` | 503 | No pudimos acceder a los archivos. Probá de nuevo en un rato. |
 <!-- errores:fin -->

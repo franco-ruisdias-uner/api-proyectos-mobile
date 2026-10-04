@@ -47,6 +47,20 @@ export class TurnosServicio {
     if (!espacio) throw new ErrorApi('ESPACIO_NO_ENCONTRADO');
     if (!fechaEnRango(fecha, hoy)) throw new ErrorApi('FECHA_FUERA_DE_RANGO');
 
+    const turnos = await this.turnosDelDia(espacio, fecha);
+    const desde = (p.pagina - 1) * p.porPagina;
+    return respuestaLista(
+      turnos.slice(desde, desde + p.porPagina),
+      meta(turnos.length, p),
+    );
+  }
+
+  /** Los 16 turnos de un espacio en un día: el cruce de reservas, fijas y bloqueos (R2). */
+  async turnosDelDia(
+    espacio: Pick<EspacioEntidad, 'id' | 'precioPorHora'>,
+    fecha: string,
+  ): Promise<Turno[]> {
+    const espacioId = espacio.id;
     const [reservas, fijas, bloqueos] = await Promise.all([
       this.reservas.find({
         where: {
@@ -62,12 +76,6 @@ export class TurnosServicio {
       }),
       this.bloqueos.find({ where: { espacioId, fecha }, order: { id: 'ASC' } }),
     ]);
-
-    const turnos = armarGrilla(espacio, fecha, reservas, fijas, bloqueos);
-    const desde = (p.pagina - 1) * p.porPagina;
-    return respuestaLista(
-      turnos.slice(desde, desde + p.porPagina),
-      meta(turnos.length, p),
-    );
+    return armarGrilla(espacio, fecha, reservas, fijas, bloqueos);
   }
 }
