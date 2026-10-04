@@ -75,7 +75,9 @@ Opciones: A) devolver el dispositivo `{ tokenExpo, plataforma }` y `{ dispositiv
 B) responder 204 sin cuerpo (rompe la regla de que sólo `DELETE` va sin sobre).
 Decisión: A, con los dos tipos publicados en `contrato/api.ts`. `POST /dispositivos` responde
 201 también cuando el token ya estaba (idempotente; si era de otro usuario, pasa al actual).
-`DELETE /dispositivos/:tokenExpo` responde 204 aunque el token no estuviera.
+`DELETE /dispositivos/:tokenExpo` responde 204 aunque el token no estuviera. Si el token es
+de otro usuario, también 204 pero **no se borra** (descartado: 403 `SIN_PERMISO`, que le
+confirmaría a cualquiera que ese token existe y es de alguien).
 Consecuencia en el contrato: dos tipos nuevos en `contrato/api.ts`.
 
 ### M0-2 — Rango de bytes imposible

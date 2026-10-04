@@ -96,15 +96,20 @@ export class DispositivosControlador {
   @ApiOperation({
     summary: 'Dejar de recibir push en este teléfono',
     description:
-      'Con sesión. 204 sin cuerpo, aunque el token no estuviera anotado.\n\nErrores: VALIDACION_FALLIDA (400), NO_AUTENTICADO (401).',
+      'Con sesión. 204 sin cuerpo, aunque el token no estuviera anotado. Sólo da de baja tus propios teléfonos.\n\nErrores: VALIDACION_FALLIDA (400), NO_AUTENTICADO (401).',
   })
-  async borrar(@Param('tokenExpo') tokenExpo: string): Promise<void> {
+  async borrar(
+    @SesionActual() sesion: UsuarioSesion,
+    @Param('tokenExpo') tokenExpo: string,
+  ): Promise<void> {
     if (!FORMATO_TOKEN_EXPO.test(tokenExpo)) {
       throw new ErrorApi(
         'VALIDACION_FALLIDA',
         'El token de notificaciones del teléfono no es válido.',
       );
     }
-    await this.almacen.borrar(tokenExpo);
+    // Sólo se borra un token propio. Uno ajeno también da 204, sin tocarlo ni revelar de quién es.
+    const propios = await this.almacen.tokensDe([sesion.id]);
+    if (propios.includes(tokenExpo)) await this.almacen.borrar(tokenExpo);
   }
 }

@@ -145,3 +145,36 @@ describe('/dispositivos — AGENTS §9', () => {
     );
   });
 });
+
+describe('AGENTS §7.3 — Sólo el dueño da de baja su dispositivo', () => {
+  let a: AppDePrueba;
+  beforeAll(async () => {
+    a = await crearApp();
+  });
+  afterAll(() => a.cerrar());
+
+  it('el DELETE de un token ajeno responde 204 y no lo borra', async () => {
+    const duena = await registrarJugador(a);
+    const otro = await registrarJugador(a);
+    const token = 'ExponentPushToken[ajeno]';
+    await a
+      .http()
+      .post('/dispositivos')
+      .set('Authorization', `Bearer ${duena.token}`)
+      .send({ tokenExpo: token, plataforma: 'ios' })
+      .expect(201);
+    await a
+      .http()
+      .delete(`/dispositivos/${encodeURIComponent(token)}`)
+      .set('Authorization', `Bearer ${otro.token}`)
+      .expect(204);
+    const res = await a
+      .http()
+      .post('/dispositivos/prueba')
+      .set('Authorization', `Bearer ${duena.token}`)
+      .expect(200);
+    expect(esperarContrato<PruebaDePush>(res.body, 'PruebaDePush')).toEqual({
+      dispositivos: 1,
+    });
+  });
+});
