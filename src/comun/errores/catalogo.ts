@@ -62,6 +62,27 @@ export const CATALOGO = {
     estado: 409,
     mensaje: 'Esa reserva ya no se puede cancelar.',
   },
+  CODIGO_INVALIDO: { estado: 404, mensaje: 'Ese código no es de una reserva.' },
+  USUARIO_NO_ENCONTRADO: { estado: 404, mensaje: 'No existe ese usuario.' },
+  RESERVA_CANCELADA: { estado: 422, mensaje: 'Esa reserva está cancelada.' },
+  RESERVA_AUSENTE: {
+    estado: 422,
+    mensaje: 'Esa reserva figura como ausente.',
+  },
+  CODIGO_DE_OTRO_DIA: { estado: 422, mensaje: 'Esa reserva no es para hoy.' },
+  CODIGO_DE_OTRO_ESPACIO: {
+    estado: 422,
+    mensaje: 'Esa reserva es para otra cancha.',
+  },
+  INGRESO_YA_REGISTRADO: { estado: 409, mensaje: 'Esa reserva ya ingresó.' },
+  FUERA_DE_HORARIO: {
+    estado: 422,
+    mensaje: 'Todavía no es el horario de esa reserva, o ya terminó.',
+  },
+  ANTES_DE_TIEMPO: {
+    estado: 422,
+    mensaje: 'Todavía no se puede marcar como ausente.',
+  },
   EMAIL_YA_REGISTRADO: {
     estado: 409,
     mensaje: 'Ya hay una cuenta con ese email.',

@@ -14,7 +14,7 @@ import type { Reserva } from '../../../contrato/tipos.js';
 import type { UsuarioSesion } from '../../comun/auth/decoradores.js';
 import { ErrorApi } from '../../comun/errores/error-api.js';
 import { esViolacionDeUnicidad } from '../../comun/errores/unicidad.js';
-import { diaEnZona } from '../../comun/fechas/fechas.js';
+import { diaEnZona, esDiaValido } from '../../comun/fechas/fechas.js';
 import { esIdDe, nuevoId, textoAleatorio } from '../../comun/ids/ids.js';
 import { Reloj } from '../../comun/reloj/reloj.js';
 import { meta } from '../../comun/respuesta/paginacion.js';
@@ -25,7 +25,11 @@ import { fechaEnRango } from '../turnos/reglas/rango-de-fechas.js';
 import { ReservaEntidad } from '../turnos/reserva.entidad.js';
 import { TurnosServicio } from '../turnos/turnos.servicio.js';
 import { UsuarioEntidad } from '../usuarios/usuario.entidad.js';
-import type { CrearReservaDto, MisReservasDto } from './dto/reservas.dto.js';
+import type {
+  CrearReservaDto,
+  FiltrosReservasDto,
+  MisReservasDto,
+} from './dto/reservas.dto.js';
 import {
   codigoQrDe,
   corteDeProximas,
@@ -134,6 +138,32 @@ export class ReservasServicio {
       order: proximas
         ? { fecha: 'ASC', inicio: 'ASC', id: 'ASC' }
         : { fecha: 'DESC', inicio: 'DESC', id: 'DESC' },
+      skip: (q.pagina - 1) * q.porPagina,
+      take: q.porPagina,
+    });
+    return respuestaLista(filas.map(aContrato), meta(total, q));
+  }
+
+  /** Para el personal: quién tiene cada turno. Por fecha e `inicio` ascendente. */
+  async listar(q: FiltrosReservasDto): Promise<RespuestaLista<Reserva>> {
+    if (q.fecha !== undefined && !esDiaValido(q.fecha))
+      throw new ErrorApi(
+        'VALIDACION_FALLIDA',
+        'La fecha tiene que ser un día con la forma AAAA-MM-DD.',
+      );
+    if (q.espacioId !== undefined && !esIdDe('esp', q.espacioId))
+      throw new ErrorApi(
+        'VALIDACION_FALLIDA',
+        'El espacio tiene que ser un id de espacio.',
+      );
+    // Sólo los filtros que vinieron: TypeORM 1.x falla con valores undefined.
+    const donde: FindOptionsWhere<ReservaEntidad> = {};
+    if (q.fecha !== undefined) donde.fecha = q.fecha;
+    if (q.espacioId !== undefined) donde.espacioId = q.espacioId;
+    if (q.estado !== undefined) donde.estado = q.estado;
+    const [filas, total] = await this.reservas.findAndCount({
+      where: donde,
+      order: { fecha: 'ASC', inicio: 'ASC', id: 'ASC' },
       skip: (q.pagina - 1) * q.porPagina,
       take: q.porPagina,
     });

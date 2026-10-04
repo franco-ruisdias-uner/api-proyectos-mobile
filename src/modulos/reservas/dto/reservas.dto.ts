@@ -39,3 +39,35 @@ export class MisReservasDto extends PaginacionDto {
 
 /** La cancelación no lleva cuerpo: el DTO vacío hace que el pipe rechace campos de más. */
 export class CancelarReservaDto {}
+
+export const ESTADOS = [
+  'confirmada',
+  'cumplida',
+  'cancelada',
+  'ausente',
+] as const;
+
+export class FiltrosReservasDto extends PaginacionDto {
+  @ApiPropertyOptional({
+    example: '2026-09-19',
+    description: 'Día del turno, AAAA-MM-DD.',
+  })
+  @IsOptional()
+  @IsString({
+    message: 'La fecha tiene que ser un día con la forma AAAA-MM-DD.',
+  })
+  fecha?: string;
+
+  @ApiPropertyOptional({ example: 'esp-02' })
+  @IsOptional()
+  @IsString({ message: 'El espacio tiene que ser un id de espacio.' })
+  espacioId?: string;
+
+  @ApiPropertyOptional({ enum: ESTADOS })
+  @IsOptional()
+  @IsIn(ESTADOS, {
+    message:
+      'El estado tiene que ser confirmada, cumplida, cancelada o ausente.',
+  })
+  estado?: (typeof ESTADOS)[number];
+}

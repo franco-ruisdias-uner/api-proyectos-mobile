@@ -9,9 +9,9 @@ Tu app ya tiene sus tipos en `src/tipos/`, copiados del PRD. **Esta API devuelve
 esos tipos**: no tenés que cambiar nada cuando pases del mock a `fetch`. Lo que agrega la API
 (el sobre de las respuestas, la sesión, los archivos) está en `contrato/api.ts`.
 
-> **Estado:** están terminadas la base (M0), los espacios (M1), la grilla de turnos (M2) y las
-> reservas (M3). El ingreso con QR, la administración y los favoritos llegan en los módulos
-> siguientes. Los
+> **Estado:** están terminadas la base (M0), los espacios (M1), la grilla de turnos (M2) las
+> reservas (M3) y el ingreso con QR y la agenda (M4). La administración y los favoritos llegan en
+> los módulos siguientes. Los
 > cambios para ustedes se anotan en [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
@@ -141,7 +141,7 @@ encargado ubica a quien no vino).
 
 ## 7. Endpoints
 
-🌐 público · 🔒 con sesión
+🌐 público · 🔒 con sesión · 🧑‍🔧 sólo `encargado` o `administrador`
 
 | Método | Ruta | | Qué hace |
 |---|---|---|---|
@@ -157,6 +157,11 @@ encargado ubica a quien no vino).
 | `GET` | `/yo/reservas` | 🔒 | Tus reservas: `?cuando=proximas` (default) o `pasadas`. |
 | `GET` | `/reservas/<id>` | 🔒 | Una reserva (la tuya, o cualquiera si sos encargado). |
 | `POST` | `/reservas/<id>/cancelacion` | 🔒 | Cancela hasta 4 horas antes del turno (`cancelableHasta`). Fuera de plazo: `CANCELACION_FUERA_DE_PLAZO`, hay que avisarle al encargado. |
+| `GET` | `/reservas` | 🧑‍🔧 | Reservas de todos, para ver quién tiene cada turno: `?fecha=`, `?espacioId=`, `?estado=`. |
+| `POST` | `/ingresos` | 🧑‍🔧 | Registra la llegada: `{ codigoQr, espacioId }`. Desde 30 minutos antes del turno hasta que termina. 200 con la `Reserva` `cumplida`. |
+| `POST` | `/reservas/<id>/ausente` | 🧑‍🔧 | Marca "no se presentó", desde 15 minutos después del inicio. |
+| `GET` | `/agenda` | 🧑‍🔧 | Los turnos de todos los espacios activos en `?fecha=` (default hoy), por espacio e `inicio`. `porPagina` hasta 500. |
+| `GET` | `/usuarios/<id>` | 🧑‍🔧 | El `Usuario` con su teléfono, para avisarle. |
 | `POST` | `/archivos` | 🔒 | Sube una foto, un audio o un video. 201 con `{ url, tipo, bytes }`. |
 | `GET` | `/archivos/<clave>` | 🌐 | Baja un archivo (admite `Range` para adelantar audio y video). |
 | `POST` | `/dispositivos` | 🔒 | Anota el token de Expo del teléfono para recibir push. |
@@ -173,21 +178,30 @@ encargado ubica a quien no vino).
 | `NO_AUTENTICADO` | 401 | Tenés que ingresar con tu cuenta. |
 | `SIN_PERMISO` | 403 | No tenés permiso para hacer esto. |
 | `ARCHIVO_NO_ENCONTRADO` | 404 | No encontramos ese archivo. |
+| `CODIGO_INVALIDO` | 404 | Ese código no es de una reserva. |
 | `ESPACIO_NO_ENCONTRADO` | 404 | No existe ese espacio. |
 | `RESERVA_NO_ENCONTRADA` | 404 | No encontramos esa reserva. |
 | `RUTA_NO_ENCONTRADA` | 404 | Esa dirección no existe en la API. |
 | `TURNO_NO_ENCONTRADO` | 404 | No existe ese turno. |
+| `USUARIO_NO_ENCONTRADO` | 404 | No existe ese usuario. |
 | `EMAIL_YA_REGISTRADO` | 409 | Ya hay una cuenta con ese email. |
+| `INGRESO_YA_REGISTRADO` | 409 | Esa reserva ya ingresó. |
 | `RESERVA_NO_CANCELABLE` | 409 | Esa reserva ya no se puede cancelar. |
 | `TURNO_NO_DISPONIBLE` | 409 | Ese turno no está disponible. |
 | `TURNO_OCUPADO` | 409 | Ese turno ya fue reservado. |
 | `ARCHIVO_DEMASIADO_GRANDE` | 413 | El archivo es demasiado grande. |
 | `TIPO_DE_ARCHIVO_NO_PERMITIDO` | 415 | Ese tipo de archivo no se puede subir. Usá una foto, un audio o un video. |
 | `RANGO_NO_VALIDO` | 416 | No pudimos leer esa parte del archivo. |
+| `ANTES_DE_TIEMPO` | 422 | Todavía no se puede marcar como ausente. |
 | `CANCELACION_FUERA_DE_PLAZO` | 422 | Faltan menos de cuatro horas: avisale al encargado para cancelar. |
 | `CAPACIDAD_EXCEDIDA` | 422 | Son más personas de las que entran en este espacio. |
+| `CODIGO_DE_OTRO_DIA` | 422 | Esa reserva no es para hoy. |
+| `CODIGO_DE_OTRO_ESPACIO` | 422 | Esa reserva es para otra cancha. |
 | `FECHA_FUERA_DE_RANGO` | 422 | Sólo se pueden ver y reservar los próximos siete días. |
+| `FUERA_DE_HORARIO` | 422 | Todavía no es el horario de esa reserva, o ya terminó. |
 | `LIMITE_DE_RESERVAS` | 422 | Ya tenés tres reservas activas. Cancelá una para reservar otra. |
+| `RESERVA_AUSENTE` | 422 | Esa reserva figura como ausente. |
+| `RESERVA_CANCELADA` | 422 | Esa reserva está cancelada. |
 | `TURNO_PASADO` | 422 | Ese turno ya pasó. |
 | `ERROR_INTERNO` | 500 | Algo salió mal de nuestro lado. Probá de nuevo en un rato. |
 | `ALMACEN_NO_DISPONIBLE` | 503 | No pudimos acceder a los archivos. Probá de nuevo en un rato. |

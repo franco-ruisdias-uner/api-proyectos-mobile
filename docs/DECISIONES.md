@@ -226,3 +226,35 @@ Decisión: se comprueba en el servicio. Dos reservas simultáneas del mismo juga
 Estado: PROVISORIA (autónomo)
 Decisión: la push a los favoritos por un turno liberado (R21) es de M6; M3 no avisa a nadie.
 
+### D10 — Horarios de ingreso y de ausente
+Estado: PROVISORIA
+Decisión: se implementa el default de la especificación. El ingreso vale desde `inicio − 30 min` (inclusive) hasta el fin del turno (exclusive: a las 20:00 en punto un turno de 19 a 20 ya es `FUERA_DE_HORARIO`). Ausente, desde `inicio + 15 min` (inclusive), sin tope.
+
+### M4-1 — Ingresar una reserva `ausente`
+Estado: PROVISORIA (autónomo)
+Hueco: R14 no dice qué pasa si ya la marcaron ausente y la persona llega tarde.
+Opciones: A) rechazar con código nuevo `RESERVA_AUSENTE` (422); B) permitirlo y restar la ausencia; C) reusar `INGRESO_YA_REGISTRADO`, que sería falso.
+Decisión: A, lo más conservador: deshacer una ausencia ya contada no está en el PRD. El encargado lo resuelve a mano.
+Consecuencia en el contrato: un código de error nuevo.
+
+### M4-2 — Respuestas de `POST /ingresos` y `POST /reservas/:id/ausente`
+Estado: PROVISORIA (autónomo)
+Decisión: ambos responden 200 (no crean nada) con la `Reserva`. Marcar ausente una reserva que ya es `ausente` responde 200 sin cambios (reintento; no suma otra ausencia); una `cancelada` da `RESERVA_CANCELADA` (422) y una `cumplida` da `INGRESO_YA_REGISTRADO` (409). Los cambios de estado son condicionales (`WHERE estado = 'confirmada'`): con dos pedidos simultáneos sólo uno cambia el estado (y sólo ese suma la ausencia); el otro de `/ingresos` recibe `INGRESO_YA_REGISTRADO`.
+
+### M4-3 — `codigoQr` tolerante
+Estado: PROVISORIA (autónomo)
+Decisión: el código se busca sin espacios en los extremos y en mayúsculas, porque los lectores de QR y el tipeo manual de la puerta pueden alterarlos. Los códigos generados son siempre mayúsculas.
+
+### M4-4 — Agenda y listado de reservas
+Estado: PROVISORIA (autónomo)
+Hueco: la especificación no dice el rango de `fecha` de `/agenda` ni el orden de `/reservas`.
+Decisión: `/agenda` acepta cualquier día válido (el personal también mira el pasado; la ventana de siete días es para reservar). Orden por `espacioId` e `inicio`; default 20 por página, máximo 500. `/reservas` ordena por fecha, `inicio` e id ascendente (máximo 100 por página). `fecha` mal formada, `estado` desconocido o `espacioId` sin forma de id dan 400; un `espacioId` bien formado que no existe da lista vacía.
+
+### M4-5 — Usuario inexistente
+Estado: PROVISORIA (autónomo)
+Decisión: `GET /usuarios/:id` con un id que no existe (o mal formado) da 404 `USUARIO_NO_ENCONTRADO` (código nuevo). Los `espaciosFavoritos` salen vacíos hasta M6.
+
+### M4-6 — Sin push en M4
+Estado: PROVISORIA (autónomo)
+Decisión: ingresar o marcar ausente no avisa a nadie; las notificaciones del servidor son sólo las de la sección 7 de la especificación (M5 y M6).
+

@@ -1,9 +1,14 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { RespuestaLista } from '../../../contrato/api.js';
 import type { Turno } from '../../../contrato/tipos.js';
-import { Publico } from '../../comun/auth/decoradores.js';
-import { TurnosDto } from './dto/turnos.dto.js';
+import { Publico, Roles } from '../../comun/auth/decoradores.js';
+import { AgendaDto, TurnosDto } from './dto/turnos.dto.js';
 import { TurnosServicio } from './turnos.servicio.js';
 
 @ApiTags('Grilla')
@@ -49,5 +54,43 @@ export class TurnosControlador {
     @Query() q: TurnosDto,
   ): Promise<RespuestaLista<Turno>> {
     return this.servicio.grilla(id, q);
+  }
+
+  @Get('agenda')
+  @Roles('encargado', 'administrador')
+  @ApiTags('Ingreso y agenda')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Agenda del día de todos los espacios',
+    description:
+      'Encargado o administrador. Los turnos de **todos** los espacios activos en `fecha` ' +
+      '(`AAAA-MM-DD`, default hoy; sin límite de rango), ordenados por espacio e `inicio`. ' +
+      '`porPagina` admite hasta 500 (11 espacios × 16 turnos = 176). Cada turno trae su ' +
+      '`reservaId`: con `GET /reservas/<id>` se ve quién lo tiene.\n\n' +
+      'Errores: VALIDACION_FALLIDA (400), NO_AUTENTICADO (401), SIN_PERMISO (403).',
+  })
+  @ApiResponse({
+    status: 200,
+    schema: {
+      example: {
+        datos: [
+          {
+            id: 'tur-esp-02-20260919-19',
+            espacioId: 'esp-02',
+            fecha: '2026-09-19',
+            inicio: '19:00',
+            fin: '20:00',
+            estado: 'reservado',
+            reservaId: 'res-1180',
+            motivoBloqueo: null,
+            precio: 8000,
+          },
+        ],
+        meta: { total: 176, pagina: 1, porPagina: 20 },
+      },
+    },
+  })
+  agenda(@Query() q: AgendaDto): Promise<RespuestaLista<Turno>> {
+    return this.servicio.agenda(q);
   }
 }

@@ -8,6 +8,7 @@ import { NotificacionesModulo } from './comun/notificaciones/notificaciones.modu
 import { RelojModulo } from './comun/reloj/reloj.modulo.js';
 import { Configuracion, validarEntorno } from './config/configuracion.js';
 import { EspaciosModulo } from './modulos/espacios/espacios.modulo.js';
+import { IngresosModulo } from './modulos/ingresos/ingresos.modulo.js';
 import { ReservasModulo } from './modulos/reservas/reservas.modulo.js';
 import { SaludModulo } from './modulos/salud/salud.modulo.js';
 import { TurnosModulo } from './modulos/turnos/turnos.modulo.js';
@@ -60,6 +61,7 @@ export class AppModule {
         EspaciosModulo,
         TurnosModulo,
         ReservasModulo,
+        IngresosModulo,
         ...(opciones.omitirSembradoInicial ? [] : [SemillasModulo]),
       ],
     };

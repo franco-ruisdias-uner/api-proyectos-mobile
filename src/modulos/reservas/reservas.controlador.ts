@@ -26,6 +26,7 @@ import { respuestaUno } from '../../comun/respuesta/respuesta.js';
 import {
   CancelarReservaDto,
   CrearReservaDto,
+  FiltrosReservasDto,
   MisReservasDto,
 } from './dto/reservas.dto.js';
 import { ReservasServicio } from './reservas.servicio.js';
@@ -97,6 +98,31 @@ export class ReservasControlador {
     @Query() q: MisReservasDto,
   ): Promise<RespuestaLista<Reserva>> {
     return this.servicio.misReservas(sesion.id, q);
+  }
+
+  @Get('reservas')
+  @Roles('encargado', 'administrador')
+  @ApiTags('Ingreso y agenda')
+  @ApiOperation({
+    summary: 'Reservas de todos (para ver quién tiene cada turno)',
+    description:
+      'Encargado o administrador. Filtros opcionales: `fecha` (día del turno), `espacioId` y ' +
+      '`estado`. Ordenadas por fecha e `inicio` ascendente.\n\n' +
+      'Errores: VALIDACION_FALLIDA (400), NO_AUTENTICADO (401), SIN_PERMISO (403).',
+  })
+  @ApiResponse({
+    status: 200,
+    schema: {
+      example: {
+        datos: [EJEMPLO_RESERVA],
+        meta: { total: 1, pagina: 1, porPagina: 20 },
+      },
+    },
+  })
+  async listar(
+    @Query() q: FiltrosReservasDto,
+  ): Promise<RespuestaLista<Reserva>> {
+    return this.servicio.listar(q);
   }
 
   @Get('reservas/:id')

@@ -2,6 +2,23 @@
 
 Lo que cambia en la API, escrito para quienes la usan desde la app.
 
+## 0.5.0 — Ingreso y agenda (M4)
+
+Estos endpoints son para el encargado y el administrador (un jugador recibe `SIN_PERMISO`).
+
+- `POST /ingresos` `{ codigoQr, espacioId }`: registra la llegada. Responde 200 con la
+  `Reserva` en estado `cumplida` y `ingresoEn` con la hora. Se puede desde 30 minutos antes
+  del inicio hasta que termina el turno.
+- `POST /reservas/<id>/ausente`: marca que no se presentó, desde 15 minutos después del
+  inicio. La reserva queda `ausente` y el jugador suma 1 a `ausencias`.
+- `GET /agenda?fecha=AAAA-MM-DD`: los turnos de todos los espacios activos (default hoy), por
+  espacio e `inicio`. Acepta `porPagina` hasta 500.
+- `GET /reservas?fecha=&espacioId=&estado=`: las reservas de todos, por fecha e `inicio`.
+- `GET /usuarios/<id>`: el `Usuario` (con su teléfono) para avisarle a quien no vino.
+- Nuevos errores: `CODIGO_INVALIDO`, `RESERVA_CANCELADA`, `RESERVA_AUSENTE`,
+  `CODIGO_DE_OTRO_DIA`, `CODIGO_DE_OTRO_ESPACIO`, `INGRESO_YA_REGISTRADO`,
+  `FUERA_DE_HORARIO`, `ANTES_DE_TIEMPO` y `USUARIO_NO_ENCONTRADO`.
+
 ## 0.4.0 — Reservas (M3)
 
 - `POST /reservas` `{ turnoId, cantidadPersonas }` (sólo jugadores): 201 con la `Reserva`.

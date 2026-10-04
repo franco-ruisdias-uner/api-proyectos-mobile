@@ -10,7 +10,7 @@ import {
 import { Sesiones } from '../../comun/auth/sesiones.js';
 import { ErrorApi } from '../../comun/errores/error-api.js';
 import { esViolacionDeUnicidad } from '../../comun/errores/unicidad.js';
-import { nuevoId } from '../../comun/ids/ids.js';
+import { esIdDe, nuevoId } from '../../comun/ids/ids.js';
 import { Reloj } from '../../comun/reloj/reloj.js';
 import { normalizarEmail } from '../../comun/texto/normalizar.js';
 import type { IngresoDto } from './dto/ingreso.dto.js';
@@ -77,6 +77,15 @@ export class UsuariosServicio {
         'NO_AUTENTICADO',
         'Tu cuenta ya no existe. Ingresá de nuevo.',
       );
+    return aContrato(usuario, await this.favoritosDe(usuario.id));
+  }
+
+  /** Para el personal (con su teléfono, para avisarle al jugador). */
+  async porId(id: string): Promise<Usuario> {
+    const usuario = esIdDe('usr', id)
+      ? await this.repo.findOneBy({ id })
+      : null;
+    if (!usuario) throw new ErrorApi('USUARIO_NO_ENCONTRADO');
     return aContrato(usuario, await this.favoritosDe(usuario.id));
   }
 

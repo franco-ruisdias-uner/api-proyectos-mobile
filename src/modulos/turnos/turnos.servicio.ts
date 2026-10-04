@@ -55,6 +55,62 @@ export class TurnosServicio {
     );
   }
 
+  /**
+   * R2 para todos los espacios activos, por espacio (id) e `inicio`. Sin límite de
+   * rango: el personal también mira días pasados.
+   */
+  async agenda(
+    p: PaginacionDto & { fecha?: string },
+  ): Promise<RespuestaLista<Turno>> {
+    const fecha = p.fecha ?? diaEnZona(this.reloj.ahora());
+    if (!esDiaValido(fecha))
+      throw new ErrorApi(
+        'VALIDACION_FALLIDA',
+        'La fecha tiene que ser un día con la forma AAAA-MM-DD.',
+      );
+    const espacios = await this.espacios.find({
+      where: { activo: true },
+      order: { id: 'ASC' },
+    });
+    const turnos: Turno[] = [];
+    if (espacios.length > 0) {
+      const ids = espacios.map((e) => e.id);
+      const [reservas, fijas, bloqueos] = await Promise.all([
+        this.reservas.find({
+          where: {
+            espacioId: In(ids),
+            fecha,
+            estado: In(['confirmada', 'cumplida', 'ausente']),
+          },
+          order: { id: 'ASC' },
+        }),
+        this.fijas.find({
+          where: { espacioId: In(ids), activa: true },
+          order: { id: 'ASC' },
+        }),
+        this.bloqueos.find({
+          where: { espacioId: In(ids), fecha },
+          order: { id: 'ASC' },
+        }),
+      ]);
+      for (const e of espacios)
+        turnos.push(
+          ...armarGrilla(
+            e,
+            fecha,
+            reservas.filter((r) => r.espacioId === e.id),
+            fijas.filter((f) => f.espacioId === e.id),
+            bloqueos.filter((b) => b.espacioId === e.id),
+          ),
+        );
+    }
+    const desde = (p.pagina - 1) * p.porPagina;
+    return respuestaLista(
+      turnos.slice(desde, desde + p.porPagina),
+      meta(turnos.length, p),
+    );
+  }
+
   /** Los 16 turnos de un espacio en un día: el cruce de reservas, fijas y bloqueos (R2). */
   async turnosDelDia(
     espacio: Pick<EspacioEntidad, 'id' | 'precioPorHora'>,
