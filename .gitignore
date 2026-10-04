@@ -9,3 +9,6 @@ node_modules/
 .DS_Store
 *.tsbuildinfo
 .vitest-tmp/
+contrato/*.js
+contrato/*.js.map
+contrato/*.d.ts

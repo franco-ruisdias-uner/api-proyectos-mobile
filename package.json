@@ -1,6 +1,6 @@
 {
   "name": "api-reservas-deportivas",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "API del Trabajo Final — Reservas Deportivas · Villaguay",
   "author": "",
   "private": true,
@@ -8,18 +8,23 @@
   "type": "module",
   "scripts": {
     "build": "nest build",
-    "deploy": "nest deploy",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "contrato:esquema": "ts-json-schema-generator --path 'contrato/*.ts' --type '*' --no-type-check --out contrato/esquema.json",
+    "db:reiniciar": "nest build && node dist/src/semillas/reiniciar.js",
+    "dev": "nest start --watch",
+    "docker:probar": "node scripts/probar-docker.mjs",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"scripts/**/*.mjs\"",
+    "lint": "oxlint --deny-warnings src/ test/ scripts/",
     "start": "nest start",
-    "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
-    "lint": "oxlint src/ test/",
+    "start:dev": "nest start --watch",
+    "start:prod": "node dist/src/main.js",
     "test": "vitest run",
-    "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
     "test:debug": "vitest --inspect-brk --no-file-parallelism",
-    "test:e2e": "vitest run --config ./vitest.config.e2e.ts"
+    "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
+    "test:e2e:matriz": "node scripts/matriz.mjs",
+    "test:watch": "vitest",
+    "verificar": "tsc --noEmit && pnpm lint && pnpm test && pnpm test:e2e"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",
@@ -58,7 +63,6 @@
     "supertest": "^7.0.0",
     "ts-json-schema-generator": "^2.9.0",
     "typescript": "^6.0.2",
-    "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^4.1.2"
   },
   "packageManager": "pnpm@10.34.6",
