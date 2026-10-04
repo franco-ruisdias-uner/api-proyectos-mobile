@@ -146,3 +146,8 @@ Estado: PROVISORIA (autónomo)
 Hueco: los medios de muestra son de M8 (`src/semillas/medios`).
 Decisión: hasta M8, los espacios sembrados llevan `imagenes: []` y `videoUrl: null`. En la base se
 guardan las claves de archivo y el mapeador las devuelve como URLs absolutas.
+
+### M1-5 — Deporte del gimnasio cerrado
+Estado: PROVISORIA (autónomo)
+Hueco: la especificación lista un «gimnasio cerrado» entre los espacios pero no dice de qué deporte es.
+Decisión: deporte propio `dep-gimnasio` («Gimnasio», ícono `barbell-outline`). El vóley usa `ellipse-outline` porque Ionicons no tiene ícono de pelota de vóley.
