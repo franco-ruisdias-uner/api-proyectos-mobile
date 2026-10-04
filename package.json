@@ -7,13 +7,16 @@
   "license": "UNLICENSED",
   "type": "module",
   "scripts": {
+    "archivos:probar": "nest build && node dist/src/herramientas/archivos-probar.js",
     "build": "nest build",
     "contrato:esquema": "ts-json-schema-generator --path 'contrato/*.ts' --type '*' --no-type-check --out contrato/esquema.json",
+    "db:probar": "nest build && node dist/src/herramientas/db-probar.js",
     "db:reiniciar": "nest build && node dist/src/semillas/reiniciar.js",
     "dev": "nest start --watch",
     "docker:probar": "node scripts/probar-docker.mjs",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"scripts/**/*.mjs\"",
     "lint": "oxlint --deny-warnings src/ test/ scripts/",
+    "publicado:probar": "node scripts/publicado-probar.mjs",
     "start": "nest start",
     "start:debug": "nest start --debug --watch",
     "start:dev": "nest start --watch",
@@ -27,6 +30,7 @@
     "verificar": "tsc --noEmit && pnpm lint && pnpm test && pnpm test:e2e"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1146.0",
     "@date-fns/tz": "^1.5.0",
     "@nestjs/common": "^12.0.1",
     "@nestjs/config": "^12.0.1",

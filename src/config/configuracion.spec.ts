@@ -20,11 +20,16 @@ describe('AGENTS §11.3 — La configuración se valida al arrancar', () => {
       url: null,
       archivo: 'datos/api.sqlite',
       sincronizar: true,
+      proveedor: null,
+      ssl: 'no',
+      sslCa: null,
+      esquema: null,
     });
     expect(c.puerto).toBe(3000);
     expect(c.archivos).toEqual({
       proveedor: 'local',
       directorio: './archivos',
+      s3: null,
     });
     expect(c.entorno).toBe('desarrollo');
     expect(c.simulacionHabilitada).toBe(true);
@@ -96,10 +101,76 @@ describe('AGENTS §11.3 — La configuración se valida al arrancar', () => {
     ]);
   });
 
-  it('los proveedores de archivos en la nube todavía no están (llegan en el módulo «Nube»)', () => {
+  it('un proveedor de archivos en la nube pide sus variables y dice cuáles faltan', () => {
     expect(problemas({ ...minimo, ARCHIVOS_PROVEEDOR: 'supabase' })).toEqual([
-      expect.stringContaining('"local"'),
+      expect.stringContaining('SUPABASE_PROYECTO'),
     ]);
+  });
+
+  it('con S3Proxy no hace falta nada más', () => {
+    const c = validarEntorno({ ...minimo, ARCHIVOS_PROVEEDOR: 's3proxy' });
+    expect(c.archivos.s3?.endpoint).toBe('http://s3:8080');
+  });
+
+  it('DB_PROVEEDOR=supabase fija motor PostgreSQL y esquema api', () => {
+    const c = validarEntorno({
+      ...minimo,
+      DB_PROVEEDOR: 'supabase',
+      DB_URL:
+        'postgres://postgres.abc:x@aws-0-sa-east-1.pooler.supabase.com:5432/postgres',
+    });
+    expect(c.db).toMatchObject({
+      motor: 'postgres',
+      esquema: 'api',
+      ssl: 'si-sin-verificar',
+    });
+    expect(
+      problemas({
+        ...minimo,
+        DB_PROVEEDOR: 'supabase',
+        DB_URL: 'postgres://a:b@x.com/db',
+      }),
+    ).toEqual([expect.stringContaining('Supabase')]);
+  });
+
+  describe('ENTORNO=publicado — AGENTS §18.2: no arranca si algo es de desarrollo', () => {
+    const bueno = {
+      ENTORNO: 'publicado',
+      JWT_SECRETO: 'x'.repeat(32),
+      DB_PROVEEDOR: 'neon',
+      DB_URL: 'postgres://u:p@ep-1.neon.tech/db',
+      ARCHIVOS_PROVEEDOR: 'r2',
+      R2_CUENTA: 'cu',
+      S3_BUCKET: 'b',
+      S3_ACCESS_KEY_ID: 'i',
+      S3_SECRET_ACCESS_KEY: 's',
+    };
+    it('una configuración completa arranca', () => {
+      expect(problemas(bueno)).toEqual([]);
+    });
+    it.each([
+      ['SQLite', { DB_PROVEEDOR: '', DB_URL: '' }, 'SQLite'],
+      [
+        'archivos locales',
+        { ARCHIVOS_PROVEEDOR: 'local' },
+        'ARCHIVOS_PROVEEDOR=local',
+      ],
+      [
+        'JWT de desarrollo',
+        { JWT_SECRETO: 'solo-para-desarrollo-no-usar-en-produccion' },
+        'JWT_SECRETO',
+      ],
+      ['JWT corto', { JWT_SECRETO: 'corto' }, 'JWT_SECRETO'],
+      [
+        'simulación',
+        { SIMULACION_HABILITADA: 'true' },
+        'SIMULACION_HABILITADA',
+      ],
+    ])('%s', (_n, cambio, texto) => {
+      expect(problemas({ ...bueno, ...cambio })).toEqual([
+        expect.stringContaining(texto),
+      ]);
+    });
   });
 
   it('junta todos los problemas en un solo mensaje en castellano', () => {

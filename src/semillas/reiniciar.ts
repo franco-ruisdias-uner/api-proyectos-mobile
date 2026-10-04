@@ -11,7 +11,15 @@ const { sembrar } = await import('./sembrar.js');
 const { validarEntorno } = await import('../config/configuracion.js');
 
 try {
-  validarEntorno(process.env);
+  const config = validarEntorno(process.env);
+  // Contra una base en la nube hay que confirmar: borra el esquema de la API (AGENTS §5.2).
+  if (config.db.proveedor !== null && !process.argv.includes('--confirmar')) {
+    console.error(
+      `Esto borra todos los datos del esquema «${config.db.esquema ?? 'de la base'}» en ${config.db.proveedor}. ` +
+        'Si es lo que querés, repetilo con --confirmar: pnpm db:reiniciar --confirmar',
+    );
+    process.exit(1);
+  }
   const app = await NestFactory.createApplicationContext(
     AppModule.registrar({ borrarEsquema: true, omitirSembradoInicial: true }),
     {

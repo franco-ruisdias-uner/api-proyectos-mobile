@@ -245,7 +245,59 @@ RELOJ_FIJO=2026-09-19T20:30:00-03:00
 - Sin Docker: `pnpm db:reiniciar` (borra todo y vuelve a cargar los datos de demo).
 - Con Docker: `docker compose down -v` y `docker compose up`.
 
-## 11. Problemas frecuentes
+## 11. Publicar la API en internet (Render + Supabase, gratis)
+
+Una app instalada en el teléfono (el build de producción con EAS) no puede apuntar a la IP de
+una notebook: necesita una dirección `https://` que ande desde cualquier red. La combinación
+gratis y sin tarjeta es: **Render** (corre la API), **Supabase** (base PostgreSQL y archivos).
+
+1. **Supabase**: creá un proyecto en <https://supabase.com>.
+   - Botón **Connect** → **Session pooler**: copiá la cadena (host `…pooler.supabase.com`,
+     puerto **5432**, usuario `postgres.<referencia>`). No uses la conexión directa (sólo anda
+     por IPv6) ni el modo transacción (puerto 6543): la API los rechaza con un mensaje.
+   - **Storage** → creá un bucket (por ejemplo `archivos`).
+   - **Storage → S3 Connection**: anotá la región y generá las claves de acceso S3.
+     Esas claves dan acceso a todo el proyecto: no las subas a git.
+2. **Render**: <https://render.com> → **New → Blueprint** y elegí el repo del grupo
+   (o el botón de abajo). Render lee `render.yaml` y te pide: `DB_URL` (la cadena del paso 1),
+   `SUPABASE_PROYECTO` (la referencia del proyecto), `S3_REGION`, `S3_BUCKET`,
+   `S3_ACCESS_KEY_ID` y `S3_SECRET_ACCESS_KEY`. `JWT_SECRETO` lo genera Render.
+
+   [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=URL-DEL-REPO-DEL-GRUPO)
+   *(reemplazá `URL-DEL-REPO-DEL-GRUPO` por la dirección de su repo en GitHub)*
+3. Cuando Render termine, probá: `pnpm publicado:probar https://tu-api.onrender.com`.
+
+Lo que tenés que saber:
+
+- Las tablas quedan en el esquema `api` de Supabase (no en `public`).
+- **Arranque en frío**: el plan gratis de Render se duerme a los 15 minutos sin uso y tarda
+  alrededor de un minuto en despertar. La primera llamada puede tardar: la app tiene que
+  mostrar que está cargando.
+- **Supabase gratis pausa el proyecto** después de una semana sin uso: se reactiva desde su panel.
+- Con `ENTORNO=publicado` la API **no arranca** si la base es SQLite, si los archivos están en
+  disco, si `JWT_SECRETO` es el de desarrollo o tiene menos de 32 caracteres, o si la simulación
+  de fallas está encendida. El mensaje dice qué cambiar.
+- Otras opciones: base en Neon o Aiven (`DB_PROVEEDOR=neon`, `aiven-postgres`, `aiven-mysql`) y
+  archivos en Cloudflare R2, Backblaze B2 o AWS (`ARCHIVOS_PROVEEDOR=r2`, `b2`, `aws`).
+  `.env.example` trae las variables de cada uno.
+- Comprobar tu configuración antes de publicar: `pnpm db:probar` y `pnpm archivos:probar`
+  usan lo que tengas en `.env`.
+- `pnpm db:reiniciar` contra una base en la nube pide `--confirmar` y borra **sólo** el
+  esquema de la API.
+
+### Archivos en S3 con Docker
+
+Para probar los archivos fuera del disco (como si fuera la nube) sumá un segundo compose:
+
+```bash
+docker compose -f compose.yaml -f compose.almacen-s3.yaml up
+```
+
+Los archivos van a S3Proxy y la app ni se entera: las URLs siguen siendo
+`http://<IP>:3000/archivos/<clave>`. Con "AWS local" (pide cuenta y token gratis en
+LocalStack): `LOCALSTACK_AUTH_TOKEN=… docker compose -f compose.postgres.yaml -f compose.almacen-localstack.yaml up`.
+
+## 12. Problemas frecuentes
 
 | Qué pasa | Qué hacer |
 |---|---|
@@ -255,4 +307,7 @@ RELOJ_FIJO=2026-09-19T20:30:00-03:00
 | `EADDRINUSE: address already in use :::3000` | Ya hay algo en el puerto 3000 (¿otra API abierta?). Cerralo o cambiá `PUERTO` en `.env`. |
 | Con XAMPP la API falla al crear las tablas | Usá `DB_MOTOR=mariadb` (sección 3). |
 | `NO_AUTENTICADO` después de `db:reiniciar` | Tu usuario se borró: ingresá de nuevo. |
+| `La API no puede arrancar` con `ENTORNO=publicado` | Leé la lista: dice qué cambiar (base, archivos, `JWT_SECRETO` o simulación). |
+| `DB_URL es la conexión directa de Supabase` | Usá la cadena del **Session pooler** (sección 11). |
+| `No se pudo acceder al bucket` | Revisá `S3_BUCKET`, `S3_REGION` y las claves; `pnpm archivos:probar` lo confirma. |
 | Docker: `port is already allocated` | Otro programa usa el puerto. Por ejemplo: `PUERTO=3001 docker compose up`. |

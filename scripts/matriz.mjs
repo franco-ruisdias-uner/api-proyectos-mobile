@@ -18,9 +18,16 @@ function correr(comando, argumentos, entorno = {}) {
   return r.status === 0;
 }
 
-function e2e(motor, url) {
+// S3Proxy de compose.matriz.yaml: los tests de archivos lo usan si está esta variable.
+const S3 = 'http://127.0.0.1:58080';
+
+function e2e(motor, url, s3 = false) {
   console.log(`\n=== E2E con ${motor} ===`);
-  const entorno = { DB_MOTOR: motor, ...(url ? { DB_URL: url } : {}) };
+  const entorno = {
+    DB_MOTOR: motor,
+    ...(url ? { DB_URL: url } : {}),
+    ...(s3 ? { S3_PRUEBAS_ENDPOINT: S3 } : {}),
+  };
   return correr(
     'pnpm',
     ['exec', 'vitest', 'run', '--config', './vitest.config.e2e.ts'],
@@ -37,7 +44,14 @@ if (hayDocker) {
   try {
     if (!correr('docker', [...COMPOSE, 'up', '-d', '--wait']))
       throw new Error('No se pudieron levantar las bases.');
-    for (const { motor, url } of MOTORES) resultados[motor] = e2e(motor, url);
+    console.log('\n=== Archivos contra S3Proxy ===');
+    resultados['s3proxy'] = correr(
+      'pnpm',
+      ['exec', 'vitest', 'run', 'test/almacen/almacen-s3.spec.ts'],
+      { S3_PRUEBAS_ENDPOINT: S3 },
+    );
+    for (const { motor, url } of MOTORES)
+      resultados[motor] = e2e(motor, url, motor === 'postgres');
   } finally {
     correr('docker', [...COMPOSE, 'down', '-v']);
   }

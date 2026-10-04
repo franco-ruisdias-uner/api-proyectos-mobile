@@ -37,7 +37,12 @@ jobs:
       TZ: ${{ matrix.tz }}
       DB_MOTOR: ${{ matrix.base.motor }}
       DB_URL: ${{ matrix.base.url }}
+      S3_PRUEBAS_ENDPOINT: http://127.0.0.1:58080
     services:
+      s3:
+        image: andrewgaul/s3proxy:sha-f892634
+        env: { S3PROXY_AUTHORIZATION: none, JCLOUDS_PROVIDER: transient }
+        ports: ['58080:8080']
       postgres:
         image: postgres:17
         env: { POSTGRES_USER: api, POSTGRES_PASSWORD: api, POSTGRES_DB: api }
@@ -64,6 +69,7 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm exec vitest run test/almacen/almacen-s3.spec.ts
       - run: pnpm test:e2e
 
   docker:

@@ -1,8 +1,19 @@
 // Opciones de TypeORM por motor: una sola función para los cuatro (AGENTS §5.1).
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import type { Configuracion } from '../../config/configuracion.js';
+
+/** Opciones de SSL según DB_SSL / DB_SSL_CA (AGENTS §18.1); undefined = sin cifrar. */
+function opcionesSsl(
+  config: Configuracion,
+): { rejectUnauthorized: boolean; ca?: string } | undefined {
+  if (config.db.ssl === 'no') return undefined;
+  return {
+    rejectUnauthorized: config.db.ssl === 'si',
+    ...(config.db.sslCa ? { ca: readFileSync(config.db.sslCa, 'utf8') } : {}),
+  };
+}
 
 export function opcionesDeBase(
   config: Configuracion,
@@ -28,7 +39,13 @@ export function opcionesDeBase(
       };
     }
     case 'postgres':
-      return { ...comunes, type: 'postgres', url: config.db.url ?? undefined };
+      return {
+        ...comunes,
+        type: 'postgres',
+        url: config.db.url ?? undefined,
+        ssl: opcionesSsl(config),
+        ...(config.db.esquema ? { schema: config.db.esquema } : {}),
+      };
     case 'mysql':
     case 'mariadb':
       return {
@@ -37,6 +54,7 @@ export function opcionesDeBase(
         url: config.db.url ?? undefined,
         timezone: 'Z',
         charset: 'utf8mb4',
+        ssl: opcionesSsl(config),
       };
   }
 }

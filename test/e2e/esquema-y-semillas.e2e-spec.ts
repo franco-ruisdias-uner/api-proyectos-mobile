@@ -354,3 +354,29 @@ describe('ESPECIFICACION §8 — Reservas de demo (M3)', () => {
       .expect(201);
   });
 });
+
+// AGENTS §18.3: con PostgreSQL, las tablas van en DB_ESQUEMA y reiniciar no toca otros.
+// Sólo corre en la matriz con PostgreSQL (no hay otro motor con esquemas).
+describe.runIf(process.env.DB_MOTOR === 'postgres')(
+  'AGENTS §18.3 — DB_ESQUEMA en PostgreSQL',
+  () => {
+    it('las tablas quedan en el esquema pedido y una tabla ajena en public sobrevive', async () => {
+      const ajena = await crearApp();
+      await ajena.dataSource.query(
+        'CREATE TABLE IF NOT EXISTS public.ajena (id int)',
+      );
+      await ajena.cerrar();
+      const a = await crearApp({ entorno: { DB_ESQUEMA: 'api_prueba' } });
+      const filas: { table_schema: string }[] = await a.dataSource.query(
+        "SELECT table_schema FROM information_schema.tables WHERE table_name = 'usuarios'",
+      );
+      expect(filas.map((f) => f.table_schema)).toContain('api_prueba');
+      const ajenas = await a.dataSource.query(
+        "SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'ajena'",
+      );
+      expect(ajenas).toHaveLength(1);
+      await a.dataSource.query('DROP TABLE public.ajena');
+      await a.cerrar();
+    });
+  },
+);

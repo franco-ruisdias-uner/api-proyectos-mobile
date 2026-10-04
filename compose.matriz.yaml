@@ -32,3 +32,15 @@ services:
       interval: 2s
       timeout: 3s
       retries: 90
+  # Para los tests de archivos con S3 (AGENTS §17.4): sin volumen, descartable.
+  s3:
+    image: andrewgaul/s3proxy:sha-f892634
+    environment:
+      S3PROXY_AUTHORIZATION: none
+      JCLOUDS_PROVIDER: transient
+    ports: ["58080:8080"]
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080'"]
+      interval: 2s
+      timeout: 3s
+      retries: 60

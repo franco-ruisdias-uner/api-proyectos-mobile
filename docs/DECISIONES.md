@@ -291,3 +291,28 @@ Decisión: la especificación lo ubica en M6 (AGENTS lo pone en M0, donde no se 
 Estado: PROVISORIA (autónomo)
 Hueco: texto del aviso y qué cancelaciones cuentan.
 Decisión: avisa sólo el pedido que efectivamente pasó la reserva a `cancelada` (un reintento no repite el aviso), incluida la cancelación del encargado; no avisa a quien canceló (si el encargado cancela, el dueño sí recibe el aviso si tiene el espacio de favorito). Las reservas que cancela un bloqueo no avisan a favoritos: el turno queda en mantenimiento, no libre. Título «Se liberó un turno», `datos` `{ espacioId, turnoId }`. Sin interruptor de avisos (D7).
+
+### M7-1 — Un solo adaptador S3 y presets como datos
+Estado: PROVISORIA (autónomo)
+Decisión: `AlmacenS3` (`@aws-sdk/client-s3`) sirve a todos los proveedores; las diferencias están en la tabla de `src/comun/archivos/proveedores.ts` y la función pura `configuracionS3`. Con cualquier proveedor que no sea `aws` el cliente usa checksums `WHEN_REQUIRED` (confirmado en la documentación del SDK, desde 3.731). Dependencia nueva: `@aws-sdk/client-s3`, no hay alternativa nativa que hable S3 firmado. `ARCHIVOS_CREAR_BUCKET=true` crea el bucket en servicios que no sean emuladores.
+
+### M7-2 — `ARCHIVOS_REDIRIGIR` no se implementó
+Estado: PROVISORIA (autónomo)
+Hueco: AGENTS §17.1 lo llama opcional (302 a una URL firmada de 15 minutos); necesita `@aws-sdk/s3-request-presigner`, otra dependencia, y por defecto está apagado.
+Decisión: no se implementa; la API siempre sirve el archivo ella misma. Alternativa descartada: agregarlo ahora. Se puede sumar después sin romper el contrato (sólo agrega comportamiento opcional).
+
+### M7-3 — Esquema propio en PostgreSQL
+Estado: PROVISORIA (autónomo)
+Decisión: con `DB_ESQUEMA` (o el del preset) un `dataSourceFactory` conecta sin sincronizar, crea el esquema con `queryRunner.createSchema(nombre, true)` y recién ahí sincroniza. Para reiniciar se borra sólo ese esquema (`dropSchema`); si es `public` no se borra el esquema, se vacían sus tablas (`clearDatabase`) porque `public` tiene permisos de la plataforma. `pnpm db:reiniciar` con `DB_PROVEEDOR` pide `--confirmar`.
+
+### M7-4 — `DB_PROVEEDOR` manda sobre `DB_MOTOR`
+Estado: PROVISORIA (autónomo)
+Decisión: si hay `DB_PROVEEDOR`, el motor sale del preset y `DB_MOTOR` se ignora (no es un error ponerlos distintos). `DB_SSL_CA` convierte `si-sin-verificar` en `si` (verifica contra esa CA).
+
+### M7-5 — Imagen del emulador S3
+Estado: PROVISORIA (autónomo)
+Decisión: `andrewgaul/s3proxy:sha-f892634` (el registro sólo publica `master` y tags por hash; se fijó uno que existe) y `localstack/localstack:2026.09.0`, ambos verificados en Docker Hub. Los healthchecks de S3Proxy (`/dev/tcp` con bash) **no se probaron** (no hubo Docker): si la imagen no trae bash, hay que cambiarlo.
+
+### M7-6 — `ENTORNO=publicado` y simulación
+Estado: PROVISORIA (autónomo)
+Decisión: la simulación ya es `false` por defecto fuera de `desarrollo`; en `publicado` sólo falla si se la pide explícitamente con `SIMULACION_HABILITADA=true`. `JWT_SECRETO` en `render.yaml` es `generateValue: true` (base64 de 256 bits, cumple el mínimo de 32).

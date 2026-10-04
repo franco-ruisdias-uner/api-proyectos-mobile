@@ -1,6 +1,7 @@
 import { type DynamicModule, Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import { ArchivosModulo } from './comun/archivos/archivos.modulo.js';
 import { AuthModulo } from './comun/auth/auth.modulo.js';
 import { opcionesDeBase } from './comun/db/opciones.js';
@@ -51,6 +52,32 @@ export class AppModule {
           useFactory: (config: Configuracion) => {
             const base = opcionesDeBase(config, { borrarEsquema });
             return borrarEsquema ? { ...base, synchronize: true } : base;
+          },
+          dataSourceFactory: async (opciones) => {
+            if (!opciones) throw new Error('Faltan las opciones de la base.');
+            const esquema =
+              opciones.type === 'postgres' ? (opciones.schema ?? null) : null;
+            if (esquema === null) return new DataSource(opciones).initialize();
+            // Esquema propio (Supabase, Neon…): se crea (o se borra sólo ése) y recién
+            // después se sincronizan las tablas. Nunca se toca otro esquema (AGENTS §18.1).
+            const ds = await new DataSource({
+              ...opciones,
+              synchronize: false,
+              dropSchema: false,
+            }).initialize();
+            const qr = ds.createQueryRunner();
+            try {
+              // `public` no se borra entero (tiene permisos de la plataforma): se vacía.
+              if (opciones.dropSchema && esquema === 'public')
+                await qr.clearDatabase();
+              else if (opciones.dropSchema)
+                await qr.dropSchema(esquema, true, true);
+              await qr.createSchema(esquema, true);
+            } finally {
+              await qr.release();
+            }
+            if (opciones.synchronize) await ds.synchronize();
+            return ds;
           },
         }),
         RelojModulo,

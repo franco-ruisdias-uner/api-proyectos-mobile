@@ -2,6 +2,20 @@
 
 Lo que cambia en la API, escrito para quienes la usan desde la app.
 
+## 0.8.0 — Nube (M7)
+
+Nada cambia en lo que devuelve la API ni en lo que ve la app: las URLs de los archivos siguen
+siendo `<origen>/archivos/<clave>` sea cual sea dónde se guarden.
+
+- Los archivos pueden guardarse en AWS S3, Supabase Storage, Cloudflare R2, Backblaze B2 o
+  cualquier servicio compatible con S3 (`ARCHIVOS_PROVEEDOR`). `/salud` informa el proveedor
+  en `almacen`.
+- La base puede ser una administrada (Supabase, Neon, Aiven) con `DB_PROVEEDOR`.
+- Se puede publicar en Render (`render.yaml`, README sección 11). `ENTORNO=publicado` no
+  arranca con configuraciones de desarrollo.
+- Herramientas nuevas: `pnpm db:probar`, `pnpm archivos:probar`, `pnpm publicado:probar <url>`.
+  `pnpm db:reiniciar` contra una base en la nube pide `--confirmar`.
+
 ## 0.7.0 — Favoritos y avisos (M6)
 
 - `PUT /yo/espacios-favoritos/<espacioId>` agrega un espacio a tus favoritos (200 con tu `Usuario`;
