@@ -42,7 +42,7 @@ export class DispositivosControlador {
     summary: 'Anotar el teléfono para recibir push',
     description:
       'Con sesión. Idempotente por token: si el token ya estaba (incluso de otro usuario), queda a tu nombre.\n\n' +
-      'Errores: VALIDACION_FALLIDA (400), NO_AUTENTICADO (401).',
+      'Errores: VALIDACION_FALLIDA (400), NO_AUTENTICADO (401), NO_IMPLEMENTADO (501).\n\n⚠️ Este endpoint lo completan ustedes (docs/NOTIFICACIONES.md): mientras tanto responde 501 NO_IMPLEMENTADO.',
   })
   @ApiResponse({
     status: 201,
@@ -73,7 +73,7 @@ export class DispositivosControlador {
     summary: 'Mandarme una push de prueba',
     description:
       'Con sesión. Manda una notificación a todos tus teléfonos anotados y dice a cuántos.\n\n' +
-      'Errores: NO_AUTENTICADO (401).',
+      'Errores: NO_AUTENTICADO (401), NO_IMPLEMENTADO (501).\n\n⚠️ Este endpoint lo completan ustedes (docs/NOTIFICACIONES.md): mientras tanto responde 501 NO_IMPLEMENTADO.',
   })
   @ApiResponse({
     status: 200,
@@ -96,7 +96,7 @@ export class DispositivosControlador {
   @ApiOperation({
     summary: 'Dejar de recibir push en este teléfono',
     description:
-      'Con sesión. 204 sin cuerpo, aunque el token no estuviera anotado. Sólo da de baja tus propios teléfonos.\n\nErrores: VALIDACION_FALLIDA (400), NO_AUTENTICADO (401).',
+      'Con sesión. 204 sin cuerpo, aunque el token no estuviera anotado. Sólo da de baja tus propios teléfonos.\n\nErrores: VALIDACION_FALLIDA (400), NO_AUTENTICADO (401), NO_IMPLEMENTADO (501).\n\n⚠️ Este endpoint lo completan ustedes (docs/NOTIFICACIONES.md): mientras tanto responde 501 NO_IMPLEMENTADO.',
   })
   async borrar(
     @SesionActual() sesion: UsuarioSesion,

@@ -63,3 +63,28 @@ describe('AGENTS §9 — Avisos', () => {
     await expect(avisos.esperarEnvios()).resolves.toBeUndefined();
   });
 });
+
+describe('AGENTS §19.3 — Avisos con las piezas de los alumnos sin programar', () => {
+  it('escribe «Push pendiente de implementar» en el log y no rompe', async () => {
+    const { AlmacenTokensPorHacer } =
+      await import('../../src/notificaciones-alumnos/almacen-tokens-por-hacer.js');
+    const { Logger } = await import('@nestjs/common');
+    const aviso2 = { titulo: 'Turno suspendido', cuerpo: 'x', datos: {} };
+    const avisos = new Avisos(
+      new AlmacenTokensPorHacer(),
+      new EnviadorMemoria(),
+    );
+    const warn = vi
+      .spyOn(Logger.prototype, 'warn')
+      .mockImplementation(() => {});
+    try {
+      avisos.avisar(['usr-1', 'usr-2'], aviso2);
+      await avisos.esperarEnvios();
+      expect(warn).toHaveBeenCalledWith(
+        'Push pendiente de implementar: Turno suspendido → 2 usuarios',
+      );
+    } finally {
+      warn.mockRestore();
+    }
+  });
+});

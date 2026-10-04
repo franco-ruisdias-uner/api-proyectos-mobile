@@ -2,6 +2,7 @@
 // qué texto; busca tokens y manda sin bloquear la respuesta. Un error del almacén o
 // del enviador se loguea y nunca rompe el pedido.
 import { Injectable, Logger } from '@nestjs/common';
+import { ErrorApi } from '../errores/error-api.js';
 import { AlmacenTokensPush, EnviadorPush } from './puertos.js';
 
 export interface Aviso {
@@ -48,6 +49,12 @@ export class Avisos {
       if (tokensInvalidos.length > 0)
         await this.almacen.descartar(tokensInvalidos);
     } catch (error) {
+      if (error instanceof ErrorApi && error.codigo === 'NO_IMPLEMENTADO') {
+        this.logger.warn(
+          `Push pendiente de implementar: ${aviso.titulo} → ${usuarioIds.length} usuarios`,
+        );
+        return;
+      }
       this.logger.error(
         `No se pudo mandar el aviso «${aviso.titulo}»: ${(error as Error).message}`,
       );

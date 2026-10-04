@@ -322,3 +322,15 @@ Estado: PROVISORIA (autónomo)
 Hueco: AGENTS §3 pide imágenes, audio y video de muestra generados; esta API sólo tiene imágenes (`Espacio.imagenes`, `videoUrl`) y no usa audio.
 Decisión: `scripts/generar-medios.mjs` dibuja doce PNG (dos por deporte, sin dependencias, con `node:zlib`) en `src/semillas/medios/`. `sembrar` los sube por el puerto `AlmacenArchivos` con claves fijas por espacio (`imagenes/AAAA/MM/semilla-<espacio>-<n>.png`), así que existen en disco y en S3. **No hay video**: no había `ffmpeg` en el entorno y un `.mp4` inventado a mano no se podría reproducir, lo que sería peor que `null`. Todos los espacios llevan `videoUrl: null`. Alternativa descartada: un mp4 de relleno que `expo-video` no abre. Para sumar uno: generar un mp4 real, subirlo con `POST /archivos` y guardar su clave en `videoUrl` de un espacio.
 `sembrar(dataSource, reloj, almacen?)`: sin almacén (algunos tests viejos) los espacios quedan sin imágenes.
+
+### M9-1 — Dos puertos ya estaban; qué se vacía y qué no
+Estado: PROVISORIA (autónomo)
+Decisión: el repo ya usaba `AlmacenTokensPush` y `EnviadorPush` (AGENTS §19.2), así que no hubo refactor previo. En `main` se reemplazaron por `AlmacenTokensPorHacer` y `EnviadorPorHacer` (`src/notificaciones-alumnos/`) y se borraron `AlmacenTokensDb`, `EnviadorExpo` y la entidad `dispositivos`; la solución completa quedó en la rama `solucion-notificaciones`. Se conservan `EnviadorRegistro` (con `NOTIFICACIONES=registro` sólo escribe en el log, no es parte de la consigna), `NOTIFICACIONES` y `EXPO_PUSH_URL`, que el enviador de los alumnos necesita.
+
+### M9-2 — `NO_IMPLEMENTADO` (501)
+Estado: PROVISORIA (autónomo)
+Decisión: código nuevo `NO_IMPLEMENTADO`, 501, con el mensaje de AGENTS §19.3. Las piezas vacías lanzan ese `ErrorApi`; el controlador lo deja pasar (501) y `Avisos` lo detecta y escribe `Push pendiente de implementar: <título> → <n> usuarios` (nivel `warn`) sin romper el pedido. La validación del cuerpo y la sesión van antes: un cuerpo mal formado sigue dando 400 y sin token, 401.
+
+### M9-3 — Los tests de dominio ya no pasan por `/dispositivos`
+Estado: PROVISORIA (autónomo)
+Decisión: `crearApp()` reemplaza por defecto los dos puertos por dobles en memoria (`a.almacenTokens`, `a.enviador`), así los tests de favoritos y bloqueos registran tokens sin depender del trabajo de los alumnos. `crearApp({ notificacionesReales: true })` usa los de verdad y sólo lo usan `test/notificaciones/` y el test de los 501. Los tests de `/dispositivos` y del enviador (de `test/e2e/`, `test/integracion/` y el bloque de bordes de `test/verificacion/m0-base`) se mudaron a `test/notificaciones/`; en `test/verificacion/m5` y `m6` sólo cambió el *setup* (token por el doble en vez de por HTTP), no las aserciones.

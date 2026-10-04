@@ -126,6 +126,10 @@ export const CATALOGO = {
     estado: 500,
     mensaje: 'Algo salió mal de nuestro lado. Probá de nuevo en un rato.',
   },
+  NO_IMPLEMENTADO: {
+    estado: 501,
+    mensaje: 'Esta parte la programan ustedes. Mirá docs/NOTIFICACIONES.md.',
+  },
   ALMACEN_NO_DISPONIBLE: {
     estado: 503,
     mensaje: 'No pudimos acceder a los archivos. Probá de nuevo en un rato.',
