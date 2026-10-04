@@ -162,6 +162,14 @@ encargado ubica a quien no vino).
 | `POST` | `/reservas/<id>/ausente` | 🧑‍🔧 | Marca "no se presentó", desde 15 minutos después del inicio. |
 | `GET` | `/agenda` | 🧑‍🔧 | Los turnos de todos los espacios activos en `?fecha=` (default hoy), por espacio e `inicio`. `porPagina` hasta 500. |
 | `GET` | `/usuarios/<id>` | 🧑‍🔧 | El `Usuario` con su teléfono, para avisarle. |
+| `POST` | `/bloqueos` | 🧑‍🔧 | Bloquea turnos: `{ espacioIds, fecha, inicio?, fin?, motivo }`. Sin horas, el día entero. Cancela las reservas confirmadas de esos turnos y avisa por push. 201 con la lista de `Bloqueo`. |
+| `GET` | `/bloqueos` | 🧑‍🔧 | Bloqueos: `?espacioId=`, `?desde=` (default hoy). |
+| `DELETE` | `/bloqueos/<id>` | 🧑‍🔧 | Quita el bloqueo (las reservas canceladas siguen canceladas). 204. |
+| `GET` | `/fijas` | 🧑‍🔧 | Reservas fijas: `?espacioId=`, `?activa=`. |
+| `POST` | `/fijas` | 🛡 | Carga una fija: `{ espacioId, titular, dia, inicio, fin, desde, hasta? }`. 409 si se pisa con otra o hay reservas confirmadas. |
+| `PATCH` | `/fijas/<id>` | 🛡 | Edita una fija. |
+| `DELETE` | `/fijas/<id>` | 🛡 | Da de baja la fija (`activa: false`). 204. |
+| `PATCH` | `/espacios/<id>` | 🛡 | Cambia el precio: `{ precioPorHora }`, entero mayor que cero. |
 | `POST` | `/archivos` | 🔒 | Sube una foto, un audio o un video. 201 con `{ url, tipo, bytes }`. |
 | `GET` | `/archivos/<clave>` | 🌐 | Baja un archivo (admite `Range` para adelantar audio y video). |
 | `POST` | `/dispositivos` | 🔒 | Anota el token de Expo del teléfono para recibir push. |
@@ -178,13 +186,17 @@ encargado ubica a quien no vino).
 | `NO_AUTENTICADO` | 401 | Tenés que ingresar con tu cuenta. |
 | `SIN_PERMISO` | 403 | No tenés permiso para hacer esto. |
 | `ARCHIVO_NO_ENCONTRADO` | 404 | No encontramos ese archivo. |
+| `BLOQUEO_NO_ENCONTRADO` | 404 | No encontramos ese bloqueo. |
 | `CODIGO_INVALIDO` | 404 | Ese código no es de una reserva. |
 | `ESPACIO_NO_ENCONTRADO` | 404 | No existe ese espacio. |
+| `FIJA_NO_ENCONTRADA` | 404 | No encontramos esa reserva fija. |
 | `RESERVA_NO_ENCONTRADA` | 404 | No encontramos esa reserva. |
 | `RUTA_NO_ENCONTRADA` | 404 | Esa dirección no existe en la API. |
 | `TURNO_NO_ENCONTRADO` | 404 | No existe ese turno. |
 | `USUARIO_NO_ENCONTRADO` | 404 | No existe ese usuario. |
+| `CONFLICTO_CON_RESERVAS` | 409 | Hay reservas confirmadas en ese horario. Resolvelas antes de cargar la fija. |
 | `EMAIL_YA_REGISTRADO` | 409 | Ya hay una cuenta con ese email. |
+| `FIJA_SUPERPUESTA` | 409 | Ya hay una reserva fija en ese horario. |
 | `INGRESO_YA_REGISTRADO` | 409 | Esa reserva ya ingresó. |
 | `RESERVA_NO_CANCELABLE` | 409 | Esa reserva ya no se puede cancelar. |
 | `TURNO_NO_DISPONIBLE` | 409 | Ese turno no está disponible. |
@@ -198,8 +210,10 @@ encargado ubica a quien no vino).
 | `CODIGO_DE_OTRO_DIA` | 422 | Esa reserva no es para hoy. |
 | `CODIGO_DE_OTRO_ESPACIO` | 422 | Esa reserva es para otra cancha. |
 | `FECHA_FUERA_DE_RANGO` | 422 | Sólo se pueden ver y reservar los próximos siete días. |
+| `FECHA_PASADA` | 422 | No se puede bloquear un día que ya pasó. |
 | `FUERA_DE_HORARIO` | 422 | Todavía no es el horario de esa reserva, o ya terminó. |
 | `LIMITE_DE_RESERVAS` | 422 | Ya tenés tres reservas activas. Cancelá una para reservar otra. |
+| `MOTIVO_REQUERIDO` | 422 | Escribí el motivo del bloqueo. |
 | `RESERVA_AUSENTE` | 422 | Esa reserva figura como ausente. |
 | `RESERVA_CANCELADA` | 422 | Esa reserva está cancelada. |
 | `TURNO_PASADO` | 422 | Ese turno ya pasó. |

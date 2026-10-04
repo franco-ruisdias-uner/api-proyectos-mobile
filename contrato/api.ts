@@ -30,6 +30,16 @@ export interface RespuestaError {
   };
 }
 
+/** Bloqueo de un espacio (D12). Sin `inicio` ni `fin`, cubre el día entero. Sólo lo usan los endpoints del personal. */
+export interface Bloqueo {
+  id: string;
+  espacioId: string;
+  fecha: string; // "AAAA-MM-DD"
+  inicio: string | null; // "HH:MM"
+  fin: string | null;
+  motivo: string;
+}
+
 /** Respuesta de POST /auth/registro y POST /auth/ingreso. */
 export interface Sesion {
   token: string;

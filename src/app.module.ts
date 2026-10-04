@@ -7,6 +7,7 @@ import { opcionesDeBase } from './comun/db/opciones.js';
 import { NotificacionesModulo } from './comun/notificaciones/notificaciones.modulo.js';
 import { RelojModulo } from './comun/reloj/reloj.modulo.js';
 import { Configuracion, validarEntorno } from './config/configuracion.js';
+import { AdministracionModulo } from './modulos/administracion/administracion.modulo.js';
 import { EspaciosModulo } from './modulos/espacios/espacios.modulo.js';
 import { IngresosModulo } from './modulos/ingresos/ingresos.modulo.js';
 import { ReservasModulo } from './modulos/reservas/reservas.modulo.js';
@@ -62,6 +63,7 @@ export class AppModule {
         TurnosModulo,
         ReservasModulo,
         IngresosModulo,
+        AdministracionModulo,
         ...(opciones.omitirSembradoInicial ? [] : [SemillasModulo]),
       ],
     };

@@ -262,3 +262,19 @@ Decisión: ingresar o marcar ausente no avisa a nadie; las notificaciones del se
 ### M4-7 — Ids mal formados
 Estado: PROVISORIA (autónomo)
 Decisión: en el cuerpo (`espacioId` de `POST /ingresos`) y en filtros de query, un id sin el prefijo correcto es 400 `VALIDACION_FALLIDA`; en la ruta (`/reservas/:id/ausente`, `/usuarios/:id`) es 404 del recurso, como en M1–M3. Un `codigoQr` de sólo espacios es 400. Una reserva `cumplida` de ayer da `CODIGO_DE_OTRO_DIA` (el día se mira antes que el ingreso previo, orden de R14).
+
+### M5-1 — Códigos de error nuevos
+Estado: PROVISORIA (autónomo)
+Decisión: se agregan `BLOQUEO_NO_ENCONTRADO` y `FIJA_NO_ENCONTRADA` (404; la especificación no los trae), además de los de la sección 6 (`MOTIVO_REQUERIDO`, `FECHA_PASADA`, `FIJA_SUPERPUESTA`, `CONFLICTO_CON_RESERVAS`). Ids mal formados en la ruta son 404.
+
+### M5-2 — Validación de horas y fechas
+Estado: PROVISORIA (autónomo)
+Decisión: horas que no son en punto, `inicio ≥ fin`, un solo extremo de bloqueo, fechas inexistentes o `desde > hasta` son 400 `VALIDACION_FALLIDA`. `MOTIVO_REQUERIDO` y `FECHA_PASADA` son 422. La validación de forma va antes que las de negocio.
+
+### M5-3 — Qué cancela un bloqueo
+Estado: PROVISORIA (autónomo)
+Decisión: cancela las `confirmada` de turnos cubiertos que no terminaron (también uno ya empezado). Cada reserva cancelada manda su propia push al dueño (dos reservas, dos avisos), con motivo, fecha y hora. `POST /bloqueos` responde una lista con `meta` `{ total, pagina: 1, porPagina: total }`.
+
+### M5-4 — Fijas: "futuras" y ediciones
+Estado: PROVISORIA (autónomo)
+Decisión: D4 considera conflicto una reserva `confirmada` cuyo turno no terminó, en un día que la fija cubre. Al editar, `FIJA_SUPERPUESTA` y `CONFLICTO_CON_RESERVAS` se evalúan sólo si cambió el horario, la vigencia o `activa` (editar el titular no choca). `espacioId` no se edita. Dar de baja dos veces da 204 las dos. `GET /bloqueos` ordena por fecha, `inicio` e id.

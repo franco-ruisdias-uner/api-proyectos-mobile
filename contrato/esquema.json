@@ -27,6 +27,45 @@
       ],
       "type": "object"
     },
+    "Bloqueo": {
+      "additionalProperties": false,
+      "description": "Bloqueo de un espacio (D12). Sin `inicio` ni `fin`, cubre el día entero. Sólo lo usan los endpoints del personal.",
+      "properties": {
+        "espacioId": {
+          "type": "string"
+        },
+        "fecha": {
+          "type": "string"
+        },
+        "fin": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "inicio": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "motivo": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "espacioId",
+        "fecha",
+        "inicio",
+        "fin",
+        "motivo"
+      ],
+      "type": "object"
+    },
     "Coordenadas": {
       "additionalProperties": false,
       "properties": {

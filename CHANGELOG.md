@@ -2,6 +2,16 @@
 
 Lo que cambia en la API, escrito para quienes la usan desde la app.
 
+## 0.6.0 — Administración (M5)
+
+- Encargado y administrador: `POST /bloqueos` (`{ espacioIds, fecha, inicio?, fin?, motivo }`;
+  sin horas bloquea el día entero y cancela las reservas confirmadas, avisando por push al dueño),
+  `GET /bloqueos` y `DELETE /bloqueos/<id>`. `GET /fijas`.
+- Sólo administrador: `POST /fijas`, `PATCH /fijas/<id>`, `DELETE /fijas/<id>` (baja, `activa: false`)
+  y `PATCH /espacios/<id>` `{ precioPorHora }`.
+- Nuevos errores: `BLOQUEO_NO_ENCONTRADO`, `FIJA_NO_ENCONTRADA`, `MOTIVO_REQUERIDO`,
+  `FECHA_PASADA`, `FIJA_SUPERPUESTA` y `CONFLICTO_CON_RESERVAS`.
+
 ## 0.5.0 — Ingreso y agenda (M4)
 
 Estos endpoints son para el encargado y el administrador (un jugador recibe `SIN_PERMISO`).

@@ -83,6 +83,28 @@ export const CATALOGO = {
     estado: 422,
     mensaje: 'Todavía no se puede marcar como ausente.',
   },
+  BLOQUEO_NO_ENCONTRADO: {
+    estado: 404,
+    mensaje: 'No encontramos ese bloqueo.',
+  },
+  FIJA_NO_ENCONTRADA: {
+    estado: 404,
+    mensaje: 'No encontramos esa reserva fija.',
+  },
+  MOTIVO_REQUERIDO: { estado: 422, mensaje: 'Escribí el motivo del bloqueo.' },
+  FECHA_PASADA: {
+    estado: 422,
+    mensaje: 'No se puede bloquear un día que ya pasó.',
+  },
+  FIJA_SUPERPUESTA: {
+    estado: 409,
+    mensaje: 'Ya hay una reserva fija en ese horario.',
+  },
+  CONFLICTO_CON_RESERVAS: {
+    estado: 409,
+    mensaje:
+      'Hay reservas confirmadas en ese horario. Resolvelas antes de cargar la fija.',
+  },
   EMAIL_YA_REGISTRADO: {
     estado: 409,
     mensaje: 'Ya hay una cuenta con ese email.',
