@@ -185,3 +185,14 @@ describe('AGENTS §11.3 — La configuración se valida al arrancar', () => {
     ).toBe(false);
   });
 });
+
+describe('DB_SSL sin DB_PROVEEDOR', () => {
+  it('un valor fuera de no|si|si-sin-verificar no arranca', () => {
+    expect(problemas({ JWT_SECRETO: 'x', DB_SSL: 'quizas' })).toEqual([
+      expect.stringContaining('DB_SSL'),
+    ]);
+    expect(validarEntorno({ JWT_SECRETO: 'x', DB_SSL: 'si' }).db.ssl).toBe(
+      'si',
+    );
+  });
+});

@@ -4,7 +4,11 @@ import {
   configuracionS3,
   type ConfiguracionS3,
 } from '../comun/archivos/proveedores.js';
-import { configuracionBase, type ModoSsl } from '../comun/db/proveedores.js';
+import {
+  configuracionBase,
+  MODOS_SSL,
+  type ModoSsl,
+} from '../comun/db/proveedores.js';
 import { leerInstante } from '../comun/fechas/fechas.js';
 
 export const MOTORES = [
@@ -184,7 +188,7 @@ export function validarEntorno(crudo: EntornoCrudo): Configuracion {
       archivo: texto('DB_ARCHIVO') ?? 'datos/api.sqlite',
       sincronizar: booleano('DB_SINCRONIZAR', true),
       proveedor: texto('DB_PROVEEDOR'),
-      ssl: baseOk?.ssl ?? 'no',
+      ssl: baseOk?.ssl ?? deLista('DB_SSL', MODOS_SSL, 'no'),
       sslCa: texto('DB_SSL_CA'),
       esquema:
         baseOk?.esquema ?? (motor === 'postgres' ? texto('DB_ESQUEMA') : null),
