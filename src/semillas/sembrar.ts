@@ -10,6 +10,7 @@ import { diaEnZona } from '../comun/fechas/fechas.js';
 import { BloqueoEntidad } from '../modulos/turnos/bloqueo.entidad.js';
 import { ReservaFijaEntidad } from '../modulos/turnos/reserva-fija.entidad.js';
 import { ReservaEntidad } from '../modulos/turnos/reserva.entidad.js';
+import { FavoritoEntidad } from '../modulos/usuarios/favorito.entidad.js';
 import { UsuarioEntidad } from '../modulos/usuarios/usuario.entidad.js';
 import { DEPORTES, ESPACIOS } from './datos/espacios.js';
 import { turnosDeDemo } from './datos/turnos.js';
@@ -25,6 +26,10 @@ export async function sembrar(
     await m
       .getRepository(UsuarioEntidad)
       .insert(USUARIOS.map((u) => ({ ...u, contrasenaHash, creadoEn: ahora })));
+    // Emiliano (usr-207) tiene la cancha 2 de favorita (ESPECIFICACION §8).
+    await m
+      .getRepository(FavoritoEntidad)
+      .insert({ usuarioId: 'usr-207', espacioId: 'esp-02', creadoEn: ahora });
     await m.getRepository(DeporteEntidad).insert(DEPORTES);
     await m.getRepository(EspacioEntidad).insert(
       ESPACIOS.map((e) => ({

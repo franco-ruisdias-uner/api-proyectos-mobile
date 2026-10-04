@@ -2,6 +2,17 @@
 
 Lo que cambia en la API, escrito para quienes la usan desde la app.
 
+## 0.7.0 — Favoritos y avisos (M6)
+
+- `PUT /yo/espacios-favoritos/<espacioId>` agrega un espacio a tus favoritos (200 con tu `Usuario`;
+  repetirlo no da error) y `DELETE` lo saca (204). Los favoritos salen en `espaciosFavoritos`,
+  en el orden en que los agregaste.
+- `PATCH /yo` `{ nombre?, telefono? }` cambia tus datos y devuelve el `Usuario`.
+- Push del servidor: cuando alguien cancela una reserva de un turno que todavía no empezó, reciben
+  un aviso ("Se liberó un turno") quienes tienen ese espacio de favorito, salvo quien canceló.
+  Los `datos` del aviso traen `espacioId` y `turnoId`. El recordatorio de dos horas antes sigue
+  siendo local del teléfono.
+
 ## 0.6.0 — Administración (M5)
 
 - Encargado y administrador: `POST /bloqueos` (`{ espacioIds, fecha, inicio?, fin?, motivo }`;

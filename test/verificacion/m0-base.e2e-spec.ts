@@ -482,11 +482,11 @@ describe('AGENTS §4.1 y §4.6 — Sobre de error en lo que no es una ruta conoc
     },
   );
 
-  it('PATCH /yo no existe todavía en M0 (M0-4), pero responde con el sobre', async () => {
+  it('una ruta que no existe bajo /yo responde 404 con el sobre (PATCH /yo llegó en M6)', async () => {
     const j = await registrarJugador(a);
     const res = await a
       .http()
-      .patch('/yo')
+      .patch('/yo/otra-cosa')
       .set('Authorization', `Bearer ${j.token}`)
       .send({ nombre: 'Otro' });
     expect(res.status).toBe(404);

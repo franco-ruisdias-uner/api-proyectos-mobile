@@ -761,7 +761,9 @@ describe('M4 verificación — agenda, listado de reservas y usuarios', () => {
       expect(
         await por('?estado=ausente&espacioId=esp-v2&fecha=2026-10-01'),
       ).toEqual([r2]);
-      expect(await por('?estado=ausente&espacioId=esp-v1&fecha=2026-10-01')).toEqual([]);
+      expect(
+        await por('?estado=ausente&espacioId=esp-v1&fecha=2026-10-01'),
+      ).toEqual([]);
       expect(await por('?fecha=2026-10-02&espacioId=esp-v2')).toEqual([r3]);
       expect(await por('?fecha=2026-10-03')).toEqual([]);
       expect((await por('?fecha=2026-10-01')).length).toBe(2);

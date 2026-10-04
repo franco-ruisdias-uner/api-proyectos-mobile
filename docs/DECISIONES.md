@@ -278,3 +278,16 @@ Decisión: cancela las `confirmada` de turnos cubiertos que no terminaron (tambi
 ### M5-4 — Fijas: "futuras" y ediciones
 Estado: PROVISORIA (autónomo)
 Decisión: D4 considera conflicto una reserva `confirmada` cuyo turno no terminó, en un día que la fija cubre. Al editar, `FIJA_SUPERPUESTA` y `CONFLICTO_CON_RESERVAS` se evalúan sólo si cambió el horario, la vigencia o `activa` (editar el titular no choca). `espacioId` no se edita. Dar de baja dos veces da 204 las dos. `GET /bloqueos` ordena por fecha, `inicio` e id.
+
+### M6-1 — Favoritos
+Estado: PROVISORIA (autónomo)
+Decisión: `PUT /yo/espacios-favoritos/:espacioId` es idempotente (200 con el `Usuario` también si ya estaba, y con pedidos simultáneos) y `DELETE` también (204 aunque no estuviera). Un espacio que no existe, o un id sin forma de espacio, da 404 `ESPACIO_NO_ENCONTRADO`; un espacio inactivo se puede marcar. `espaciosFavoritos` sale en el orden en que se agregaron (tabla `espacios_favoritos`, clave primaria `usuarioId + espacioId`). Cualquier rol con sesión puede tener favoritos.
+
+### M6-2 — PATCH /yo
+Estado: PROVISORIA (autónomo)
+Decisión: la especificación lo ubica en M6 (AGENTS lo pone en M0, donde no se hizo: M0-4). Acepta `nombre` (1 a 80) y `telefono` (mismo formato que el registro), ambos opcionales; cuerpo vacío es 200 sin cambios; cualquier otro campo (`email`, `rol`, contadores) o un `null` es 400. El test del verificador de M0 que esperaba 404 para `PATCH /yo` pasó a usar `PATCH /yo/otra-cosa`: contradecía la especificación (M6).
+
+### M6-3 — Push de turno liberado (R21)
+Estado: PROVISORIA (autónomo)
+Hueco: texto del aviso y qué cancelaciones cuentan.
+Decisión: avisa sólo el pedido que efectivamente pasó la reserva a `cancelada` (un reintento no repite el aviso), incluida la cancelación del encargado; no avisa a quien canceló (si el encargado cancela, el dueño sí recibe el aviso si tiene el espacio de favorito). Las reservas que cancela un bloqueo no avisan a favoritos: el turno queda en mantenimiento, no libre. Título «Se liberó un turno», `datos` `{ espacioId, turnoId }`. Sin interruptor de avisos (D7).

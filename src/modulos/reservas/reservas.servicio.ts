@@ -16,6 +16,7 @@ import { ErrorApi } from '../../comun/errores/error-api.js';
 import { esViolacionDeUnicidad } from '../../comun/errores/unicidad.js';
 import { diaEnZona, esDiaValido } from '../../comun/fechas/fechas.js';
 import { esIdDe, nuevoId, textoAleatorio } from '../../comun/ids/ids.js';
+import { Avisos } from '../../comun/notificaciones/avisos.servicio.js';
 import { Reloj } from '../../comun/reloj/reloj.js';
 import { meta } from '../../comun/respuesta/paginacion.js';
 import { respuestaLista } from '../../comun/respuesta/respuesta.js';
@@ -24,6 +25,7 @@ import { leerIdDeTurno } from '../turnos/reglas/id-turno.js';
 import { fechaEnRango } from '../turnos/reglas/rango-de-fechas.js';
 import { ReservaEntidad } from '../turnos/reserva.entidad.js';
 import { TurnosServicio } from '../turnos/turnos.servicio.js';
+import { FavoritoEntidad } from '../usuarios/favorito.entidad.js';
 import { UsuarioEntidad } from '../usuarios/usuario.entidad.js';
 import type {
   CrearReservaDto,
@@ -48,10 +50,13 @@ export class ReservasServicio {
     private readonly reloj: Reloj,
     private readonly dataSource: DataSource,
     private readonly turnos: TurnosServicio,
+    private readonly avisos: Avisos,
     @InjectRepository(ReservaEntidad)
     private readonly reservas: Repository<ReservaEntidad>,
     @InjectRepository(EspacioEntidad)
     private readonly espacios: Repository<EspacioEntidad>,
+    @InjectRepository(FavoritoEntidad)
+    private readonly favoritos: Repository<FavoritoEntidad>,
   ) {}
 
   /** R7, R8, R9 y R11. `creada` es false si el jugador ya tenía ese turno (reintento). */
@@ -194,7 +199,7 @@ export class ReservasServicio {
 
     // El cambio de estado es condicional: si dos pedidos llegan juntos, sólo uno lo
     // aplica (y sólo ese suma la cancelación tardía).
-    await this.dataSource.transaction(async (m) => {
+    const liberada = await this.dataSource.transaction(async (m) => {
       const cambio = await m
         .getRepository(ReservaEntidad)
         .update(
@@ -205,8 +210,32 @@ export class ReservasServicio {
         await m
           .getRepository(UsuarioEntidad)
           .increment({ id: reserva.usuarioId }, 'cancelacionesTardias', 1);
+      return cambio.affected === 1;
     });
+    // R21: sólo el pedido que cambió el estado avisa (después de confirmar).
+    if (liberada) await this.avisarTurnoLiberado(reserva, sesion.id);
     return aContrato(await this.buscar(id));
+  }
+
+  /** R21: push a quienes tienen el espacio de favorito, salvo a quien canceló. */
+  private async avisarTurnoLiberado(
+    reserva: ReservaEntidad,
+    quienCancelo: string,
+  ): Promise<void> {
+    const [filas, espacio] = await Promise.all([
+      this.favoritos.findBy({ espacioId: reserva.espacioId }),
+      this.espacios.findOneBy({ id: reserva.espacioId }),
+    ]);
+    const destinatarios = filas
+      .map((f) => f.usuarioId)
+      .filter((id) => id !== quienCancelo);
+    if (!espacio || destinatarios.length === 0) return;
+    const [dia, mes] = [reserva.fecha.slice(8, 10), reserva.fecha.slice(5, 7)];
+    this.avisos.avisar(destinatarios, {
+      titulo: 'Se liberó un turno',
+      cuerpo: `${espacio.nombre} tiene libre el turno del ${dia}/${mes} a las ${reserva.inicio}.`,
+      datos: { espacioId: reserva.espacioId, turnoId: reserva.turnoId },
+    });
   }
 
   private async buscar(id: string): Promise<ReservaEntidad> {

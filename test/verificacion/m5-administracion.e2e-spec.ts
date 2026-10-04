@@ -200,11 +200,7 @@ describe('M5 verificación — administración', () => {
       );
     });
     it.each(rutas)('%s %s: jugador → 403 SIN_PERMISO', async (m, ruta) => {
-      esperarError(
-        await ag()[m](ruta).set(con(jugador)),
-        403,
-        'SIN_PERMISO',
-      );
+      esperarError(await ag()[m](ruta).set(con(jugador)), 403, 'SIN_PERMISO');
     });
     it.each(rutas.filter((r) => r[2] === 'admin'))(
       '%s %s: encargado → 403 SIN_PERMISO (sólo administrador)',
@@ -322,9 +318,7 @@ describe('M5 verificación — administración', () => {
         [422],
         'FECHA_PASADA',
       );
-      await bloquear(enc, bloqueoBase({ fecha: '2027-01-01' })).expect(
-        201,
-      );
+      await bloquear(enc, bloqueoBase({ fecha: '2027-01-01' })).expect(201);
     });
 
     it('último día del mes: 30/09 se puede bloquear un 30/09 a las 23:59', async () => {
@@ -352,10 +346,7 @@ describe('M5 verificación — administración', () => {
       ['no es hora', { inicio: 'abc', fin: 'def' }],
       ['hora numérica', { inicio: 10, fin: 11 }],
     ])('horas inválidas (%s) → 400/422', async (_n, extra) => {
-      esperarFallo(
-        await bloquear(encargado, bloqueoBase(extra)),
-        [400, 422],
-      );
+      esperarFallo(await bloquear(encargado, bloqueoBase(extra)), [400, 422]);
     });
 
     it.each([
@@ -376,7 +367,11 @@ describe('M5 verificación — administración', () => {
       const cuerpo: Record<string, unknown> = { ...bloqueoBase(), ...extra };
       for (const k of Object.keys(cuerpo))
         if (cuerpo[k] === undefined) delete cuerpo[k];
-      esperarFallo(await bloquear(encargado, cuerpo), [400], 'VALIDACION_FALLIDA');
+      esperarFallo(
+        await bloquear(encargado, cuerpo),
+        [400],
+        'VALIDACION_FALLIDA',
+      );
     });
 
     it('cuerpo vacío → 400', async () => {
@@ -392,16 +387,17 @@ describe('M5 verificación — administración', () => {
         [404],
         'ESPACIO_NO_ENCONTRADO',
       );
-      const lista = await pedir(
-        'get',
-        '/bloqueos',
-        encargado,
-      ).query({ espacioId });
+      const lista = await pedir('get', '/bloqueos', encargado).query({
+        espacioId,
+      });
       expect(lista.body.datos).toEqual([]);
     });
 
     it('no se puede bloquear más de siete días adelante sin error de rango (bloquear no está limitado por R6)', async () => {
-      const res = await bloquear(encargado, bloqueoBase({ fecha: '2026-12-01' }));
+      const res = await bloquear(
+        encargado,
+        bloqueoBase({ fecha: '2026-12-01' }),
+      );
       expect(res.status).toBe(201);
     });
   });
@@ -419,9 +415,13 @@ describe('M5 verificación — administración', () => {
         estado: 'cumplida',
         ocupacion: `${espacioId}|${MANANA}|08:00`,
       });
-      const ajena = await reservaDe(MANANA, '10:00', {}, otro, (
-        await crearEspacio(a, { deporteId })
-      ).id);
+      const ajena = await reservaDe(
+        MANANA,
+        '10:00',
+        {},
+        otro,
+        (await crearEspacio(a, { deporteId })).id,
+      );
       a.enviador.vaciar();
 
       await bloquear(
@@ -528,10 +528,7 @@ describe('M5 verificación — administración', () => {
       const turnoId = t[4].id;
       const [rr, rb] = await Promise.all([
         pedir('post', '/reservas', jugador, { turnoId, cantidadPersonas: 4 }),
-        bloquear(
-          encargado,
-          bloqueoBase({ inicio: '12:00', fin: '13:00' }),
-        ),
+        bloquear(encargado, bloqueoBase({ inicio: '12:00', fin: '13:00' })),
       ]);
       expect(rb.status).toBe(201);
       expect([201, 409]).toContain(rr.status);
@@ -565,7 +562,9 @@ describe('M5 verificación — administración', () => {
       const datos = esperarContrato<Bloqueo[]>(res.body, 'Bloqueo');
       expect(datos.map((b) => b.fecha)).toEqual([HOY, MARTES]);
       expect(res.body.meta).toEqual({ total: 2, pagina: 1, porPagina: 20 });
-      datos.forEach((b) => expect(Object.keys(b).sort()).toEqual(CLAVES_BLOQUEO));
+      datos.forEach((b) =>
+        expect(Object.keys(b).sort()).toEqual(CLAVES_BLOQUEO),
+      );
     });
 
     it('desde incluye el propio día y acepta el pasado', async () => {
@@ -601,7 +600,9 @@ describe('M5 verificación — administración', () => {
         .expect(200);
       expect(p9.body.datos).toEqual([]);
       expect(p9.body.meta).toEqual({ total: 3, pagina: 9, porPagina: 2 });
-      const ids = [...p1.body.datos, ...p2.body.datos].map((b: Bloqueo) => b.id);
+      const ids = [...p1.body.datos, ...p2.body.datos].map(
+        (b: Bloqueo) => b.id,
+      );
       expect(new Set(ids).size).toBe(3);
     });
 
@@ -654,7 +655,11 @@ describe('M5 verificación — administración', () => {
     });
 
     it('un bloqueo borrado no pisa a otro que sigue cubriendo el turno', async () => {
-      const b1 = await crearBloqueo(a, { espacioId, fecha: MANANA, motivo: 'A' });
+      const b1 = await crearBloqueo(a, {
+        espacioId,
+        fecha: MANANA,
+        motivo: 'A',
+      });
       await crearBloqueo(a, {
         espacioId,
         fecha: MANANA,
@@ -706,9 +711,9 @@ describe('M5 verificación — administración', () => {
         dia: 3,
         hasta: '2026-12-31',
       }).expect(201);
-      expect(
-        esperarContrato<ReservaFija>(res2.body, 'ReservaFija').hasta,
-      ).toBe('2026-12-31');
+      expect(esperarContrato<ReservaFija>(res2.body, 'ReservaFija').hasta).toBe(
+        '2026-12-31',
+      );
     });
 
     it('hasta null explícito es abierta; hasta == desde es válido', async () => {
@@ -736,10 +741,9 @@ describe('M5 verificación — administración', () => {
     it('una fija de dos horas cubre dos turnos de la grilla (R3) y no los de otro día', async () => {
       await cargarFija(admin, { inicio: '20:00', fin: '22:00' }).expect(201);
       const t = await grilla(MARTES);
-      expect(t.filter((x) => x.estado === 'fijo').map((x) => x.inicio)).toEqual([
-        '20:00',
-        '21:00',
-      ]);
+      expect(t.filter((x) => x.estado === 'fijo').map((x) => x.inicio)).toEqual(
+        ['20:00', '21:00'],
+      );
       expect((await grilla(MIERCOLES)).every((x) => x.estado === 'libre')).toBe(
         true,
       );
@@ -881,7 +885,9 @@ describe('M5 verificación — administración', () => {
     it('concurrencia: dos fijas iguales a la vez → una 201 y otra 409 FIJA_SUPERPUESTA', async () => {
       const rs = await Promise.all([cargarFija(admin), cargarFija(admin)]);
       const estados = rs.map((r) => r.status).sort();
-      expect(estados, JSON.stringify(rs.map((r) => r.body))).toEqual([201, 409]);
+      expect(estados, JSON.stringify(rs.map((r) => r.body))).toEqual([
+        201, 409,
+      ]);
       const lista = await pedir('get', '/fijas', admin).query({ espacioId });
       expect(lista.body.meta.total).toBe(1);
     });
@@ -911,7 +917,10 @@ describe('M5 verificación — administración', () => {
 
     it('no conflictúan: cancelada, otro día, otra hora, antes de desde, después de hasta, otro espacio, pasada', async () => {
       const otroEsp = (await crearEspacio(a, { deporteId })).id;
-      await reservaDe(MARTES, '21:00', { estado: 'cancelada', ocupacion: null });
+      await reservaDe(MARTES, '21:00', {
+        estado: 'cancelada',
+        ocupacion: null,
+      });
       await reservaDe(MIERCOLES, '21:00');
       await reservaDe(MARTES, '20:00');
       await reservaDe(MARTES, '22:00'); // fin exclusivo
@@ -928,7 +937,11 @@ describe('M5 verificación — administración', () => {
     it('una reserva confirmada que empezó hoy más temprano no es "futura"; una de hoy más tarde sí', async () => {
       // hoy es sábado 19/09 10:00; fija de sábados 9-10 (pasada) y de 20-21 (futura)
       await reservaDe(HOY, '09:00');
-      const ok = await cargarFija(admin, { dia: 6, inicio: '09:00', fin: '10:00' });
+      const ok = await cargarFija(admin, {
+        dia: 6,
+        inicio: '09:00',
+        fin: '10:00',
+      });
       expect(ok.status, JSON.stringify(ok.body)).toBe(201);
       await reservaDe(HOY, '20:00');
       esperarFallo(
@@ -949,13 +962,17 @@ describe('M5 verificación — administración', () => {
       const otro = (await crearEspacio(a, { deporteId })).id;
       await crearFija(a, { espacioId, activa: true });
       await crearFija(a, { espacioId, activa: false, dia: 3 });
-      await crearFija(a, { espacioId: otro, activa: true, hasta: '2026-12-31' });
+      await crearFija(a, {
+        espacioId: otro,
+        activa: true,
+        hasta: '2026-12-31',
+      });
       const todas = await pedir('get', '/fijas', encargado)
         .query({ espacioId })
         .expect(200);
-      expect(esperarContrato<ReservaFija[]>(todas.body, 'ReservaFija')).toHaveLength(
-        2,
-      );
+      expect(
+        esperarContrato<ReservaFija[]>(todas.body, 'ReservaFija'),
+      ).toHaveLength(2);
       expect(todas.body.meta.total).toBe(2);
       const act = await pedir('get', '/fijas', encargado)
         .query({ espacioId, activa: 'true' })
@@ -981,7 +998,12 @@ describe('M5 verificación — administración', () => {
 
     it('paginación: página fuera de rango y desempate estable', async () => {
       for (let i = 0; i < 3; i++)
-        await crearFija(a, { espacioId, dia: (i + 1) as 1, inicio: '10:00', fin: '11:00' });
+        await crearFija(a, {
+          espacioId,
+          dia: (i + 1) as 1,
+          inicio: '10:00',
+          fin: '11:00',
+        });
       const p1 = await pedir('get', '/fijas', encargado)
         .query({ espacioId, porPagina: 2 })
         .expect(200);
@@ -993,7 +1015,9 @@ describe('M5 verificación — administración', () => {
         .expect(200);
       expect(p3.body.datos).toEqual([]);
       expect(p3.body.meta).toEqual({ total: 3, pagina: 3, porPagina: 2 });
-      const ids = [...p1.body.datos, ...p2.body.datos].map((f: ReservaFija) => f.id);
+      const ids = [...p1.body.datos, ...p2.body.datos].map(
+        (f: ReservaFija) => f.id,
+      );
       expect(new Set(ids).size).toBe(3);
     });
 
@@ -1040,9 +1064,14 @@ describe('M5 verificación — administración', () => {
         fin: '23:00',
         hasta: '2026-12-31',
       }).expect(200);
-      expect(esperarContrato<ReservaFija>(res2.body, 'ReservaFija')).toMatchObject(
-        { inicio: '20:00', fin: '23:00', hasta: '2026-12-31', titular: 'Otro club' },
-      );
+      expect(
+        esperarContrato<ReservaFija>(res2.body, 'ReservaFija'),
+      ).toMatchObject({
+        inicio: '20:00',
+        fin: '23:00',
+        hasta: '2026-12-31',
+        titular: 'Otro club',
+      });
       const res3 = await pedir('patch', `/fijas/${f.id}`, admin, {
         hasta: null,
       }).expect(200);
@@ -1051,7 +1080,9 @@ describe('M5 verificación — administración', () => {
         activa: false,
       }).expect(200);
       expect(res4.body.datos.activa).toBe(false);
-      expect((await grilla(MARTES)).every((t) => t.estado === 'libre')).toBe(true);
+      expect((await grilla(MARTES)).every((t) => t.estado === 'libre')).toBe(
+        true,
+      );
     });
 
     it('editarse a sí misma sin cambiar el horario no es superposición', async () => {
@@ -1060,7 +1091,9 @@ describe('M5 verificación — administración', () => {
         inicio: '21:00',
         fin: '22:00',
       }).expect(200);
-      await pedir('patch', `/fijas/${f.id}`, admin, { fin: '23:00' }).expect(200);
+      await pedir('patch', `/fijas/${f.id}`, admin, { fin: '23:00' }).expect(
+        200,
+      );
     });
 
     it('FIJA_SUPERPUESTA al moverla encima de otra, o al reactivarla', async () => {
@@ -1089,14 +1122,17 @@ describe('M5 verificación — administración', () => {
         'CONFLICTO_CON_RESERVAS',
       );
       expect(
-        (await pedir('get', '/fijas', admin).query({ espacioId })).body.datos[0].fin,
+        (await pedir('get', '/fijas', admin).query({ espacioId })).body.datos[0]
+          .fin,
       ).toBe('22:00');
     });
 
     it('sólo con un cambio de titular no revisa reservas ya cubiertas', async () => {
       const f = await crear();
       await reservaDe(MIERCOLES, '10:00');
-      await pedir('patch', `/fijas/${f.id}`, admin, { titular: 'Nuevo' }).expect(200);
+      await pedir('patch', `/fijas/${f.id}`, admin, {
+        titular: 'Nuevo',
+      }).expect(200);
     });
 
     it.each([
@@ -1264,7 +1300,9 @@ describe('M5 verificación — administración', () => {
       await crearFija(a, { espacioId });
       const sup = await cargarFija(admin);
       esperarError(sup, 409, 'FIJA_SUPERPUESTA');
-      expect(sup.body.error.mensaje).toBe('Ya hay una reserva fija en ese horario.');
+      expect(sup.body.error.mensaje).toBe(
+        'Ya hay una reserva fija en ese horario.',
+      );
     });
   });
 });

@@ -10,8 +10,8 @@ esos tipos**: no tenés que cambiar nada cuando pases del mock a `fetch`. Lo que
 (el sobre de las respuestas, la sesión, los archivos) está en `contrato/api.ts`.
 
 > **Estado:** están terminadas la base (M0), los espacios (M1), la grilla de turnos (M2) las
-> reservas (M3) y el ingreso con QR y la agenda (M4). La administración y los favoritos llegan en
-> los módulos siguientes. Los
+> reservas (M3), el ingreso con QR y la agenda (M4), la administración (M5) y los favoritos con
+> sus avisos (M6). Los
 > cambios para ustedes se anotan en [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
@@ -154,6 +154,9 @@ encargado ubica a quien no vino).
 | `GET` | `/espacios/<id>` | 🌐 | El detalle de un espacio. |
 | `GET` | `/espacios/<id>/turnos` | 🌐 | Los 16 turnos (08:00 a 24:00) de un día: `?fecha=AAAA-MM-DD` (default hoy, hasta hoy + 6). Estado `libre`, `reservado`, `fijo` o `mantenimiento`. |
 | `POST` | `/reservas` | 🔒 jugador | Reserva un turno: `{ turnoId, cantidadPersonas }`. 201 con la `Reserva`; **200** con la misma si ya la tenías (reintento por mala señal). |
+| `PATCH` | `/yo` | 🔒 | Cambia tu `nombre` y/o `telefono`. Devuelve tu `Usuario`. |
+| `PUT` | `/yo/espacios-favoritos/<espacioId>` | 🔒 | Agrega un favorito (si ya estaba, 200 igual). Devuelve tu `Usuario`. |
+| `DELETE` | `/yo/espacios-favoritos/<espacioId>` | 🔒 | Lo saca. 204. |
 | `GET` | `/yo/reservas` | 🔒 | Tus reservas: `?cuando=proximas` (default) o `pasadas`. |
 | `GET` | `/reservas/<id>` | 🔒 | Una reserva (la tuya, o cualquiera si sos encargado). |
 | `POST` | `/reservas/<id>/cancelacion` | 🔒 | Cancela hasta 4 horas antes del turno (`cancelableHasta`). Fuera de plazo: `CANCELACION_FUERA_DE_PLAZO`, hay que avisarle al encargado. |

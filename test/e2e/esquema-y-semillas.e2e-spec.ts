@@ -74,6 +74,7 @@ describe('ESPECIFICACION §8 — Usuarios de demo', () => {
       rol: 'jugador',
       cancelacionesTardias: 1,
       ausencias: 0,
+      espaciosFavoritos: ['esp-02'],
     });
   });
 
