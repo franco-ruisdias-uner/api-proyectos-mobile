@@ -1,7 +1,7 @@
 // AGENTS §5.2 y §10.4: el esquema queda estable después de sincronizar, y cada
 // registro sembrado cumple el contrato. Corre en los cuatro motores.
 import type { Sesion } from '../../contrato/api.js';
-import type { Deporte, Espacio, Usuario } from '../../contrato/tipos.js';
+import type { Deporte, Espacio, Turno, Usuario } from '../../contrato/tipos.js';
 import {
   CONTRASENA_DEMO,
   USUARIOS,
@@ -177,6 +177,95 @@ describe('AGENTS §16.2 — SEMBRAR_SI_VACIA', () => {
         .expect(401);
     } finally {
       await a.cerrar();
+    }
+  });
+});
+
+describe('ESPECIFICACION §8 — Grilla de demo (casos feos de M2)', () => {
+  let a: AppDePrueba;
+  const grilla = async (espacio: string, fecha: string): Promise<Turno[]> => {
+    const res = await a
+      .http()
+      .get(`/espacios/${espacio}/turnos?fecha=${fecha}`)
+      .expect(200);
+    return esperarContrato<Turno[]>(res.body, 'Turno');
+  };
+  beforeAll(async () => {
+    a = await crearApp();
+    await sembrar(a.dataSource, a.reloj);
+  });
+  afterAll(() => a.cerrar());
+
+  it('la grilla de cada espacio, de hoy a hoy + 6, cumple el contrato', async () => {
+    for (const e of ESPACIOS)
+      for (let d = 19; d <= 25; d++) await grilla(e.id, `2026-09-${d}`);
+  });
+
+  it('pasado mañana está bloqueado por lluvia en todas las canchas descubiertas', async () => {
+    for (const e of ESPACIOS.filter((x) => !x.techado)) {
+      const t = await grilla(e.id, '2026-09-21');
+      expect(t.every((x) => x.motivoBloqueo === 'Cancha anegada')).toBe(true);
+    }
+    const gim = await grilla('esp-11', '2026-09-21');
+    expect(gim.some((x) => x.estado === 'mantenimiento')).toBe(false);
+  });
+
+  it('esp-04 mañana no tiene ningún turno libre y mezcla los cuatro estados menos libre', async () => {
+    const t = await grilla('esp-04', '2026-09-20');
+    expect(t.filter((x) => x.estado === 'libre')).toEqual([]);
+    expect(new Set(t.map((x) => x.estado))).toEqual(
+      new Set(['mantenimiento', 'fijo', 'reservado']),
+    );
+  });
+
+  it('fij-07 ocupa los martes de 21 a 22 en esp-02', async () => {
+    const t = await grilla('esp-02', '2026-09-22'); // martes
+    expect(t.find((x) => x.inicio === '21:00')?.estado).toBe('fijo');
+    expect(t.find((x) => x.inicio === '22:00')?.estado).toBe('libre');
+    const miercoles = await grilla('esp-02', '2026-09-23');
+    expect(miercoles.some((x) => x.estado === 'fijo')).toBe(false);
+  });
+
+  it('res-1180 aparece como reservado en su turno', async () => {
+    const t = await grilla('esp-02', '2026-09-20');
+    expect(t.find((x) => x.inicio === '19:00')).toMatchObject({
+      estado: 'reservado',
+      reservaId: 'res-1180',
+    });
+  });
+
+  it('una reserva cancelada deja el turno libre; la fija de dos horas cubre dos turnos; hay un bloqueo parcial', async () => {
+    expect(
+      (await grilla('esp-01', '2026-09-22')).find((x) => x.inicio === '20:00')
+        ?.estado,
+    ).toBe('libre');
+    const sabado = await grilla('esp-03', '2026-09-19');
+    expect(
+      sabado.filter((x) => x.estado === 'fijo').map((x) => x.inicio),
+    ).toEqual(['16:00', '17:00']);
+    const parcial = await grilla('esp-09', '2026-09-22');
+    expect(
+      parcial.filter((x) => x.estado === 'mantenimiento').map((x) => x.inicio),
+    ).toEqual(['10:00', '11:00']);
+  });
+
+  it('ninguna reserva sembrada confirmada, cumplida o ausente queda tapada por una fija o un bloqueo', async () => {
+    const r = await a.dataSource.query(
+      'SELECT espacioId, fecha, inicio, id, estado FROM reservas',
+    );
+    for (const x of r as {
+      espacioId: string;
+      fecha: string;
+      inicio: string;
+      id: string;
+      estado: string;
+    }[]) {
+      // Las de días pasados quedan fuera del rango de la grilla (R6).
+      if (x.estado === 'cancelada' || x.fecha < '2026-09-19') continue;
+      const t = (await grilla(x.espacioId, x.fecha)).find(
+        (y) => y.inicio === x.inicio,
+      );
+      expect(t, x.id).toMatchObject({ estado: 'reservado', reservaId: x.id });
     }
   });
 });

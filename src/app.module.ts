@@ -9,6 +9,7 @@ import { RelojModulo } from './comun/reloj/reloj.modulo.js';
 import { Configuracion, validarEntorno } from './config/configuracion.js';
 import { EspaciosModulo } from './modulos/espacios/espacios.modulo.js';
 import { SaludModulo } from './modulos/salud/salud.modulo.js';
+import { TurnosModulo } from './modulos/turnos/turnos.modulo.js';
 import { UsuariosModulo } from './modulos/usuarios/usuarios.modulo.js';
 import { SemillasModulo } from './semillas/semillas.modulo.js';
 
@@ -56,6 +57,7 @@ export class AppModule {
         SaludModulo,
         UsuariosModulo,
         EspaciosModulo,
+        TurnosModulo,
         ...(opciones.omitirSembradoInicial ? [] : [SemillasModulo]),
       ],
     };

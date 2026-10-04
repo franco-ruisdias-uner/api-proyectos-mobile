@@ -6,8 +6,13 @@ import type { Reloj } from '../comun/reloj/reloj.js';
 import { DeporteEntidad } from '../modulos/espacios/deporte.entidad.js';
 import { EspacioEntidad } from '../modulos/espacios/espacio.entidad.js';
 import { normalizarTexto } from '../comun/texto/normalizar.js';
+import { diaEnZona } from '../comun/fechas/fechas.js';
+import { BloqueoEntidad } from '../modulos/turnos/bloqueo.entidad.js';
+import { ReservaFijaEntidad } from '../modulos/turnos/reserva-fija.entidad.js';
+import { ReservaEntidad } from '../modulos/turnos/reserva.entidad.js';
 import { UsuarioEntidad } from '../modulos/usuarios/usuario.entidad.js';
 import { DEPORTES, ESPACIOS } from './datos/espacios.js';
+import { turnosDeDemo } from './datos/turnos.js';
 import { CONTRASENA_DEMO, USUARIOS } from './datos/usuarios.js';
 
 export async function sembrar(
@@ -27,6 +32,10 @@ export async function sembrar(
         complejoBusqueda: normalizarTexto(e.complejo),
       })),
     );
+    const turnos = turnosDeDemo(diaEnZona(ahora), ahora);
+    await m.getRepository(ReservaFijaEntidad).insert(turnos.fijas);
+    await m.getRepository(BloqueoEntidad).insert(turnos.bloqueos);
+    await m.getRepository(ReservaEntidad).insert(turnos.reservas);
   });
 }
 

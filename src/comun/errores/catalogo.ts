@@ -30,6 +30,10 @@ export const CATALOGO = {
     estado: 404,
     mensaje: 'No encontramos ese archivo.',
   },
+  FECHA_FUERA_DE_RANGO: {
+    estado: 422,
+    mensaje: 'Sólo se pueden ver y reservar los próximos siete días.',
+  },
   EMAIL_YA_REGISTRADO: {
     estado: 409,
     mensaje: 'Ya hay una cuenta con ese email.',

@@ -9,8 +9,8 @@ Tu app ya tiene sus tipos en `src/tipos/`, copiados del PRD. **Esta API devuelve
 esos tipos**: no tenés que cambiar nada cuando pases del mock a `fetch`. Lo que agrega la API
 (el sobre de las respuestas, la sesión, los archivos) está en `contrato/api.ts`.
 
-> **Estado:** está terminada la base (M0): cuenta, sesión, archivos, notificaciones y salud.
-> Los espacios, la grilla de turnos y las reservas llegan en los módulos siguientes. Los
+> **Estado:** están terminadas la base (M0), los espacios (M1) y la grilla de turnos (M2).
+> Las reservas llegan en los módulos siguientes. Los
 > cambios para ustedes se anotan en [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
@@ -151,6 +151,7 @@ encargado ubica a quien no vino).
 | `GET` | `/deportes` | 🌐 | Todos los deportes. |
 | `GET` | `/espacios` | 🌐 | Los espacios activos. Filtros: `deporteId`, `complejo`, `iluminacion`, `techado`. |
 | `GET` | `/espacios/<id>` | 🌐 | El detalle de un espacio. |
+| `GET` | `/espacios/<id>/turnos` | 🌐 | Los 16 turnos (08:00 a 24:00) de un día: `?fecha=AAAA-MM-DD` (default hoy, hasta hoy + 6). Estado `libre`, `reservado`, `fijo` o `mantenimiento`. |
 | `POST` | `/archivos` | 🔒 | Sube una foto, un audio o un video. 201 con `{ url, tipo, bytes }`. |
 | `GET` | `/archivos/<clave>` | 🌐 | Baja un archivo (admite `Range` para adelantar audio y video). |
 | `POST` | `/dispositivos` | 🔒 | Anota el token de Expo del teléfono para recibir push. |
@@ -173,6 +174,7 @@ encargado ubica a quien no vino).
 | `ARCHIVO_DEMASIADO_GRANDE` | 413 | El archivo es demasiado grande. |
 | `TIPO_DE_ARCHIVO_NO_PERMITIDO` | 415 | Ese tipo de archivo no se puede subir. Usá una foto, un audio o un video. |
 | `RANGO_NO_VALIDO` | 416 | No pudimos leer esa parte del archivo. |
+| `FECHA_FUERA_DE_RANGO` | 422 | Sólo se pueden ver y reservar los próximos siete días. |
 | `ERROR_INTERNO` | 500 | Algo salió mal de nuestro lado. Probá de nuevo en un rato. |
 | `ALMACEN_NO_DISPONIBLE` | 503 | No pudimos acceder a los archivos. Probá de nuevo en un rato. |
 <!-- errores:fin -->

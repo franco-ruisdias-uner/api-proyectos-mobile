@@ -151,3 +151,40 @@ guardan las claves de archivo y el mapeador las devuelve como URLs absolutas.
 Estado: PROVISORIA (autónomo)
 Hueco: la especificación lista un «gimnasio cerrado» entre los espacios pero no dice de qué deporte es.
 Decisión: deporte propio `dep-gimnasio` («Gimnasio», ícono `barbell-outline`). El vóley usa `ellipse-outline` porque Ionicons no tiene ícono de pelota de vóley.
+
+### D1 — Id de turno
+Estado: PROVISORIA (autónomo)
+Hueco: el id de ejemplo del PRD (`tur-0219-19`) no incluye el espacio ni el año: dos canchas tendrían el mismo id.
+Opciones: A) `tur-<espacioId>-<AAAAMMDD>-<HH>`; B) un id guardado en la base.
+Decisión: A, el default de la especificación. Es determinístico y el turno no se guarda: `idDeTurno()` / `leerIdDeTurno()`. El tipo es `string`, así que el contrato no cambia; sí cambia el ejemplo del PRD.
+Consecuencia en el contrato: ninguna en la forma; el ejemplo del PRD pasa a `tur-esp-02-20260919-19`.
+
+### D5 — Precio del turno
+Estado: PROVISORIA
+Decisión: `Turno.precio` es el `precioPorHora` actual del espacio.
+
+### D8 — Fin del último turno
+Estado: PROVISORIA
+Decisión: `"24:00"`. Los 16 turnos van de `08:00–09:00` a `23:00–24:00`.
+
+### M2-1 — Entidades de reservas, fijas y bloqueos desde M2
+Estado: PROVISORIA (autónomo)
+Hueco: la grilla cruza reservas, fijas y bloqueos, pero sus endpoints son de M3 y M5.
+Decisión: M2 crea las tres entidades completas (con la columna `ocupacion` de R8 y su índice único) y las usa sólo para leer; los endpoints que las escriben llegan en sus módulos. Las semillas las cargan para tener qué mostrar. Viven en `src/modulos/turnos/`.
+
+### M2-2 — Grilla de un espacio inactivo, y paginación
+Estado: PROVISORIA (autónomo)
+Hueco: la especificación no dice qué hace `/espacios/:id/turnos` con un espacio dado de baja, ni si pagina.
+Opciones: A) 404 `ESPACIO_NO_ENCONTRADO`; B) grilla igual (como el detalle, M1-2).
+Decisión: A: R7 pide que el espacio esté activo para reservar, y mostrar turnos de algo que no se puede reservar confunde. Acepta `pagina` y `porPagina` como toda lista (default 20: entran los 16 turnos; `meta.total` es 16).
+Consecuencia en el contrato: ninguna.
+
+### M2-3 — Validaciones de `fecha`
+Estado: PROVISORIA (autónomo)
+Decisión: una `fecha` que no es un `AAAA-MM-DD` que exista (incluye `2026-02-30` y `""`) da 400 `VALIDACION_FALLIDA`; una válida fuera de hoy…hoy + 6 da 422 `FECHA_FUERA_DE_RANGO`. El espacio se valida antes que el rango (404 antes que 422). "Hoy" se calcula con el reloj en hora argentina.
+Consecuencia en el contrato: ninguna.
+
+### M2-4 — Superposición de fijas o bloqueos sobre un mismo turno
+Estado: PROVISORIA (autónomo)
+Decisión: se resuelve por la prioridad de R2. Con varios bloqueos sobre el mismo turno, se muestra el motivo del de id menor. R19 (M5) evita fijas superpuestas.
+
