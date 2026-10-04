@@ -148,6 +148,9 @@ encargado ubica a quien no vino).
 | `POST` | `/auth/registro` | 🌐 | Crea una cuenta de jugador. 201 con `{ token, usuario }`. |
 | `POST` | `/auth/ingreso` | 🌐 | Ingresa con email y contraseña. 200 con `{ token, usuario }`. |
 | `GET` | `/yo` | 🔒 | Tu `Usuario`. |
+| `GET` | `/deportes` | 🌐 | Todos los deportes. |
+| `GET` | `/espacios` | 🌐 | Los espacios activos. Filtros: `deporteId`, `complejo`, `iluminacion`, `techado`. |
+| `GET` | `/espacios/<id>` | 🌐 | El detalle de un espacio. |
 | `POST` | `/archivos` | 🔒 | Sube una foto, un audio o un video. 201 con `{ url, tipo, bytes }`. |
 | `GET` | `/archivos/<clave>` | 🌐 | Baja un archivo (admite `Range` para adelantar audio y video). |
 | `POST` | `/dispositivos` | 🔒 | Anota el token de Expo del teléfono para recibir push. |
@@ -164,6 +167,7 @@ encargado ubica a quien no vino).
 | `NO_AUTENTICADO` | 401 | Tenés que ingresar con tu cuenta. |
 | `SIN_PERMISO` | 403 | No tenés permiso para hacer esto. |
 | `ARCHIVO_NO_ENCONTRADO` | 404 | No encontramos ese archivo. |
+| `ESPACIO_NO_ENCONTRADO` | 404 | No existe ese espacio. |
 | `RUTA_NO_ENCONTRADA` | 404 | Esa dirección no existe en la API. |
 | `EMAIL_YA_REGISTRADO` | 409 | Ya hay una cuenta con ese email. |
 | `ARCHIVO_DEMASIADO_GRANDE` | 413 | El archivo es demasiado grande. |

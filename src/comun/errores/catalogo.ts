@@ -22,6 +22,10 @@ export const CATALOGO = {
     estado: 404,
     mensaje: 'Esa dirección no existe en la API.',
   },
+  ESPACIO_NO_ENCONTRADO: {
+    estado: 404,
+    mensaje: 'No existe ese espacio.',
+  },
   ARCHIVO_NO_ENCONTRADO: {
     estado: 404,
     mensaje: 'No encontramos ese archivo.',

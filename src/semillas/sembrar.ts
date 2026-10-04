@@ -3,7 +3,11 @@
 import type { DataSource } from 'typeorm';
 import { hashContrasena } from '../comun/auth/contrasenas.js';
 import type { Reloj } from '../comun/reloj/reloj.js';
+import { DeporteEntidad } from '../modulos/espacios/deporte.entidad.js';
+import { EspacioEntidad } from '../modulos/espacios/espacio.entidad.js';
+import { normalizarTexto } from '../comun/texto/normalizar.js';
 import { UsuarioEntidad } from '../modulos/usuarios/usuario.entidad.js';
+import { DEPORTES, ESPACIOS } from './datos/espacios.js';
 import { CONTRASENA_DEMO, USUARIOS } from './datos/usuarios.js';
 
 export async function sembrar(
@@ -16,6 +20,13 @@ export async function sembrar(
     await m
       .getRepository(UsuarioEntidad)
       .insert(USUARIOS.map((u) => ({ ...u, contrasenaHash, creadoEn: ahora })));
+    await m.getRepository(DeporteEntidad).insert(DEPORTES);
+    await m.getRepository(EspacioEntidad).insert(
+      ESPACIOS.map((e) => ({
+        ...e,
+        complejoBusqueda: normalizarTexto(e.complejo),
+      })),
+    );
   });
 }
 

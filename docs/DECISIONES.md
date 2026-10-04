@@ -117,3 +117,32 @@ Decisión: todos los usuarios de demo usan `villaguay2026` (está en el README).
 que no están en el PRD siguen su formato: `usr-208`, `usr-209` (jugadores), `usr-301`
 (encargado) y `usr-302` (administrador).
 
+
+### M1-1 — Espacios sin complejo
+Estado: PROVISORIA (autónomo)
+Hueco: `Espacio.complejo` es `string` (no admite `null`) y la especificación marca «—» para los
+espacios que no son de un complejo; una cadena vacía rompe la regla de nulos del PRD.
+Opciones: A) el texto «—»; B) un nombre inventado por espacio.
+Decisión: A, tal cual la especificación. El filtro `complejo` compara sin mayúsculas ni tildes.
+Consecuencia en el contrato: ninguna (el tipo sigue siendo `string`).
+
+### M1-2 — Detalle de un espacio inactivo
+Estado: PROVISORIA (autónomo)
+Hueco: la lista sólo trae los `activo: true`, pero `GET /espacios/:id` no dice qué hacer con uno inactivo.
+Opciones: A) 200 con `activo: false`; B) 404.
+Decisión: A: el campo `activo` existe en el PRD justamente para eso, y una reserva vieja puede
+apuntar a un espacio dado de baja.
+Consecuencia en el contrato: ninguna.
+
+### M1-3 — Orden y filtros de la lista de espacios
+Estado: PROVISORIA (autónomo)
+Hueco: el PRD no dice cómo se ordenan ni qué pasa con filtros mal formados.
+Decisión: orden por `id`. `iluminacion` y `techado` aceptan sólo `true` o `false` (si no, 400
+`VALIDACION_FALLIDA`). Un `deporteId` que no existe da lista vacía. Un parámetro desconocido da 400.
+`/deportes` y `/espacios` paginan como el resto (máximo 100: los once espacios entran de sobra).
+
+### M1-4 — Imágenes y video de las semillas
+Estado: PROVISORIA (autónomo)
+Hueco: los medios de muestra son de M8 (`src/semillas/medios`).
+Decisión: hasta M8, los espacios sembrados llevan `imagenes: []` y `videoUrl: null`. En la base se
+guardan las claves de archivo y el mapeador las devuelve como URLs absolutas.

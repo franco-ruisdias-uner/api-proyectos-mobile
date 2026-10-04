@@ -16,8 +16,6 @@ const AUXILIARES = new Set([
 
 /** Entidades que la API empieza a devolver en un módulo posterior del plan (ESPECIFICACION §3). */
 const DE_MODULOS_SIGUIENTES: Record<string, string> = {
-  Deporte: 'M1',
-  Espacio: 'M1',
   Turno: 'M2',
   Reserva: 'M3',
   ReservaFija: 'M5',
