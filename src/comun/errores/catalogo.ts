@@ -22,7 +22,6 @@ export const CATALOGO = {
     estado: 404,
     mensaje: 'Esa dirección no existe en la API.',
   },
-  USUARIO_NO_ENCONTRADO: { estado: 404, mensaje: 'No existe ese usuario.' },
   ARCHIVO_NO_ENCONTRADO: {
     estado: 404,
     mensaje: 'No encontramos ese archivo.',
