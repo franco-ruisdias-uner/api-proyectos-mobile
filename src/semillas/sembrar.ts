@@ -1,6 +1,8 @@
 // Carga los datos de demo. Se usa desde `pnpm db:reiniciar` y, con SEMBRAR_SI_VACIA,
 // al arrancar la API contra una base vacía.
 import type { DataSource } from 'typeorm';
+import type { AlmacenArchivos } from '../comun/archivos/almacen-archivos.js';
+import { aIsoConZona } from '../comun/fechas/fechas.js';
 import { hashContrasena } from '../comun/auth/contrasenas.js';
 import type { Reloj } from '../comun/reloj/reloj.js';
 import { DeporteEntidad } from '../modulos/espacios/deporte.entidad.js';
@@ -13,14 +15,21 @@ import { ReservaEntidad } from '../modulos/turnos/reserva.entidad.js';
 import { FavoritoEntidad } from '../modulos/usuarios/favorito.entidad.js';
 import { UsuarioEntidad } from '../modulos/usuarios/usuario.entidad.js';
 import { DEPORTES, ESPACIOS } from './datos/espacios.js';
+import { subirMedios } from './medios.js';
 import { turnosDeDemo } from './datos/turnos.js';
 import { CONTRASENA_DEMO, USUARIOS } from './datos/usuarios.js';
 
 export async function sembrar(
   dataSource: DataSource,
   reloj: Reloj,
+  almacen?: AlmacenArchivos,
 ): Promise<void> {
   const ahora = reloj.ahora();
+  // Sin almacén (algunos tests) los espacios quedan sin imágenes.
+  const [anio, mes] = aIsoConZona(ahora).split('-');
+  const imagenes = almacen
+    ? await subirMedios(almacen, ESPACIOS, anio, mes)
+    : new Map<string, string[]>();
   const contrasenaHash = await hashContrasena(CONTRASENA_DEMO);
   await dataSource.transaction(async (m) => {
     await m
@@ -34,6 +43,7 @@ export async function sembrar(
     await m.getRepository(EspacioEntidad).insert(
       ESPACIOS.map((e) => ({
         ...e,
+        imagenes: imagenes.get(e.id) ?? e.imagenes,
         complejoBusqueda: normalizarTexto(e.complejo),
       })),
     );

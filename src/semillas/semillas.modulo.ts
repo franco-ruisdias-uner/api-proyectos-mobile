@@ -5,6 +5,7 @@ import {
   type OnApplicationBootstrap,
 } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { AlmacenArchivos } from '../comun/archivos/almacen-archivos.js';
 import { Configuracion } from '../config/configuracion.js';
 import { Reloj } from '../comun/reloj/reloj.js';
 import { baseVacia, sembrar } from './sembrar.js';
@@ -18,6 +19,7 @@ export class SembradoInicial implements OnApplicationBootstrap {
     private readonly config: Configuracion,
     private readonly dataSource: DataSource,
     private readonly reloj: Reloj,
+    private readonly almacen: AlmacenArchivos,
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
@@ -26,7 +28,7 @@ export class SembradoInicial implements OnApplicationBootstrap {
       this.logger.log('La base ya tiene datos: no se siembra.');
       return;
     }
-    await sembrar(this.dataSource, this.reloj);
+    await sembrar(this.dataSource, this.reloj, this.almacen);
     this.logger.log('Base vacía: se cargaron los datos de demo.');
   }
 }

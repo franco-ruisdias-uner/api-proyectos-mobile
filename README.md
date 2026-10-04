@@ -9,10 +9,8 @@ Tu app ya tiene sus tipos en `src/tipos/`, copiados del PRD. **Esta API devuelve
 esos tipos**: no tenés que cambiar nada cuando pases del mock a `fetch`. Lo que agrega la API
 (el sobre de las respuestas, la sesión, los archivos) está en `contrato/api.ts`.
 
-> **Estado:** están terminadas la base (M0), los espacios (M1), la grilla de turnos (M2) las
-> reservas (M3), el ingreso con QR y la agenda (M4), la administración (M5) y los favoritos con
-> sus avisos (M6). Los
-> cambios para ustedes se anotan en [`CHANGELOG.md`](CHANGELOG.md).
+> **Estado:** la API está completa salvo la parte de notificaciones que programan ustedes
+> (M9). Los cambios para ustedes se anotan en [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
@@ -134,6 +132,26 @@ Todos tienen la contraseña **`villaguay2026`**.
 | `nuevo@demo.ar` | jugador | Una cuenta sin nada. |
 | `marcelo@villaguay.demo.ar` | encargado | Agenda, ingresos, bloqueos. |
 | `nahuel@villaguay.demo.ar` | administrador | Todo, más reservas fijas y precios. |
+
+### Qué trae la base de demo
+
+Los datos se cargan **relativos al día en que sembrás** (o a `RELOJ_FIJO`), así que siempre
+hay turnos "de hoy", "de mañana" y de la semana que viene. Los once espacios traen **dos
+imágenes cada uno**, que se suben por el almacén de archivos al sembrar (funcionan igual con
+disco o con S3). Ningún espacio trae video: `videoUrl` es `null` en todos, para que pruebes
+esa pantalla.
+
+| Caso | Dónde mirarlo |
+|---|---|
+| Un día entero bloqueado por lluvia | Pasado mañana, todas las canchas descubiertas, motivo "Cancha anegada". |
+| Una grilla sin ningún turno libre | `esp-04` mañana: mezcla de reservas, fijas y un bloqueo. |
+| Una reserva fija todos los martes | `fij-07`, "Grupo de los martes", `esp-02`, de 21 a 22. |
+| Una fija de dos horas | La de un club en `esp-03`. |
+| Un bloqueo parcial | `esp-09`, de 10 a 12. |
+| Una reserva cancelada, una cumplida y una ausente | En el historial de `emiliano@mail.com` (`GET /yo/reservas?cuando=pasadas`). |
+| El límite de tres reservas | `lleno@demo.ar`. |
+| Un espacio sin video | Cualquiera: `videoUrl: null`. |
+| Un error de red | Cabecera `X-Simular: error-500` (sección 9). |
 
 El registro desde la app (`POST /auth/registro`) siempre crea un **jugador** y pide
 `nombre`, `email`, `contrasena` y `telefono` (el teléfono es obligatorio: es cómo el

@@ -1,10 +1,11 @@
 // AGENTS §5.2 y §10.4: el esquema queda estable después de sincronizar, y cada
 // registro sembrado cumple el contrato. Corre en los cuatro motores.
-import type { Sesion } from '../../contrato/api.js';
+import type { Bloqueo, Sesion } from '../../contrato/api.js';
 import type {
   Deporte,
   Espacio,
   Reserva,
+  ReservaFija,
   Turno,
   Usuario,
 } from '../../contrato/tipos.js';
@@ -352,6 +353,98 @@ describe('ESPECIFICACION §8 — Reservas de demo (M3)', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ turnoId: 'tur-esp-01-20260920-10', cantidadPersonas: 4 })
       .expect(201);
+  });
+});
+
+describe('ESPECIFICACION §8 — Medios de demo (M8)', () => {
+  let a: AppDePrueba;
+  beforeAll(async () => {
+    a = await crearApp();
+    await sembrar(a.dataSource, a.reloj, a.almacen);
+  });
+  afterAll(() => a.cerrar());
+
+  it('cada espacio tiene dos imágenes que se bajan con la URL del contrato y son PNG', async () => {
+    for (const semilla of ESPACIOS) {
+      const res = await a.http().get(`/espacios/${semilla.id}`).expect(200);
+      const e = esperarContrato<Espacio>(res.body, 'Espacio');
+      expect(e.imagenes, semilla.id).toHaveLength(2);
+      for (const url of e.imagenes) {
+        const ruta = new URL(url).pathname;
+        const img = await a.http().get(ruta).expect(200);
+        expect(img.headers['content-type']).toContain('image/png');
+        expect(Buffer.from(img.body).subarray(1, 4).toString('ascii')).toBe(
+          'PNG',
+        );
+      }
+    }
+  });
+
+  it('las imágenes admiten Range (206), como pide AGENTS §8', async () => {
+    const res = await a.http().get('/espacios/esp-02').expect(200);
+    const ruta = new URL(res.body.datos.imagenes[0]).pathname;
+    await a.http().get(ruta).set('Range', 'bytes=0-9').expect(206);
+  });
+
+  it('sembrar dos veces en bases distintas no rompe y esp-01 sigue sin video', async () => {
+    const b = await crearApp();
+    try {
+      await sembrar(b.dataSource, b.reloj, b.almacen);
+      const res = await b.http().get('/espacios/esp-01').expect(200);
+      expect(res.body.datos.videoUrl).toBeNull();
+    } finally {
+      await b.cerrar();
+    }
+  });
+});
+
+describe('AGENTS §10.4 — Todo lo sembrado cumple el contrato', () => {
+  let a: AppDePrueba;
+  let encargado: string;
+  const get = async (ruta: string, token = encargado) =>
+    (
+      await a
+        .http()
+        .get(ruta)
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200)
+    ).body;
+  beforeAll(async () => {
+    a = await crearApp();
+    await sembrar(a.dataSource, a.reloj, a.almacen);
+    const res = await a
+      .http()
+      .post('/auth/ingreso')
+      .send({
+        email: 'marcelo@villaguay.demo.ar',
+        contrasena: CONTRASENA_DEMO,
+      });
+    encargado = res.body.datos.token;
+  });
+  afterAll(() => a.cerrar());
+
+  it('cada usuario sembrado, por /usuarios/:id', async () => {
+    for (const u of USUARIOS)
+      esperarContrato<Usuario>(await get(`/usuarios/${u.id}`), 'Usuario');
+  });
+
+  it('cada reserva fija y cada bloqueo', async () => {
+    const fijas = await get('/fijas?porPagina=100');
+    expect(
+      esperarContrato<ReservaFija[]>(fijas, 'ReservaFija').length,
+    ).toBeGreaterThan(2);
+    const bloqueos = await get('/bloqueos?desde=2026-09-01&porPagina=100');
+    expect(
+      esperarContrato<Bloqueo[]>(bloqueos, 'Bloqueo').length,
+    ).toBeGreaterThan(2);
+  });
+
+  it('la agenda de cada uno de los siete días', async () => {
+    for (let d = 19; d <= 25; d++)
+      esperarContrato<Turno[]>(
+        await get(`/agenda?fecha=2026-09-${d}&porPagina=500`),
+        'Turno',
+      );
   });
 });
 

@@ -73,7 +73,7 @@ type Base = Omit<
 > &
   Partial<Pick<EspacioSemilla, 'videoUrl' | 'reglas'>>;
 
-// Los medios (imagenes/videos) llegan en M8: por ahora las listas van vacías.
+// Las imágenes las sube `sembrar` por el puerto de archivos (ver medios.ts) y pisa esta lista.
 const espacio = (e: Base): EspacioSemilla => ({
   imagenes: [],
   videoUrl: null,

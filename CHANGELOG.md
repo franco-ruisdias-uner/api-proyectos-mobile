@@ -2,6 +2,15 @@
 
 Lo que cambia en la API, escrito para quienes la usan desde la app.
 
+## 0.9.0 — Semillas completas y README (M8)
+
+Nada cambia en la forma de las respuestas.
+
+- Los once espacios de demo ahora traen **dos imágenes** cada uno (antes `imagenes` venía
+  vacía). Las URLs son `<origen>/archivos/imagenes/…` y admiten `Range`.
+- `videoUrl` sigue en `null` en todos los espacios de demo.
+- README: sección con los casos de la base de demo y dónde encontrarlos.
+
 ## 0.8.0 — Nube (M7)
 
 Nada cambia en lo que devuelve la API ni en lo que ve la app: las URLs de los archivos siguen

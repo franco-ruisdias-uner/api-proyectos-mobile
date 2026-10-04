@@ -1,2 +1,3 @@
-Imágenes, audios y videos de muestra para las semillas (generados, sin derechos de
-terceros). Se suben por el puerto `AlmacenArchivos` al sembrar. Llegan en M8.
+Imágenes de muestra para las semillas: dibujos de cada cancha generados con
+`node scripts/generar-medios.mjs` (sin fotos ni derechos de terceros). `sembrar` las sube por el
+puerto `AlmacenArchivos`. No hay video: ver `docs/DECISIONES.md`, M8-1.

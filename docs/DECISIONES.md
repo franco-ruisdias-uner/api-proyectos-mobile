@@ -143,7 +143,7 @@ Decisión: orden por `id`. `iluminacion` y `techado` aceptan sólo `true` o `fal
 
 ### M1-4 — Imágenes y video de las semillas
 Estado: PROVISORIA (autónomo)
-Hueco: los medios de muestra son de M8 (`src/semillas/medios`).
+Hueco: los medios de muestra son de M8 (`src/semillas/medios`). Ver M8-1.
 Decisión: hasta M8, los espacios sembrados llevan `imagenes: []` y `videoUrl: null`. En la base se
 guardan las claves de archivo y el mapeador las devuelve como URLs absolutas.
 
@@ -316,3 +316,9 @@ Decisión: `andrewgaul/s3proxy:sha-f892634` (el registro sólo publica `master` 
 ### M7-6 — `ENTORNO=publicado` y simulación
 Estado: PROVISORIA (autónomo)
 Decisión: la simulación ya es `false` por defecto fuera de `desarrollo`; en `publicado` sólo falla si se la pide explícitamente con `SIMULACION_HABILITADA=true`. `JWT_SECRETO` en `render.yaml` es `generateValue: true` (base64 de 256 bits, cumple el mínimo de 32).
+
+### M8-1 — Medios de las semillas: imágenes sí, video no
+Estado: PROVISORIA (autónomo)
+Hueco: AGENTS §3 pide imágenes, audio y video de muestra generados; esta API sólo tiene imágenes (`Espacio.imagenes`, `videoUrl`) y no usa audio.
+Decisión: `scripts/generar-medios.mjs` dibuja doce PNG (dos por deporte, sin dependencias, con `node:zlib`) en `src/semillas/medios/`. `sembrar` los sube por el puerto `AlmacenArchivos` con claves fijas por espacio (`imagenes/AAAA/MM/semilla-<espacio>-<n>.png`), así que existen en disco y en S3. **No hay video**: no había `ffmpeg` en el entorno y un `.mp4` inventado a mano no se podría reproducir, lo que sería peor que `null`. Todos los espacios llevan `videoUrl: null`. Alternativa descartada: un mp4 de relleno que `expo-video` no abre. Para sumar uno: generar un mp4 real, subirlo con `POST /archivos` y guardar su clave en `videoUrl` de un espacio.
+`sembrar(dataSource, reloj, almacen?)`: sin almacén (algunos tests viejos) los espacios quedan sin imágenes.

@@ -7,6 +7,8 @@ if (existsSync('.env')) process.loadEnvFile('.env');
 const { AppModule } = await import('../app.module.js');
 const { DataSource } = await import('typeorm');
 const { Reloj } = await import('../comun/reloj/reloj.js');
+const { AlmacenArchivos } =
+  await import('../comun/archivos/almacen-archivos.js');
 const { sembrar } = await import('./sembrar.js');
 const { validarEntorno } = await import('../config/configuracion.js');
 
@@ -27,7 +29,7 @@ try {
       abortOnError: false,
     },
   );
-  await sembrar(app.get(DataSource), app.get(Reloj));
+  await sembrar(app.get(DataSource), app.get(Reloj), app.get(AlmacenArchivos));
   await app.close();
   console.log('Listo: la base quedó vacía y con los datos de demo.');
 } catch (error) {

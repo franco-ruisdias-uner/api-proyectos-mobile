@@ -11,6 +11,7 @@ import TestAgent from 'supertest/lib/agent.js';
 import { AppModule } from '../../src/app.module.js';
 import { configurarApp } from '../../src/app.configurar.js';
 import { Reloj, RelojFijo } from '../../src/comun/reloj/reloj.js';
+import { AlmacenArchivos } from '../../src/comun/archivos/almacen-archivos.js';
 import { EnviadorPush } from '../../src/comun/notificaciones/puertos.js';
 import { Avisos } from '../../src/comun/notificaciones/avisos.servicio.js';
 import { EnviadorMemoria } from './notificaciones.js';
@@ -29,6 +30,7 @@ export interface AppDePrueba {
   enviador: EnviadorMemoria;
   avisos: Avisos;
   dataSource: DataSource;
+  almacen: AlmacenArchivos;
   cerrar: () => Promise<void>;
 }
 
@@ -88,6 +90,7 @@ export async function crearApp(
     enviador,
     avisos: app.get(Avisos),
     dataSource: app.get(DataSource),
+    almacen: app.get(AlmacenArchivos),
     cerrar: async () => {
       await app.close();
       rmSync(directorio, { recursive: true, force: true });
