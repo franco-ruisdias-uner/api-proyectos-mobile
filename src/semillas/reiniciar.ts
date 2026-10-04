@@ -8,10 +8,12 @@ const { AppModule } = await import('../app.module.js');
 const { DataSource } = await import('typeorm');
 const { Reloj } = await import('../comun/reloj/reloj.js');
 const { sembrar } = await import('./sembrar.js');
+const { validarEntorno } = await import('../config/configuracion.js');
 
 try {
+  validarEntorno(process.env);
   const app = await NestFactory.createApplicationContext(
-    AppModule.registrar({ borrarEsquema: true }),
+    AppModule.registrar({ borrarEsquema: true, omitirSembradoInicial: true }),
     {
       logger: ['error', 'warn'],
       abortOnError: false,

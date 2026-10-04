@@ -11,9 +11,18 @@ if (existsSync('.env')) process.loadEnvFile('.env');
 
 const { AppModule } = await import('./app.module.js');
 const { configurarApp } = await import('./app.configurar.js');
-const { Configuracion } = await import('./config/configuracion.js');
+const { Configuracion, ErrorDeConfiguracion, validarEntorno } =
+  await import('./config/configuracion.js');
 
 const logger = new Logger('API');
+// Primero la configuración, para que un .env mal armado dé un mensaje claro y nada más.
+try {
+  validarEntorno(process.env);
+} catch (error) {
+  if (!(error instanceof ErrorDeConfiguracion)) throw error;
+  logger.error(error.message);
+  process.exit(1);
+}
 let app: NestExpressApplication;
 try {
   app = await NestFactory.create<NestExpressApplication>(

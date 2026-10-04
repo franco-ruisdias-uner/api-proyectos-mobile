@@ -17,6 +17,8 @@ export interface OpcionesAppModule {
   ignorarArchivoEnv?: boolean;
   /** Borra y recrea el esquema al conectar (tests y db:reiniciar). */
   borrarEsquema?: boolean;
+  /** No sembrar al arrancar aunque SEMBRAR_SI_VACIA diga que sí (db:reiniciar siembra por su cuenta). */
+  omitirSembradoInicial?: boolean;
 }
 
 @Module({})
@@ -52,7 +54,7 @@ export class AppModule {
         NotificacionesModulo,
         SaludModulo,
         UsuariosModulo,
-        SemillasModulo,
+        ...(opciones.omitirSembradoInicial ? [] : [SemillasModulo]),
       ],
     };
   }
