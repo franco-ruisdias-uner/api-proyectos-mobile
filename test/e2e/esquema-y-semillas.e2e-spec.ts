@@ -74,7 +74,7 @@ describe('ESPECIFICACION §8 — Usuarios de demo', () => {
       telefono: '3455-401122',
       rol: 'jugador',
       cancelacionesTardias: 1,
-      ausencias: 0,
+      ausencias: 1,
       espaciosFavoritos: ['esp-02'],
     });
   });
