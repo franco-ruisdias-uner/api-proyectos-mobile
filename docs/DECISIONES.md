@@ -258,3 +258,7 @@ Decisión: `GET /usuarios/:id` con un id que no existe (o mal formado) da 404 `U
 Estado: PROVISORIA (autónomo)
 Decisión: ingresar o marcar ausente no avisa a nadie; las notificaciones del servidor son sólo las de la sección 7 de la especificación (M5 y M6).
 
+
+### M4-7 — Ids mal formados
+Estado: PROVISORIA (autónomo)
+Decisión: en el cuerpo (`espacioId` de `POST /ingresos`) y en filtros de query, un id sin el prefijo correcto es 400 `VALIDACION_FALLIDA`; en la ruta (`/reservas/:id/ausente`, `/usuarios/:id`) es 404 del recurso, como en M1–M3. Un `codigoQr` de sólo espacios es 400. Una reserva `cumplida` de ayer da `CODIGO_DE_OTRO_DIA` (el día se mira antes que el ingreso previo, orden de R14).
