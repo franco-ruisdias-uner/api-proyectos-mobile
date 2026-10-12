@@ -122,10 +122,13 @@ describe('ESPECIFICACION §8 — Semillas de suministros y medidores', () => {
     ]);
   });
 
-  it('las coordenadas son las del mock (origen + índice × 0.00012, ±0.00008 en longitud)', () => {
-    expect(suministros[0].latitud).toBeCloseTo(-30.7521, 10);
-    expect(suministros[0].longitud).toBeCloseTo(-57.9814 + 0.00008, 10);
-    expect(suministros[1].latitud).toBeCloseTo(-30.7521 + 0.00012, 10);
-    expect(suministros[1].longitud).toBeCloseTo(-57.9814 - 0.00008, 10);
+  it('sum-004120 usa las coordenadas del PRD; el resto, la fórmula del mock a 6 decimales', () => {
+    expect(suministros[0]).toMatchObject({
+      latitud: -30.7521,
+      longitud: -57.9814,
+    });
+    expect(suministros[1].latitud).toBe(-30.75198);
+    expect(suministros[1].longitud).toBe(-57.98148);
+    expect(suministros[2].longitud).toBe(-57.98132);
   });
 });

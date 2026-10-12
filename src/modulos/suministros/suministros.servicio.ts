@@ -38,7 +38,7 @@ export class SuministrosServicio {
       filtros.buscar === undefined
         ? ''
         : normalizarParaBusqueda(filtros.buscar);
-    if (termino === '') {
+    if (termino === '' && filtros.numero === undefined) {
       const { pagina, porPagina } = filtros;
       const [filas, total] = await this.suministros.findAndCount({
         where: base,
@@ -55,16 +55,22 @@ export class SuministrosServicio {
     // `%` y `_` del término son comodines de LIKE: la base filtra de más y acá se deja sólo
     // lo que contiene el texto tal cual (igual que en /usuarios).
     const candidatos = await this.suministros.find({
-      where: [
-        { ...base, titularBusqueda: Like(`%${termino}%`) },
-        { ...base, direccionBusqueda: Like(`%${termino}%`) },
-      ],
+      where:
+        termino === ''
+          ? base
+          : [
+              { ...base, titularBusqueda: Like(`%${termino}%`) },
+              { ...base, direccionBusqueda: Like(`%${termino}%`) },
+            ],
       order: orden,
     });
+    // MySQL y MariaDB comparan texto sin distinguir mayúsculas: el número se confirma acá.
     const encontrados = candidatos.filter(
       (s) =>
-        s.titularBusqueda.includes(termino) ||
-        s.direccionBusqueda.includes(termino),
+        (filtros.numero === undefined || s.numero === filtros.numero) &&
+        (termino === '' ||
+          s.titularBusqueda.includes(termino) ||
+          s.direccionBusqueda.includes(termino)),
     );
     const pagina = paginar(encontrados, filtros);
     return { datos: pagina.datos.map(aContrato), meta: pagina.meta };
@@ -86,7 +92,8 @@ export class SuministrosServicio {
 
   async obtener(id: string, sesion: SesionActual): Promise<Suministro> {
     const suministro = await this.suministros.findOneBy({ id });
-    if (!suministro) throw new ErrorApi('SUMINISTRO_NO_ENCONTRADO');
+    // Los ids distinguen mayúsculas; MySQL y MariaDB no al comparar: se confirma acá.
+    if (suministro?.id !== id) throw new ErrorApi('SUMINISTRO_NO_ENCONTRADO');
     await this.exigirAcceso(sesion, suministro.id);
     return aContrato(suministro);
   }
@@ -102,15 +109,18 @@ export class SuministrosServicio {
   }
 
   async obtenerMedidor(id: string, sesion: SesionActual): Promise<Medidor> {
-    return this.medidorVisible(await this.medidores.findOneBy({ id }), sesion);
+    const medidor = await this.medidores.findOneBy({ id });
+    // MySQL y MariaDB comparan sin distinguir mayúsculas: se confirma acá.
+    return this.medidorVisible(medidor?.id === id ? medidor : null, sesion);
   }
 
   async obtenerMedidorPorQr(
     codigoQr: string,
     sesion: SesionActual,
   ): Promise<Medidor> {
+    const medidor = await this.medidores.findOneBy({ codigoQr });
     return this.medidorVisible(
-      await this.medidores.findOneBy({ codigoQr }),
+      medidor?.codigoQr === codigoQr ? medidor : null,
       sesion,
     );
   }

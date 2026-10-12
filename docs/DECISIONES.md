@@ -214,3 +214,15 @@ Estado: PROVISORIA (autónomo)
 Decisión: un medidor que ningún suministro tiene sólo lo ve administración (a un lector: 403). El
 QR se busca por la columna `codigoQr` y no se deduce del id; cualquier texto que no coincida da 404
 `MEDIDOR_NO_ENCONTRADO`, no 400.
+
+### A18 — Coordenadas de las semillas
+Estado: PROVISORIA (autónomo)
+Hueco: el ejemplo del PRD pone `sum-004120` en longitud -57.9814 y la fórmula del mock da -57.98132.
+Decisión: manda el PRD (como D19): `sum-004120` queda en (-30.7521, -57.9814). El resto sigue la
+fórmula del mock, redondeada a 6 decimales para quitar el ruido de coma flotante.
+
+### A19 — Ids, QR y número distinguen mayúsculas en los cuatro motores
+Estado: PROVISORIA (autónomo)
+Decisión: MySQL y MariaDB comparan texto sin distinguir mayúsculas; el servicio confirma la
+igualdad exacta después de buscar, así `med-qr001` no encuentra `med-QR001` en ningún motor.
+Videos de demo: se suben cuatro (uno por modelo) aunque el ×10 no usa el suyo (A15); en uso hay tres.

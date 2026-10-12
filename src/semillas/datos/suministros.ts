@@ -71,10 +71,15 @@ const SUMINISTROS_POR_BARRIO = 20;
 const BARRIO_CON_INACTIVO = '02';
 const INDICE_INACTIVO = 5;
 
+/** A 6 decimales (11 cm): quita el ruido de coma flotante de la fórmula del mock. */
+const aSeisDecimales = (n: number) => Math.round(n * 1e6) / 1e6;
+
 function coordenadas(indice: number, origen: Coordenadas): Coordenadas {
   return {
-    latitud: origen.latitud + indice * 0.00012,
-    longitud: origen.longitud + (indice % 2 === 0 ? 0.00008 : -0.00008),
+    latitud: aSeisDecimales(origen.latitud + indice * 0.00012),
+    longitud: aSeisDecimales(
+      origen.longitud + (indice % 2 === 0 ? 0.00008 : -0.00008),
+    ),
   };
 }
 
@@ -125,7 +130,10 @@ function parDeBrasil(indice: number): Par {
       numero,
       titular: TITULARES_FIJOS[indice] ?? TITULARES[indice % TITULARES.length],
       direccion: `Brasil ${calle}`,
-      ...coordenadas(indice, { latitud: -30.7521, longitud: -57.9814 }),
+      // El ejemplo del PRD manda: sum-004120 está en (-30.7521, -57.9814) (D19, A18).
+      ...(indice === 0
+        ? { latitud: -30.7521, longitud: -57.9814 }
+        : coordenadas(indice, { latitud: -30.7521, longitud: -57.9814 })),
       categoria: 'residencial',
       medidorId,
       lecturaAnterior: conexionNueva ? null : lecturaAnterior,
