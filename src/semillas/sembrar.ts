@@ -6,9 +6,15 @@ import { Reloj } from '../comun/reloj/reloj.js';
 import { normalizarParaBusqueda } from '../comun/texto/normalizar.js';
 import { normalizarLegajo } from '../modulos/usuarios/reglas/legajo.js';
 import { UsuarioEntidad } from '../modulos/usuarios/usuario.entidad.js';
+import { RutaSuministroEntidad } from '../modulos/rutas/ruta-suministro.entidad.js';
+import { RutaEntidad } from '../modulos/rutas/ruta.entidad.js';
 import { MedidorEntidad } from '../modulos/suministros/medidor.entidad.js';
 import { SuministroEntidad } from '../modulos/suministros/suministro.entidad.js';
-import { generarSuministrosYMedidores } from './datos/suministros.js';
+import { generarRutas } from './datos/rutas.js';
+import {
+  generarSuministrosYMedidores,
+  type SemillaSuministro,
+} from './datos/suministros.js';
 import { CONTRASENA_DEMO, USUARIOS } from './datos/usuarios.js';
 import { videoDeDemo } from './medios/video-demo.js';
 
@@ -99,5 +105,27 @@ export class Sembrador {
     this.log.log(
       `Sembrados ${filasSuministros.length} suministros y ${filasMedidores.length} medidores.`,
     );
+    await this.sembrarRutas(suministros);
+  }
+
+  /** Las rutas de la app de clase, con el recorrido en `posicion` (R4). */
+  private async sembrarRutas(suministros: SemillaSuministro[]): Promise<void> {
+    const rutas = generarRutas(suministros);
+    const posiciones = rutas.flatMap((r) =>
+      r.suministroIds.map((suministroId, posicion) => ({
+        rutaId: r.id,
+        suministroId,
+        bimestre: r.bimestre,
+        posicion,
+      })),
+    );
+    await this.dataSource.transaction(async (m) => {
+      await m
+        .getRepository(RutaEntidad)
+        .insert(rutas.map(({ suministroIds: _ids, ...ruta }) => ruta));
+      for (const tanda of enTandas(posiciones))
+        await m.getRepository(RutaSuministroEntidad).insert(tanda);
+    });
+    this.log.log(`Sembradas ${rutas.length} rutas.`);
   }
 }

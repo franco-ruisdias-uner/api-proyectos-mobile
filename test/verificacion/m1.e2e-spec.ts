@@ -862,16 +862,17 @@ describe('Verificación M1 — §8 semillas contra el PRD y la app de clase', ()
     expect(d.body.datos.map((s: Suministro) => s.id)).toContain('sum-004120');
   });
 
-  it('el lector de demo (L-011) recibe 403 en todo hasta M2 (A13) y administración L-030 puede todo', async () => {
+  it('el lector de demo (L-011) ve los suministros de su ruta (R3, desde M2) y no los de otras', async () => {
     const r = await c
       .http()
       .post('/auth/ingreso')
       .send({ legajo: 'L-011', contrasena: 'lectura' })
       .expect(200);
     const t = r.body.datos.token as string;
+    await c.http().get('/suministros/sum-004120').set(bearer(t)).expect(200);
     const x = await c
       .http()
-      .get('/suministros/sum-004120')
+      .get('/suministros/sum-020001')
       .set(bearer(t))
       .expect(403);
     esperarError(x.body, 'SIN_PERMISO');

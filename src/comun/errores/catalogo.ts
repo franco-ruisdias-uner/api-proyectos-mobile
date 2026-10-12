@@ -55,6 +55,31 @@ export const CATALOGO = {
   },
   USUARIO_NO_ENCONTRADO: { estado: 404, mensaje: 'No existe ese usuario.' },
 
+  // Lectura de Medidores — rutas
+  LECTOR_NO_ENCONTRADO: {
+    estado: 422,
+    mensaje: 'Ese usuario no existe o no es lector.',
+  },
+  RUTA_NO_ENCONTRADA: { estado: 404, mensaje: 'No existe esa ruta.' },
+  RUTA_YA_EXISTE: {
+    estado: 409,
+    mensaje: 'Ya hay una ruta con ese número en ese bimestre.',
+  },
+  RUTA_YA_CERRADA: { estado: 409, mensaje: 'Esa ruta fue cerrada el DD/MM.' },
+  RUTA_EN_CURSO: {
+    estado: 409,
+    mensaje:
+      'La ruta ya salió a la calle: no se le pueden cambiar los suministros.',
+  },
+  SUMINISTRO_REPETIDO: {
+    estado: 422,
+    mensaje: 'Hay un suministro repetido en la ruta.',
+  },
+  SUMINISTRO_EN_OTRA_RUTA: {
+    estado: 409,
+    mensaje: 'El suministro 004120 ya está en la ruta 07 de este bimestre.',
+  },
+
   // Lectura de Medidores — suministros y medidores
   SUMINISTRO_NO_ENCONTRADO: {
     estado: 404,

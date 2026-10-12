@@ -10,6 +10,7 @@ import { RelojModulo } from './comun/reloj/reloj.modulo.js';
 import { SaludControlador } from './comun/salud/salud.controlador.js';
 import { AuthModulo } from './modulos/auth/auth.modulo.js';
 import { DispositivosModulo } from './modulos/dispositivos/dispositivos.modulo.js';
+import { RutasModulo } from './modulos/rutas/rutas.modulo.js';
 import { SuministrosModulo } from './modulos/suministros/suministros.modulo.js';
 import { UsuariosModulo } from './modulos/usuarios/usuarios.modulo.js';
 import { SemillasModulo } from './semillas/semillas.modulo.js';
@@ -32,6 +33,7 @@ export class AppModule {
         DispositivosModulo,
         UsuariosModulo,
         SuministrosModulo,
+        RutasModulo,
         AuthModulo,
         SemillasModulo,
       ],

@@ -187,6 +187,14 @@ interface PruebaPush { dispositivos: number }
 | `GET` | `/suministros/:id` | Con sesión (cualquier rol) | Un suministro |
 | `GET` | `/medidores/qr/:codigoQr` | Con sesión (cualquier rol) | El medidor de un código QR |
 | `GET` | `/medidores/:id` | Con sesión (cualquier rol) | Un medidor |
+| `GET` | `/yo/rutas` | Con sesión (cualquier rol) | Mis rutas |
+| `GET` | `/rutas` | Sólo con rol: administracion | Lista las rutas |
+| `POST` | `/rutas` | Sólo con rol: administracion | Arma y asigna una ruta |
+| `GET` | `/rutas/:id` | Con sesión (cualquier rol) | Una ruta |
+| `PATCH` | `/rutas/:id` | Sólo con rol: administracion | Edita una ruta |
+| `GET` | `/rutas/:id/suministros` | Con sesión (cualquier rol) | Los suministros de una ruta, en orden de recorrido |
+| `POST` | `/rutas/:id/descarga` | Con sesión (cualquier rol) | Descarga completa de la ruta |
+| `GET` | `/rutas/:id/avance` | Con sesión (cualquier rol) | Avance de la ruta según el servidor |
 | `POST` | `/auth/ingreso` | Público: no hace falta sesión | Ingresar con legajo y contraseña |
 | `POST` | `/auth/salida` | Con sesión (cualquier rol) | Salir: cierra todas las sesiones del usuario |
 <!-- tabla-endpoints:fin -->
@@ -203,13 +211,20 @@ interface PruebaPush { dispositivos: number }
 | `ARCHIVO_NO_ENCONTRADO` | 404 | No encontramos ese archivo. |
 | `MEDIDOR_NO_ENCONTRADO` | 404 | No existe ese medidor. |
 | `RECURSO_NO_ENCONTRADO` | 404 | Esa dirección no existe en la API. |
+| `RUTA_NO_ENCONTRADA` | 404 | No existe esa ruta. |
 | `SUMINISTRO_NO_ENCONTRADO` | 404 | No existe ese suministro. |
 | `USUARIO_NO_ENCONTRADO` | 404 | No existe ese usuario. |
 | `LEGAJO_YA_REGISTRADO` | 409 | Ya hay una cuenta con ese legajo. |
+| `RUTA_EN_CURSO` | 409 | La ruta ya salió a la calle: no se le pueden cambiar los suministros. |
+| `RUTA_YA_CERRADA` | 409 | Esa ruta fue cerrada el DD/MM. |
+| `RUTA_YA_EXISTE` | 409 | Ya hay una ruta con ese número en ese bimestre. |
+| `SUMINISTRO_EN_OTRA_RUTA` | 409 | El suministro 004120 ya está en la ruta 07 de este bimestre. |
 | `ARCHIVO_DEMASIADO_GRANDE` | 413 | El archivo es demasiado grande. |
 | `TIPO_DE_ARCHIVO_NO_PERMITIDO` | 415 | Ese tipo de archivo no se puede subir. Usá una foto, un audio o un video. |
 | `RANGO_NO_VALIDO` | 416 | No se pudo leer esa parte del archivo. |
 | `ARCHIVO_NO_SUBIDO` | 422 | El archivo todavía no se subió. Probá de nuevo cuando tengas señal. |
+| `LECTOR_NO_ENCONTRADO` | 422 | Ese usuario no existe o no es lector. |
+| `SUMINISTRO_REPETIDO` | 422 | Hay un suministro repetido en la ruta. |
 | `ERROR_INTERNO` | 500 | Algo salió mal de nuestro lado. Probá de nuevo en un rato. |
 | `ALMACEN_NO_DISPONIBLE` | 503 | No pudimos acceder a los archivos. Probá de nuevo en un rato. |
 <!-- tabla-errores:fin -->

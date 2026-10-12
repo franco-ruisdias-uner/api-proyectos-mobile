@@ -19,6 +19,40 @@
       "required": ["url", "tipo", "bytes"],
       "type": "object"
     },
+    "AvanceRuta": {
+      "additionalProperties": false,
+      "description": "Respuesta de GET /rutas/:id/avance: lo que el servidor ya recibió.",
+      "properties": {
+        "conNovedad": {
+          "type": "number"
+        },
+        "fueraDeRango": {
+          "type": "number"
+        },
+        "leidos": {
+          "type": "number"
+        },
+        "pendientes": {
+          "description": "suministros - leidos - conNovedad",
+          "type": "number"
+        },
+        "rutaId": {
+          "type": "string"
+        },
+        "suministros": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "rutaId",
+        "suministros",
+        "leidos",
+        "conNovedad",
+        "pendientes",
+        "fueraDeRango"
+      ],
+      "type": "object"
+    },
     "Categoria": {
       "enum": ["residencial", "comercial", "industrial", "rural"],
       "type": "string"
@@ -237,6 +271,45 @@
         "fechaHora",
         "sincronizada"
       ],
+      "type": "object"
+    },
+    "PaqueteRuta": {
+      "additionalProperties": false,
+      "description": "Respuesta de POST /rutas/:id/descarga: la jornada completa, sin paginar.",
+      "properties": {
+        "lecturas": {
+          "description": "Las vigentes que el servidor ya tiene de esa ruta.",
+          "items": {
+            "$ref": "#/definitions/Lectura"
+          },
+          "type": "array"
+        },
+        "medidores": {
+          "description": "Los de esos suministros, uno por suministro, en el mismo orden.",
+          "items": {
+            "$ref": "#/definitions/Medidor"
+          },
+          "type": "array"
+        },
+        "novedades": {
+          "description": "Ídem.",
+          "items": {
+            "$ref": "#/definitions/Novedad"
+          },
+          "type": "array"
+        },
+        "ruta": {
+          "$ref": "#/definitions/Ruta"
+        },
+        "suministros": {
+          "description": "En el orden de `ruta.suministroIds`.",
+          "items": {
+            "$ref": "#/definitions/Suministro"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["ruta", "suministros", "medidores", "lecturas", "novedades"],
       "type": "object"
     },
     "PruebaPush": {

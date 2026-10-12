@@ -1,4 +1,4 @@
-import type { Suministro } from '../../contrato/tipos.js';
+import type { Ruta, Suministro } from '../../contrato/tipos.js';
 import { ArchivosServicio } from '../../src/comun/archivos/archivos.servicio.js';
 import { MedidorEntidad } from '../../src/modulos/suministros/medidor.entidad.js';
 import { medidorAContrato } from '../../src/modulos/suministros/suministros.mapeador.js';
@@ -7,6 +7,23 @@ import { USUARIOS } from '../../src/semillas/datos/usuarios.js';
 import { type AppDePrueba, crearApp } from '../utilidades/crear-app.js';
 import { esperarContrato } from '../utilidades/contrato.js';
 import { bearer, ingresar } from '../utilidades/usuarios.js';
+
+/** Las `asignada` o `en_curso` de cada lector, por número (ESPECIFICACION §1). Las cerradas no cuentan. */
+const RUTAS_ABIERTAS_POR_LECTOR: Record<string, string[]> = {
+  'usr-011': ['rut-07-2026-05'],
+  'usr-012': ['rut-01-2026-05'],
+  'usr-013': ['rut-02-2026-05'],
+  'usr-015': ['rut-04-2026-05'],
+  'usr-016': ['rut-05-2026-05'],
+  'usr-018': ['rut-08-2026-05'],
+  'usr-019': ['rut-09-2026-05'],
+  'usr-021': ['rut-11-2026-05'],
+  'usr-022': ['rut-13-2026-05'],
+  'usr-024': ['rut-15-2026-05'],
+  'usr-025': ['rut-16-2026-05'],
+  'usr-027': ['rut-18-2026-05'],
+  'usr-028': ['rut-19-2026-05'],
+};
 
 describe('ESPECIFICACION §8 — Semillas: los usuarios de la app de clase', () => {
   let c: AppDePrueba;
@@ -36,7 +53,7 @@ describe('ESPECIFICACION §8 — Semillas: los usuarios de la app de clase', () 
         nombre: u.nombre,
         rol: u.rol,
         biometriaActiva: u.biometriaActiva,
-        rutasAsignadas: [],
+        rutasAsignadas: RUTAS_ABIERTAS_POR_LECTOR[u.id] ?? [],
       })),
     );
   });
@@ -171,5 +188,98 @@ describe('ESPECIFICACION §8 — Semillas: suministros y medidores de la app de 
     expect(lista.filter((s) => !s.activo).map((s) => s.numero)).toEqual([
       '020006',
     ]);
+  });
+});
+
+describe('ESPECIFICACION §8 — Semillas: las rutas de la app de clase', () => {
+  let c: AppDePrueba;
+  let token: string;
+  beforeAll(async () => {
+    c = await crearApp();
+    await c.app.get(Sembrador).sembrar();
+    token = await ingresar(c, { legajo: 'L-030', contrasena: 'lectura' });
+  });
+  afterAll(() => c.cerrar());
+
+  it('las 20 rutas cumplen el contrato, y la 07 y la 12 son las del lector usr-011', async () => {
+    const r = await c
+      .http()
+      .get('/rutas?porPagina=100')
+      .set(bearer(token))
+      .expect(200);
+    esperarContrato(r.body, 'Ruta');
+    expect(r.body.meta.total).toBe(20);
+    const rutas = r.body.datos as Ruta[];
+    expect(rutas.find((x) => x.id === 'rut-07-2026-05')).toMatchObject({
+      nombre: 'Barrio Brasil',
+      lectorId: 'usr-011',
+      estado: 'en_curso',
+      descargadaEn: '2026-09-15T07:40:00-03:00',
+      cerradaEn: null,
+    });
+    expect(rutas.find((x) => x.id === 'rut-12-2026-05')).toMatchObject({
+      nombre: 'Quintas Norte',
+      lectorId: 'usr-011',
+      estado: 'cerrada',
+      descargadaEn: '2026-09-14T07:10:00-03:00',
+      cerradaEn: '2026-09-14T17:02:00-03:00',
+    });
+    expect(rutas.filter((x) => x.estado === 'cerrada')).toHaveLength(7);
+  });
+
+  it('Ramón Duarte baja la ruta 07 completa: 200 suministros en orden, con sus 200 medidores', async () => {
+    const ramon = await ingresar(c, { legajo: 'L-011', contrasena: 'lectura' });
+    const r = await c
+      .http()
+      .post('/rutas/rut-07-2026-05/descarga')
+      .set(bearer(ramon))
+      .expect(200);
+    esperarContrato(r.body, 'PaqueteRuta');
+    const p = r.body.datos;
+    expect(p.ruta.suministroIds).toHaveLength(200);
+    expect(p.ruta.suministroIds.slice(0, 4)).toEqual([
+      'sum-004120',
+      'sum-004136',
+      'sum-004150',
+      'sum-004162',
+    ]);
+    expect(p.suministros).toHaveLength(200);
+    expect(p.medidores).toHaveLength(200);
+    // Ya estaba en curso y descargada: la descarga no pisa descargadaEn.
+    expect(p.ruta.descargadaEn).toBe('2026-09-15T07:40:00-03:00');
+  });
+
+  it('la ruta cerrada de Ramón no se descarga: "Esa ruta fue cerrada el 14/09."', async () => {
+    const ramon = await ingresar(c, { legajo: 'L-011', contrasena: 'lectura' });
+    const r = await c
+      .http()
+      .post('/rutas/rut-12-2026-05/descarga')
+      .set(bearer(ramon))
+      .expect(409);
+    expect(r.body.error.mensaje).toBe('Esa ruta fue cerrada el 14/09.');
+  });
+
+  it('el suministro inactivo sigue en el recorrido de su ruta (R8)', async () => {
+    const r = await c
+      .http()
+      .get('/rutas/rut-02-2026-05/suministros')
+      .set(bearer(token))
+      .expect(200);
+    const inactivos = (r.body.datos as Suministro[]).filter((s) => !s.activo);
+    expect(inactivos.map((s) => s.numero)).toEqual(['020006']);
+  });
+
+  it('un lector ve sus suministros pero no los de otro', async () => {
+    const jorge = await ingresar(c, { legajo: 'L-013', contrasena: 'lectura' });
+    await c
+      .http()
+      .get('/suministros/sum-020001')
+      .set(bearer(jorge))
+      .expect(200);
+    await c
+      .http()
+      .get('/suministros/sum-004120')
+      .set(bearer(jorge))
+      .expect(403);
   });
 });

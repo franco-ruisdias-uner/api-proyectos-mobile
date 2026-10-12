@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { type FindOptionsWhere, Like, Repository } from 'typeorm';
-import type { Usuario } from '../../../contrato/tipos.js';
+import { type FindOptionsWhere, In, Like, Repository } from 'typeorm';
+import type { EstadoRuta, Usuario } from '../../../contrato/tipos.js';
 import {
   contrasenaCoincide,
   hashearContrasena,
@@ -21,6 +21,7 @@ import type {
   CrearUsuarioDto,
   ListarUsuariosDto,
 } from './dto/usuarios.dto.js';
+import { RutaEntidad } from '../rutas/ruta.entidad.js';
 import { compararPorLegajo, normalizarLegajo } from './reglas/legajo.js';
 import { UsuarioEntidad } from './usuario.entidad.js';
 import { aContrato } from './usuarios.mapeador.js';
@@ -30,17 +31,27 @@ export class UsuariosServicio {
   constructor(
     @InjectRepository(UsuarioEntidad)
     private readonly repositorio: Repository<UsuarioEntidad>,
+    @InjectRepository(RutaEntidad)
+    private readonly rutas: Repository<RutaEntidad>,
     private readonly reloj: Reloj,
   ) {}
 
   /**
-   * `Usuario.rutasAsignadas`: ids de las rutas `asignada` o `en_curso` del lector, por
-   * número. Las rutas llegan en M2; hasta entonces ningún usuario tiene rutas.
+   * `Usuario.rutasAsignadas`: ids de las rutas `asignada` o `en_curso` de cada lector, por
+   * número de ruta. Se calcula, no se guarda. Para administración es `[]`.
    */
   private async rutasAsignadas(
     usuarioIds: string[],
   ): Promise<Map<string, string[]>> {
-    return new Map(usuarioIds.map((id) => [id, []]));
+    const abiertas: EstadoRuta[] = ['asignada', 'en_curso'];
+    const mapa = new Map<string, string[]>(usuarioIds.map((id) => [id, []]));
+    if (usuarioIds.length === 0) return mapa;
+    const rutas = await this.rutas.find({
+      where: { lectorId: In(usuarioIds), estado: In(abiertas) },
+      order: { numero: 'ASC', bimestre: 'DESC', id: 'ASC' },
+    });
+    for (const r of rutas) mapa.get(r.lectorId)?.push(r.id);
+    return mapa;
   }
 
   private async aContratos(usuarios: UsuarioEntidad[]): Promise<Usuario[]> {

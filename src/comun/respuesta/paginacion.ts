@@ -18,6 +18,22 @@ export class PaginacionDto {
   porPagina: number = 20;
 }
 
+/** Para las listas que el teléfono recorre entera (los suministros de una ruta): 50 por defecto, hasta 200. */
+export class PaginacionAmpliaDto {
+  @ApiPropertyOptional({ default: 1, minimum: 1 })
+  @Type(() => Number)
+  @IsInt({ message: 'La página tiene que ser un número entero.' })
+  @Min(1, { message: 'La página tiene que ser 1 o más.' })
+  pagina: number = 1;
+
+  @ApiPropertyOptional({ default: 50, minimum: 1, maximum: 200 })
+  @Type(() => Number)
+  @IsInt({ message: 'La cantidad por página tiene que ser un número entero.' })
+  @Min(1, { message: 'La cantidad por página tiene que ser 1 o más.' })
+  @Max(200, { message: 'La cantidad por página no puede pasar de 200.' })
+  porPagina: number = 50;
+}
+
 export function paginar<T>(
   todos: T[],
   { pagina, porPagina }: { pagina: number; porPagina: number },
