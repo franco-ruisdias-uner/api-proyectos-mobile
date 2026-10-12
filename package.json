@@ -19,7 +19,8 @@
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
     "test:e2e:matriz": "node scripts/matriz.mjs",
     "verificar": "pnpm tipos && pnpm lint && pnpm test && pnpm test:e2e",
-    "docker:probar": "node scripts/probar-docker.mjs"
+    "docker:probar": "node scripts/probar-docker.mjs",
+    "docs:readme": "nest build && node dist/src/documentacion/actualizar-readme.js"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",

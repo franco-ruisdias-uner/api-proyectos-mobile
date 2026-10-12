@@ -25,10 +25,6 @@ export const CATALOGO = {
     estado: 416,
     mensaje: 'No se pudo leer esa parte del archivo.',
   },
-  ID_EN_USO: {
-    estado: 409,
-    mensaje: 'Ese identificador ya lo usó otra persona.',
-  },
   ARCHIVO_DEMASIADO_GRANDE: {
     estado: 413,
     mensaje: 'El archivo es demasiado grande.',

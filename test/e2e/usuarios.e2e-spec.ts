@@ -110,16 +110,12 @@ describe('M0 — Usuarios (sólo administración)', () => {
 
     it('R1 — dos altas simultáneas con el mismo legajo: una pasa y la otra da LEGAJO_YA_REGISTRADO', async () => {
       const alta = (nombre: string) =>
-        c
-          .http()
-          .post('/usuarios')
-          .set(bearer(admin.token))
-          .send({
-            legajo: 'L-134',
-            nombre,
-            rol: 'lector',
-            contrasena: 'clave-larga-1',
-          });
+        c.http().post('/usuarios').set(bearer(admin.token)).send({
+          legajo: 'L-134',
+          nombre,
+          rol: 'lector',
+          contrasena: 'clave-larga-1',
+        });
       const [a, b] = await Promise.all([alta('Uno'), alta('Dos')]);
       expect([a.status, b.status].sort()).toEqual([201, 409]);
       esperarError((a.status === 409 ? a : b).body, 'LEGAJO_YA_REGISTRADO');
