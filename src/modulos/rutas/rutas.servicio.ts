@@ -340,10 +340,25 @@ export class RutasServicio {
     return (await this.aContratos([await this.buscar(id)]))[0];
   }
 
+  private async existeRuta(id: string): Promise<boolean> {
+    return (await this.rutas.findOneBy({ id }))?.id === id;
+  }
+
   private async exigirDisponible(dto: CrearRutaDto, id: string): Promise<void> {
-    if ((await this.rutas.findOneBy({ id }))?.id === id)
-      throw new ErrorApi('RUTA_YA_EXISTE');
-    await this.exigirSuministros(dto.suministroIds, dto.bimestre);
+    if (await this.existeRuta(id)) throw new ErrorApi('RUTA_YA_EXISTE');
+    try {
+      await this.exigirSuministros(dto.suministroIds, dto.bimestre);
+    } catch (error) {
+      // Si el mismo pedido se confirmó entre las dos lecturas, sus suministros "ya están en otra
+      // ruta" porque esa ruta es la que acaba de crearse: lo que corresponde es RUTA_YA_EXISTE.
+      if (
+        error instanceof ErrorApi &&
+        error.codigo === 'SUMINISTRO_EN_OTRA_RUTA' &&
+        (await this.existeRuta(id))
+      )
+        throw new ErrorApi('RUTA_YA_EXISTE');
+      throw error;
+    }
   }
 
   async actualizar(id: string, dto: ActualizarRutaDto): Promise<Ruta> {

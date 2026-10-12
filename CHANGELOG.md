@@ -4,6 +4,24 @@ Todo lo que cambia en la API, escrito para los grupos que la usan desde la app.
 
 ## [Sin publicar]
 
+### M2 — Rutas
+
+- **Mis rutas**: `GET /yo/rutas` (por defecto las `asignada` y `en_curso`; `estado` acepta una lista
+  separada por comas). `Usuario.rutasAsignadas` ya trae los ids reales.
+- **Una ruta**: `GET /rutas/:id`, `GET /rutas/:id/suministros` (en el orden del recorrido, de a 50,
+  hasta 200 por página) y `GET /rutas/:id/avance`.
+- **Descarga completa**: `POST /rutas/:id/descarga` devuelve todo lo de la jornada sin paginar
+  (`PaqueteRuta`: ruta, suministros, medidores, lecturas y novedades). La primera descarga marca
+  `descargadaEn` y pasa la ruta a `en_curso`.
+- **Administración**: `GET /rutas`, `POST /rutas` y `PATCH /rutas/:id`. El id es
+  `rut-<numero>-<bimestre>` y el orden de `suministroIds` es el recorrido: nadie lo reordena.
+- Tipos nuevos en `contrato/api.ts`: `PaqueteRuta` y `AvanceRuta`.
+- Errores nuevos: `LECTOR_NO_ENCONTRADO`, `RUTA_NO_ENCONTRADA`, `RUTA_YA_EXISTE`, `RUTA_YA_CERRADA`
+  ("Esa ruta fue cerrada el 14/09."), `RUTA_EN_CURSO`, `SUMINISTRO_REPETIDO` y
+  `SUMINISTRO_EN_OTRA_RUTA`.
+- Un lector ya puede ver los suministros y medidores de sus rutas (los demás siguen dando 403).
+- Datos de demo: las 20 rutas de la app de clase, con el recorrido en el mismo orden.
+
 ### M1 — Suministros y medidores
 
 - **Suministros**: `GET /suministros` (sólo administración; filtros `numero` exacto, `buscar` por

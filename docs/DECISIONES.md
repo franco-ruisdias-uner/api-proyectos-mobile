@@ -226,3 +226,49 @@ Estado: PROVISORIA (autónomo)
 Decisión: MySQL y MariaDB comparan texto sin distinguir mayúsculas; el servicio confirma la
 igualdad exacta después de buscar, así `med-qr001` no encuentra `med-QR001` en ningún motor.
 Videos de demo: se suben cuatro (uno por modelo) aunque el ×10 no usa el suyo (A15); en uso hay tres.
+
+### A20 — Número de ruta
+Estado: PROVISORIA (autónomo)
+Hueco: la especificación dice que `numero` es texto ("07") y que el id es `rut-<numero>-<bimestre>`, pero no su formato.
+Opciones: A) cualquier texto; B) sólo dígitos, 1 a 6.
+Decisión: B. Con letras, `rut-A1-…` y `rut-a1-…` chocarían en MySQL y MariaDB (comparan sin distinguir mayúsculas), y un guion
+en el número haría ambiguo el id. Cualquier otro valor → 400 `VALIDACION_FALLIDA`.
+
+### A21 — Orden de los controles al crear una ruta
+Estado: PROVISORIA (autónomo)
+Hueco: R5 enumera los controles pero no dice cuál gana cuando se cumplen dos (por ejemplo, el mismo pedido enviado dos veces).
+Decisión: formato (400) → lector (422) → suministros repetidos (422) → `RUTA_YA_EXISTE` (409) → suministros inexistentes (404) →
+`SUMINISTRO_EN_OTRA_RUTA` (409). `RUTA_YA_EXISTE` va antes que el choque de suministros para que repetir un pedido diga "ya existe".
+Con pedidos simultáneos, los índices únicos (`numero`+`bimestre` y `bimestre`+`suministroId`) deciden y se traduce al código que corresponde.
+Consecuencia: el pedido repetido da siempre `RUTA_YA_EXISTE`.
+
+### A22 — `Usuario.rutasAsignadas` en las semillas
+Estado: PROVISORIA (autónomo)
+Hueco: el mock de la app de clase (`mocks/users.ts`) pone en `rutasAsignadas` también las rutas cerradas (usr-011 tiene la 07 y la 12), pero la
+especificación (§1) dice "las `asignada` o `en_curso`".
+Decisión: manda la especificación. usr-011 queda con `["rut-07-2026-05"]`; la 12 sigue disponible en `GET /yo/rutas?estado=cerrada`.
+Consecuencia: la pantalla de la app de clase que muestre las cerradas desde `rutasAsignadas` tiene que pedir `/yo/rutas?estado=cerrada`.
+
+### A23 — Acceso de un lector a un suministro o medidor
+Estado: PROVISORIA (autónomo)
+Hueco: R3 dice "en una de sus rutas" sin aclarar si cuentan las cerradas o las de otros bimestres.
+Decisión: cuenta cualquier ruta cuyo `lectorId` sea el del lector, en cualquier estado y bimestre. Si la ruta cambia de lector (R6), el anterior
+pierde el acceso. Reemplaza al acceso vacío de A13.
+
+### A24 — Descarga: código y quién puede
+Estado: PROVISORIA (autónomo)
+Hueco: la especificación no dice el estado HTTP de `POST /rutas/:id/descarga` (un POST suele ser 201).
+Decisión: 200, porque no crea un recurso. Administración también puede descargar (🧑‍🔧) y, como dice R7, la primera descarga marca
+`descargadaEn` y pasa la ruta a `en_curso` sea quien sea el que la pida. `lecturas` y `novedades` del paquete salen `[]` hasta M3 y M4.
+
+### A25 — Editar la ruta mandando los mismos suministros
+Estado: PROVISORIA (autónomo)
+Hueco: R6 prohíbe cambiar `suministroIds` con la ruta `en_curso`; no dice qué pasa si el cuerpo trae la misma lista.
+Decisión: la misma lista, en el mismo orden, no es un cambio y se acepta (así la administración puede reenviar la ruta completa para cambiar
+sólo el nombre o el lector). Otro orden o otros elementos → 409 `RUTA_EN_CURSO`. Un `PATCH` vacío (`{}`) devuelve la ruta sin cambios;
+`numero`, `bimestre` y `estado` no se pueden mandar (400).
+
+### A26 — Avance mientras no existen lecturas ni novedades
+Estado: PROVISORIA (autónomo)
+Decisión: en M2, `leidos`, `conNovedad` y `fueraDeRango` valen 0 y `pendientes` = `suministros`. M3 y M4 los calculan con los resultados vigentes (R13).
+

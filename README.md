@@ -8,8 +8,8 @@ Hasta ahora la app trabajó con datos inventados (mocks) detrás de una capa de 
 API devuelve **exactamente los mismos tipos** que copiaron del PRD en `src/tipos/`: el día que
 cambian el mock por `fetch`, no tienen que tocar los tipos.
 
-> **Estado:** están hechas la base (M0) y los suministros y medidores (M1). Rutas, lecturas,
-> novedades y el cierre de ruta llegan en los próximos módulos (mirá `CHANGELOG.md`).
+> **Estado:** están hechas la base (M0), los suministros y medidores (M1) y las rutas (M2).
+> Lecturas, novedades y el cierre de ruta llegan en los próximos módulos (mirá `CHANGELOG.md`).
 
 ---
 
@@ -124,9 +124,16 @@ medidor con multiplicador ×10 (sin video, el 26.º de Brasil) y el suministro `
 inactivo. Los videos instructivos de los medidores son de demo (sin imagen reproducible): sirven
 para probar la descarga y `Range`.
 
-> Los lectores van a poder ver un suministro o un medidor sólo si está en una de sus rutas; las
-> rutas llegan con M2, así que hasta entonces los pueden consultar sólo con la cuenta de
-> administración (`L-030`).
+**Rutas de demo.** Son las 20 de la app de clase, en el mismo orden de recorrido: la `07` de
+Barrio Brasil (200 suministros, `en_curso`) y la `12` de Quintas Norte (`cerrada` el 14/09) son
+de Ramón Duarte (`L-011`); las otras 18 son de barrio, con 20 suministros cada una y distintos
+lectores y estados. Para probar: ingresá como `L-011` y pedí `POST /rutas/rut-07-2026-05/descarga`
+(trae la jornada entera de una vez) o `GET /yo/rutas?estado=cerrada` para ver la `12`.
+`Usuario.rutasAsignadas` trae sólo las `asignada` y `en_curso`.
+
+Un lector ve un suministro o un medidor sólo si está en una de sus rutas (si no, 403); la
+administración (`L-030`) ve todo. El orden de `suministroIds` de una ruta es el recorrido: no se
+reordena nunca.
 
 ## 6. Cómo se usa
 
