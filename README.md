@@ -8,9 +8,8 @@ Hasta ahora la app trabajó con datos inventados (mocks) detrás de una capa de 
 API devuelve **exactamente los mismos tipos** que copiaron del PRD en `src/tipos/`: el día que
 cambian el mock por `fetch`, no tienen que tocar los tipos.
 
-> **Estado:** está hecha la base (M0): ingreso con legajo, sesión, usuarios, archivos y avisos.
-> Suministros, rutas, lecturas, novedades y el cierre de ruta llegan en los próximos módulos
-> (mirá `CHANGELOG.md`).
+> **Estado:** están hechas la base (M0) y los suministros y medidores (M1). Rutas, lecturas,
+> novedades y el cierre de ruta llegan en los próximos módulos (mirá `CHANGELOG.md`).
 
 ---
 
@@ -117,6 +116,18 @@ Si no carga:
 
 El legajo se puede escribir con mayúsculas o minúsculas (`l-011` también entra).
 
+**Suministros y medidores de demo**: son los de la app de clase, con los mismos ids y el mismo
+orden: 580 suministros (200 en Barrio Brasil, 20 en Quintas Norte y 20 en cada uno de 18
+barrios). Casos para probar: `sum-004120` con `med-A88413` (el del PRD, QR
+`COOP-CHJ:med-A88413`), la conexión nueva (sin lectura anterior, el décimo de Brasil), el
+medidor con multiplicador ×10 (sin video, el 26.º de Brasil) y el suministro `020006`, que está
+inactivo. Los videos instructivos de los medidores son de demo (sin imagen reproducible): sirven
+para probar la descarga y `Range`.
+
+> Los lectores van a poder ver un suministro o un medidor sólo si está en una de sus rutas; las
+> rutas llegan con M2, así que hasta entonces los pueden consultar sólo con la cuenta de
+> administración (`L-030`).
+
 ## 6. Cómo se usa
 
 - **Ingresar**: `POST /auth/ingreso` con `{ "legajo": "L-011", "contrasena": "lectura" }`.
@@ -172,6 +183,10 @@ interface PruebaPush { dispositivos: number }
 | `GET` | `/usuarios` | Sólo con rol: administracion | Lista los usuarios |
 | `POST` | `/usuarios` | Sólo con rol: administracion | Da de alta un usuario |
 | `PATCH` | `/usuarios/:id` | Sólo con rol: administracion | Cambia el nombre o blanquea la contraseña de un usuario |
+| `GET` | `/suministros` | Sólo con rol: administracion | Lista los suministros |
+| `GET` | `/suministros/:id` | Con sesión (cualquier rol) | Un suministro |
+| `GET` | `/medidores/qr/:codigoQr` | Con sesión (cualquier rol) | El medidor de un código QR |
+| `GET` | `/medidores/:id` | Con sesión (cualquier rol) | Un medidor |
 | `POST` | `/auth/ingreso` | Público: no hace falta sesión | Ingresar con legajo y contraseña |
 | `POST` | `/auth/salida` | Con sesión (cualquier rol) | Salir: cierra todas las sesiones del usuario |
 <!-- tabla-endpoints:fin -->
@@ -186,7 +201,9 @@ interface PruebaPush { dispositivos: number }
 | `NO_AUTENTICADO` | 401 | Tenés que ingresar de nuevo con tu legajo y contraseña. |
 | `SIN_PERMISO` | 403 | No tenés permiso para hacer eso. |
 | `ARCHIVO_NO_ENCONTRADO` | 404 | No encontramos ese archivo. |
+| `MEDIDOR_NO_ENCONTRADO` | 404 | No existe ese medidor. |
 | `RECURSO_NO_ENCONTRADO` | 404 | Esa dirección no existe en la API. |
+| `SUMINISTRO_NO_ENCONTRADO` | 404 | No existe ese suministro. |
 | `USUARIO_NO_ENCONTRADO` | 404 | No existe ese usuario. |
 | `LEGAJO_YA_REGISTRADO` | 409 | Ya hay una cuenta con ese legajo. |
 | `ARCHIVO_DEMASIADO_GRANDE` | 413 | El archivo es demasiado grande. |

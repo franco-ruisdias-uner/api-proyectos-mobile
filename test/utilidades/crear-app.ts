@@ -27,6 +27,11 @@ export interface OpcionesApp {
   entorno?: Record<string, string>;
   /** Usar el almacén de tokens en memoria en vez de la tabla. */
   tokensEnMemoria?: boolean;
+  /**
+   * Proveedores que se sustituyen (`[token, valor]`). Sólo para módulos que todavía no existen
+   * (p. ej. el acceso de los lectores a sus rutas antes de M2); nunca repositorios ni la base.
+   */
+  sustitutos?: Array<[unknown, unknown]>;
 }
 
 export interface AppDePrueba {
@@ -80,6 +85,9 @@ export async function crearApp(
     modulo = modulo
       .overrideProvider(AlmacenTokensPush)
       .useValue(new AlmacenTokensMemoria());
+  }
+  for (const [token, valor] of opciones.sustitutos ?? []) {
+    modulo = modulo.overrideProvider(token as never).useValue(valor as never);
   }
   const compilado = await modulo.compile();
 

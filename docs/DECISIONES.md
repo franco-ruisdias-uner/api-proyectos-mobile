@@ -175,3 +175,42 @@ Hueco: AGENTS §4.2 dice "máximo 100" sin aclarar si un valor mayor se rechaza 
 Opciones: A) 400 `VALIDACION_FALLIDA`; B) recortar a 100 en silencio (y `meta.porPagina` = 100).
 Decisión: A, con "La cantidad por página no puede pasar de 100." Lo mismo para `pagina` < 1 o
 valores que no son enteros.
+
+### A13 — Acceso de los lectores a suministros y medidores antes de M2
+Estado: PROVISORIA (autónomo)
+Hueco: R3 dice que un lector sólo ve lo que está en una de sus rutas, pero las rutas llegan en M2.
+Opciones: A) un puerto `AccesoSuministros` con una implementación que hoy dice "no" (un lector
+no tiene rutas) y que M2 reemplaza; B) crear ya las tablas de rutas (adelanta M2 y su esquema);
+C) dejar que cualquier lector vea todo hasta M2 (abre datos de socios).
+Decisión: A. Hasta M2 un lector recibe 403 `SIN_PERMISO` en todo suministro o medidor que existe.
+Los tests del caso feliz del lector sustituyen sólo ese puerto; la base y los repositorios son
+reales. Un id que no existe da 404 para cualquiera.
+Consecuencia en el contrato: ninguna, M2 sólo cambia quién tiene permiso.
+
+### A14 — Un suministro inactivo en las semillas
+Estado: PROVISORIA (autónomo)
+Hueco: §8 pide "un suministro con `activo: false` en alguna ruta de barrio", pero ningún mock lo
+tiene.
+Decisión: `sum-020006` (el sexto de la ruta 02, Barrio Sur, que está `en_curso`). Es la única
+diferencia de las semillas con los datos de la app de clase.
+
+### A15 — Videos instructivos de demo
+Estado: PROVISORIA (autónomo)
+Hueco: §8 pide cuatro videos de pocos KB generados, uno por modelo; no hay herramienta de video
+en el repo y no se agrega una dependencia para esto.
+Decisión: `src/semillas/medios/video-demo.ts` arma un MP4 válido en su estructura (`ftyp`, `moov`,
+`mdat`) de unos 48 KB, sin imagen reproducible. Se suben por el puerto de archivos al sembrar; los
+medidores comparten el video de su modelo y el ×10 queda en `null`. Sirven para probar descarga y
+`Range`; se reemplazan por videos reales cuando la cátedra los tenga.
+
+### A16 — Búsqueda de suministros y qué es "exacto"
+Estado: PROVISORIA (autónomo)
+Decisión: `numero` es igualdad exacta sobre el texto ("4120" no encuentra "004120"). `buscar`
+mira titular y dirección normalizados (sin tildes ni mayúsculas) y trata `%` y `_` como texto
+común, igual que en `/usuarios`. Un `activo` que no sea `true` o `false` es 400.
+
+### A17 — Lectura de un medidor sin suministro y código QR
+Estado: PROVISORIA (autónomo)
+Decisión: un medidor que ningún suministro tiene sólo lo ve administración (a un lector: 403). El
+QR se busca por la columna `codigoQr` y no se deduce del id; cualquier texto que no coincida da 404
+`MEDIDOR_NO_ENCONTRADO`, no 400.

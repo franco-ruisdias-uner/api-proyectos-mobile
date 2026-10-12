@@ -54,6 +54,13 @@ export const CATALOGO = {
     mensaje: 'Ya hay una cuenta con ese legajo.',
   },
   USUARIO_NO_ENCONTRADO: { estado: 404, mensaje: 'No existe ese usuario.' },
+
+  // Lectura de Medidores — suministros y medidores
+  SUMINISTRO_NO_ENCONTRADO: {
+    estado: 404,
+    mensaje: 'No existe ese suministro.',
+  },
+  MEDIDOR_NO_ENCONTRADO: { estado: 404, mensaje: 'No existe ese medidor.' },
 } as const satisfies Record<string, { estado: number; mensaje: string }>;
 
 export type CodigoError = keyof typeof CATALOGO;
