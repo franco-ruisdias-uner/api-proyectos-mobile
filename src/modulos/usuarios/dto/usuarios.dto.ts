@@ -20,6 +20,10 @@ export const LARGO_MINIMO_CONTRASENA = 8;
 const recortar = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim() : value;
 
+/** Opcional en un PATCH: puede no venir, pero si viene no puede ser null. */
+const Opcional = () =>
+  ValidateIf((_dto: object, valor: unknown) => valor !== undefined);
+
 export class ListarUsuariosDto extends PaginacionDto {
   @ApiPropertyOptional({ enum: ROLES })
   @IsOptional()
@@ -70,7 +74,7 @@ export class CrearUsuarioDto {
 
 export class ActualizarUsuarioDto {
   @ApiPropertyOptional({ example: 'Julia Ríos', maxLength: 100 })
-  @IsOptional()
+  @Opcional()
   @Transform(recortar)
   @IsString({ message: 'El nombre tiene que ser un texto.' })
   @IsNotEmpty({ message: 'El nombre no puede quedar vacío.' })
@@ -84,7 +88,7 @@ export class ActualizarUsuarioDto {
       'Contraseña nueva (blanqueo). Cierra todas las sesiones de ese usuario.',
     minLength: LARGO_MINIMO_CONTRASENA,
   })
-  @IsOptional()
+  @Opcional()
   @IsString({ message: 'La contraseña tiene que ser un texto.' })
   @MinLength(LARGO_MINIMO_CONTRASENA, {
     message: `La contraseña tiene que tener al menos ${LARGO_MINIMO_CONTRASENA} caracteres.`,
@@ -95,7 +99,7 @@ export class ActualizarUsuarioDto {
 
 export class ActualizarYoDto {
   @ApiPropertyOptional({ example: true })
-  @IsOptional()
+  @Opcional()
   @IsBoolean({ message: 'biometriaActiva tiene que ser verdadero o falso.' })
   biometriaActiva?: boolean;
 

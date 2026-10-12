@@ -83,7 +83,14 @@ export class UsuariosServicio {
     }
     // Los usuarios de una cooperativa son pocos: se ordenan en TypeScript para que el
     // orden sea idéntico en los cuatro motores (cada uno ordena texto a su manera).
-    const encontrados = await this.repositorio.findBy(where);
+    // `%` y `_` del término son comodines para LIKE: la base filtra de más y acá se deja
+    // sólo lo que contiene el texto tal cual.
+    const encontrados = (await this.repositorio.findBy(where)).filter(
+      (u) =>
+        termino === '' ||
+        u.legajoBusqueda.includes(termino) ||
+        u.nombreBusqueda.includes(termino),
+    );
     encontrados.sort(compararPorLegajo);
     const pagina = paginar(encontrados, filtros);
     return { datos: await this.aContratos(pagina.datos), meta: pagina.meta };
