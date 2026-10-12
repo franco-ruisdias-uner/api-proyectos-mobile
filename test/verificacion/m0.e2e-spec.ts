@@ -571,6 +571,17 @@ describe('Verificación M0 — Base', () => {
       expect(r.body.meta.total).toBe(0);
     });
 
+    it.each(['\\', '\\%', 'a\\_b', '!', '[a]', "'"])(
+      'buscar %j con caracteres de escape → 200 sin resultados, nunca 500',
+      async (termino) => {
+        const r = await lista(`?buscar=${encodeURIComponent(termino)}`).expect(
+          200,
+        );
+        esperarContrato(r.body, 'Usuario');
+        expect(r.body.meta.total).toBe(0);
+      },
+    );
+
     it('rol=administracion con buscar', async () => {
       const r = await lista('?rol=administracion&buscar=q-').expect(200);
       expect(r.body.datos.map((u: { legajo: string }) => u.legajo)).toEqual([

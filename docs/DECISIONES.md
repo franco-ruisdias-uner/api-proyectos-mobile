@@ -168,3 +168,10 @@ Estado: PROVISORIA (autónomo)
 Decisión: en M0 `Usuario.rutasAsignadas` es `[]` para todos (las rutas llegan en M2). El
 cálculo está en un solo lugar del servicio de usuarios.
 
+
+### A12 — `porPagina` fuera de rango
+Estado: PROVISORIA (autónomo)
+Hueco: AGENTS §4.2 dice "máximo 100" sin aclarar si un valor mayor se rechaza o se recorta.
+Opciones: A) 400 `VALIDACION_FALLIDA`; B) recortar a 100 en silencio (y `meta.porPagina` = 100).
+Decisión: A, con "La cantidad por página no puede pasar de 100." Lo mismo para `pagina` < 1 o
+valores que no son enteros.
