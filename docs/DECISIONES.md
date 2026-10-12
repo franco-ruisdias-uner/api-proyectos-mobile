@@ -272,3 +272,13 @@ sólo el nombre o el lector). Otro orden o otros elementos → 409 `RUTA_EN_CURS
 Estado: PROVISORIA (autónomo)
 Decisión: en M2, `leidos`, `conNovedad` y `fueraDeRango` valen 0 y `pendientes` = `suministros`. M3 y M4 los calculan con los resultados vigentes (R13).
 
+
+### A27 — Deadlock en escrituras simultáneas de rutas
+Estado: PROVISORIA (autónomo)
+Hueco: dos `PATCH` simultáneos que toman el mismo suministro libre hacían que MySQL y MariaDB abortaran una transacción por deadlock (salía 500).
+Decisión: las transacciones de `POST /rutas` y `PATCH /rutas/:id` se reintentan hasta 4 veces si la base informa deadlock; la segunda vuelta ve el
+conflicto y responde `SUMINISTRO_EN_OTRA_RUTA` (409). Lo encontró el verificador.
+
+### A28 — Número de ruta con espacios y filtro `estado` en `/rutas`
+Estado: PROVISORIA (autónomo)
+Decisión: el `numero` se recorta antes de validar (`" 7"` crea `rut-7-…`); `/rutas` acepta `estado` con lista separada por comas, como `/yo/rutas`.

@@ -15,6 +15,7 @@ import { ArchivosServicio } from '../../comun/archivos/archivos.servicio.js';
 import type { SesionActual } from '../../comun/auth/sesion-actual.js';
 import {
   ErrorApi,
+  esDeadlock,
   esViolacionDeUnicidad,
 } from '../../comun/errores/error-api.js';
 import { Reloj } from '../../comun/reloj/reloj.js';
@@ -54,6 +55,17 @@ function enTandas<T>(filas: T[], tamano = TANDA): T[][] {
 }
 
 /** Los instantes se guardan al segundo: así lo que se responde es lo que quedó en la base. */
+/** Dos escrituras cruzadas pueden abortar a una por deadlock: se reintenta y la segunda vuelta ve el conflicto. */
+async function conReintento<T>(operacion: () => Promise<T>): Promise<T> {
+  for (let intento = 1; ; intento++) {
+    try {
+      return await operacion();
+    } catch (error) {
+      if (!esDeadlock(error) || intento >= 4) throw error;
+    }
+  }
+}
+
 function alSegundo(instante: Date): Date {
   return new Date(Math.floor(instante.getTime() / 1000) * 1000);
 }
@@ -317,21 +329,23 @@ export class RutasServicio {
       throw new ErrorApi('SUMINISTRO_REPETIDO');
     await this.exigirDisponible(dto, id);
     try {
-      await this.dataSource.transaction(async (m) => {
-        await m.getRepository(RutaEntidad).insert({
-          id,
-          numero: dto.numero,
-          nombre: dto.nombre,
-          bimestre: dto.bimestre,
-          lectorId: dto.lectorId,
-          estado: 'asignada',
-          descargadaEn: null,
-          cerradaEn: null,
-        });
-        await this.guardarPosiciones(m, id, dto.bimestre, dto.suministroIds);
-      });
+      await conReintento(() =>
+        this.dataSource.transaction(async (m) => {
+          await m.getRepository(RutaEntidad).insert({
+            id,
+            numero: dto.numero,
+            nombre: dto.nombre,
+            bimestre: dto.bimestre,
+            lectorId: dto.lectorId,
+            estado: 'asignada',
+            descargadaEn: null,
+            cerradaEn: null,
+          });
+          await this.guardarPosiciones(m, id, dto.bimestre, dto.suministroIds);
+        }),
+      );
     } catch (error) {
-      if (!esViolacionDeUnicidad(error)) throw error;
+      if (!esViolacionDeUnicidad(error) && !esDeadlock(error)) throw error;
       // Dos pedidos simultáneos pasaron los controles: el índice único decidió. Se vuelve a
       // mirar para dar el código que corresponde.
       await this.exigirDisponible(dto, id);
@@ -381,16 +395,23 @@ export class RutasServicio {
     if (dto.nombre !== undefined) cambios.nombre = dto.nombre;
     if (dto.lectorId !== undefined) cambios.lectorId = dto.lectorId;
     try {
-      await this.dataSource.transaction(async (m) => {
-        if (Object.keys(cambios).length > 0)
-          await m.getRepository(RutaEntidad).update({ id }, cambios);
-        if (cambiaLista && dto.suministroIds) {
-          await m.getRepository(RutaSuministroEntidad).delete({ rutaId: id });
-          await this.guardarPosiciones(m, id, ruta.bimestre, dto.suministroIds);
-        }
-      });
+      await conReintento(() =>
+        this.dataSource.transaction(async (m) => {
+          if (Object.keys(cambios).length > 0)
+            await m.getRepository(RutaEntidad).update({ id }, cambios);
+          if (cambiaLista && dto.suministroIds) {
+            await m.getRepository(RutaSuministroEntidad).delete({ rutaId: id });
+            await this.guardarPosiciones(
+              m,
+              id,
+              ruta.bimestre,
+              dto.suministroIds,
+            );
+          }
+        }),
+      );
     } catch (error) {
-      if (!esViolacionDeUnicidad(error)) throw error;
+      if (!esViolacionDeUnicidad(error) && !esDeadlock(error)) throw error;
       if (dto.suministroIds)
         await this.exigirSuministros(dto.suministroIds, ruta.bimestre, id);
       throw error;
