@@ -258,6 +258,15 @@ interface PruebaPush { dispositivos: number }
 | `ALMACEN_NO_DISPONIBLE` | 503 | No pudimos acceder a los archivos. Probá de nuevo en un rato. |
 <!-- tabla-errores:fin -->
 
+### Avisos (push del servidor)
+
+La API manda **una** push: cuando la administración le asigna una ruta a un lector (al crearla con
+`POST /rutas` o al cambiarle el `lectorId` con `PATCH /rutas/:id`), el lector nuevo recibe *"Tenés una ruta
+nueva: 07 Barrio Brasil."*, con `datos: { tipo: "ruta_nueva", rutaId }` para abrir esa ruta. Para recibirla, la app
+registra su token con `POST /dispositivos` y puede probarlo con `POST /dispositivos/prueba`. No hay interruptor de
+avisos (el `Usuario` no lo tiene). El recordatorio de las 17 con lecturas sin subir es **local del teléfono**: la
+API no lo manda. Si Expo falla, la ruta se crea igual.
+
 ## 7. Simular errores y demoras
 
 La app tiene que mostrar bien un error de red o una carga lenta. Para probarlo sin apagar el

@@ -4,6 +4,14 @@ Todo lo que cambia en la API, escrito para los grupos que la usan desde la app.
 
 ## [Sin publicar]
 
+### M6 — Avisos
+
+- **Push de ruta nueva**: cuando la administración crea una ruta (`POST /rutas`) o le cambia el lector
+  (`PATCH /rutas/:id`), el lector nuevo recibe *"Tenés una ruta nueva: 07 Barrio Brasil."* con
+  `datos: { tipo: "ruta_nueva", rutaId }`. Hay que haber registrado el token con `POST /dispositivos`.
+- No se avisa si el pedido falla, si el `PATCH` no cambia de lector, ni al lector que se queda con la ruta. Un error
+  de Expo no rompe el pedido. Sin endpoints ni errores nuevos.
+
 ### M5 — Cierre de ruta
 
 - **Cerrar la ruta**: `POST /rutas/:id/cierre` con `{ lecturaIds, novedadIds }`, los ids de **todo** lo que el

@@ -87,7 +87,8 @@ export class RutasControlador {
     descripcion:
       'Cuerpo: `{ numero, nombre, bimestre, lectorId, suministroIds }`. `suministroIds` va en el orden del recorrido ' +
       '(de 1 a 300) y ese orden no se cambia nunca. El id es `rut-<numero>-<bimestre>` y la ruta queda `asignada`. ' +
-      'Un suministro no puede estar en dos rutas del mismo bimestre.',
+      'Un suministro no puede estar en dos rutas del mismo bimestre. Al lector le llega una push: ' +
+      '"Tenés una ruta nueva: 07 Barrio Brasil.".',
     roles: ['administracion'],
     estado: 201,
     ejemplo: { ...EJEMPLO_RUTA, estado: 'asignada', descargadaEn: null },
@@ -126,7 +127,8 @@ export class RutasControlador {
     descripcion:
       'Cuerpo: `{ nombre?, lectorId?, suministroIds? }`. Una ruta `cerrada` no se edita. Los suministros sólo se ' +
       'cambian con la ruta `asignada`: con el lector en la calle no se le mueve la lista. El lector sí se puede ' +
-      'cambiar con la ruta `en_curso`; lo ya cargado sigue siendo de quien lo cargó.',
+      'cambiar con la ruta `en_curso`; lo ya cargado sigue siendo de quien lo cargó. Si cambia el lector, el nuevo ' +
+      'recibe la push de ruta nueva.',
     roles: ['administracion'],
     ejemplo: EJEMPLO_RUTA,
     errores: [

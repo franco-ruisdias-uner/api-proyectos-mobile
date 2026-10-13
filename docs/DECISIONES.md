@@ -325,3 +325,8 @@ Decisión: un id está recibido si existe como lectura (o novedad) **de esa ruta
 
 
 Dudas del verificador (M5), sin cambios de comportamiento: el mensaje mixto con una lectura y varias novedades sigue la misma regla de A37 ("Faltan subir 1 lectura y 2 novedades."); una ruta `asignada` nunca descargada se puede cerrar (A37); si un cierre y la carga de una lectura que no figura en sus listas se cruzan, la lectura entra (201) o recibe `RUTA_YA_CERRADA` según el orden, y el reintento da 200 si había entrado.
+
+### A38 — Detalles de la push de ruta nueva que la especificación no fija
+Estado: PROVISORIA (autónomo)
+Hueco: la sección 9 da el texto pero no el título, los `datos`, ni cuándo cuenta un "cambio de lector".
+Decisión: título `Ruta nueva`; cuerpo `Tenés una ruta nueva: <numero> <nombre>.` (con el nombre vigente tras el pedido); `datos: { tipo: 'ruta_nueva', rutaId }`. Se avisa al lector nuevo sólo si el `lectorId` del `PATCH` es distinto del actual, y sólo después de confirmar la transacción. No se avisa al lector anterior ni a administración. Se aplica también a rutas `en_curso`. Descartado: avisar al lector anterior que perdió la ruta (la especificación sólo lista al nuevo), `datos` con pantalla de destino (la app decide la navegación).

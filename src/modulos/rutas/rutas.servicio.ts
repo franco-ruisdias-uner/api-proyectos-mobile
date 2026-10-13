@@ -18,6 +18,7 @@ import {
   esDeadlock,
   esViolacionDeUnicidad,
 } from '../../comun/errores/error-api.js';
+import { Avisos } from '../../comun/notificaciones/avisos.js';
 import { Reloj } from '../../comun/reloj/reloj.js';
 import { paginar } from '../../comun/respuesta/paginacion.js';
 import type { Meta } from '../../comun/respuesta/respuesta.js';
@@ -101,6 +102,7 @@ export class RutasServicio {
     private readonly dataSource: DataSource,
     private readonly reloj: Reloj,
     private readonly archivos: ArchivosServicio,
+    private readonly avisos: Avisos,
   ) {}
 
   // ---- lectura ----
@@ -458,7 +460,22 @@ export class RutasServicio {
       await this.exigirDisponible(dto, id);
       throw new ErrorApi('RUTA_YA_EXISTE');
     }
+    this.avisarRutaNueva(dto.lectorId, id, dto.numero, dto.nombre);
     return (await this.aContratos([await this.buscar(id)]))[0];
+  }
+
+  /** Push al lector que recibe una ruta (Especificación §9). Después de confirmar; no bloquea. */
+  private avisarRutaNueva(
+    lectorId: string,
+    rutaId: string,
+    numero: string,
+    nombre: string,
+  ): void {
+    this.avisos.avisar([lectorId], {
+      titulo: 'Ruta nueva',
+      cuerpo: `Tenés una ruta nueva: ${numero} ${nombre}.`,
+      datos: { tipo: 'ruta_nueva', rutaId },
+    });
   }
 
   private async existeRuta(id: string): Promise<boolean> {
@@ -523,6 +540,13 @@ export class RutasServicio {
         await this.exigirSuministros(dto.suministroIds, ruta.bimestre, id);
       throw error;
     }
+    if (dto.lectorId !== undefined && dto.lectorId !== ruta.lectorId)
+      this.avisarRutaNueva(
+        dto.lectorId,
+        id,
+        ruta.numero,
+        dto.nombre ?? ruta.nombre,
+      );
     return (await this.aContratos([await this.buscar(id)]))[0];
   }
 }
