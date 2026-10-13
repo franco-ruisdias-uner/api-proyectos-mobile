@@ -9,8 +9,9 @@ API devuelve **exactamente los mismos tipos** que copiaron del PRD en `src/tipos
 cambian el mock por `fetch`, no tienen que tocar los tipos.
 
 > **Estado:** la API está completa: base, suministros y medidores, rutas, lecturas, novedades, cierre de ruta, avisos,
-> nube y datos de demo. Lo único que falta es lo que programan ustedes (el guardado de tokens y el envío de push,
-> mirá `CHANGELOG.md`).
+> nube y datos de demo. Lo único que falta es lo que programan ustedes: **el guardado de tokens de Expo y el envío de
+> push**. Los tres endpoints de `/dispositivos` responden 501 hasta que lo hagan: mirá `docs/NOTIFICACIONES.md` y
+> corré `pnpm test:notificaciones` (empieza en rojo).
 
 ---
 
@@ -205,9 +206,9 @@ interface PruebaPush { dispositivos: number }
 | `GET` | `/salud` | Público: no hace falta sesión | ¿Anda la API? |
 | `POST` | `/archivos` | Con sesión (cualquier rol) | Sube una foto, un audio o un video |
 | `GET` | `/archivos/:clave` | Público: no hace falta sesión | Descarga un archivo |
-| `POST` | `/dispositivos` | Con sesión (cualquier rol) | Registra el token de Expo del teléfono |
-| `POST` | `/dispositivos/prueba` | Con sesión (cualquier rol) | Manda una push de prueba a los teléfonos del usuario |
-| `DELETE` | `/dispositivos/:tokenExpo` | Con sesión (cualquier rol) | Da de baja el token de Expo del teléfono |
+| `POST` | `/dispositivos` | Con sesión (cualquier rol) | Registra el token de Expo del teléfono (lo completan ustedes) |
+| `POST` | `/dispositivos/prueba` | Con sesión (cualquier rol) | Manda una push de prueba a los teléfonos del usuario (lo completan ustedes) |
+| `DELETE` | `/dispositivos/:tokenExpo` | Con sesión (cualquier rol) | Da de baja el token de Expo del teléfono (lo completan ustedes) |
 | `GET` | `/yo` | Con sesión (cualquier rol) | El usuario de la sesión |
 | `PATCH` | `/yo` | Con sesión (cualquier rol) | Cambia la preferencia de huella o la contraseña propia |
 | `GET` | `/usuarios` | Sólo con rol: administracion | Lista los usuarios |
@@ -272,6 +273,7 @@ interface PruebaPush { dispositivos: number }
 | `SUMINISTRO_FUERA_DE_RUTA` | 422 | Ese suministro no es de esta ruta. |
 | `SUMINISTRO_REPETIDO` | 422 | Hay un suministro repetido en la ruta. |
 | `ERROR_INTERNO` | 500 | Algo salió mal de nuestro lado. Probá de nuevo en un rato. |
+| `NO_IMPLEMENTADO` | 501 | Esta parte la programan ustedes. Mirá docs/NOTIFICACIONES.md. |
 | `ALMACEN_NO_DISPONIBLE` | 503 | No pudimos acceder a los archivos. Probá de nuevo en un rato. |
 <!-- tabla-errores:fin -->
 
@@ -280,7 +282,8 @@ interface PruebaPush { dispositivos: number }
 La API manda **una** push: cuando la administración le asigna una ruta a un lector (al crearla con
 `POST /rutas` o al cambiarle el `lectorId` con `PATCH /rutas/:id`), el lector nuevo recibe *"Tenés una ruta
 nueva: 07 Barrio Brasil."*, con `datos: { tipo: "ruta_nueva", rutaId }` para abrir esa ruta. Para recibirla, la app
-registra su token con `POST /dispositivos` y puede probarlo con `POST /dispositivos/prueba`. No hay interruptor de
+registra su token con `POST /dispositivos` y puede probarlo con `POST /dispositivos/prueba` (**los dos, y el `DELETE`, los
+completan ustedes**: responden 501 `NO_IMPLEMENTADO` hasta entonces; ver `docs/NOTIFICACIONES.md`). No hay interruptor de
 avisos (el `Usuario` no lo tiene). El recordatorio de las 17 con lecturas sin subir es **local del teléfono**: la
 API no lo manda. Si Expo falla, la ruta se crea igual.
 
@@ -384,6 +387,7 @@ docker compose -f compose.yaml -f compose.almacen-s3.yaml up
 | Comando | Qué hace |
 |---|---|
 | `pnpm verificar` | Tipos + lint + tests unitarios + e2e con SQLite. |
+| `pnpm test:notificaciones` | La consigna de las notificaciones (`test/notificaciones/`): en rojo hasta que programen el guardado de tokens y el envío. |
 | `pnpm test:e2e:matriz` | Los e2e contra SQLite, PostgreSQL, MySQL y MariaDB (con Docker, más los archivos contra S3Proxy). |
 | `pnpm docker:probar` | Levanta los cuatro compose (y el de S3Proxy) y los prueba. |
 | `pnpm db:probar` / `pnpm archivos:probar` | Prueban la base y los archivos con la configuración del `.env` (no corren en la CI: necesitan cuentas). |

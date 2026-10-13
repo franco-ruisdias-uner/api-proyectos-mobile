@@ -1,66 +1,53 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
-import { esViolacionDeUnicidad } from '../comun/errores/error-api.js';
+import { ErrorApi } from '../comun/errores/error-api.js';
 import {
   AlmacenTokensPush,
   type Plataforma,
 } from '../comun/notificaciones/puertos.js';
-import { Reloj } from '../comun/reloj/reloj.js';
-import { DispositivoEntidad } from './dispositivo.entidad.js';
 
-/** Los tokens de Expo en la tabla `dispositivos`. */
+/**
+ * TODO(alumnos): acá viven los tokens de Expo de cada usuario. Hoy ningún método hace nada y
+ * los tres endpoints de `/dispositivos` responden 501 `NO_IMPLEMENTADO`.
+ *
+ * Qué les toca: crear una entidad de TypeORM para los dispositivos (su tabla, sus columnas),
+ * registrarla con `TypeOrmModule.forFeature([...])` en `DispositivosModulo`, y completar los
+ * cuatro métodos. Cuando lo logren, `pnpm test:notificaciones` pasa a verde.
+ * Guía: docs/NOTIFICACIONES.md.
+ */
 @Injectable()
 export class AlmacenTokensPorHacer extends AlmacenTokensPush {
-  constructor(
-    @InjectRepository(DispositivoEntidad)
-    private readonly repositorio: Repository<DispositivoEntidad>,
-    private readonly reloj: Reloj,
-  ) {
-    super();
-  }
-
-  /** Idempotente por token: si lo tenía otro usuario, pasa al actual. */
+  /**
+   * TODO(alumnos): guardar el token de ese usuario. Tiene que ser idempotente (mandar el mismo
+   * token dos veces deja un solo registro, también si llegan al mismo tiempo) y, si el token lo
+   * tenía otro usuario (teléfono compartido entre turnos), pasa a ser del usuario actual.
+   */
   async guardar(
-    usuarioId: string,
-    tokenExpo: string,
-    plataforma: Plataforma,
+    _usuarioId: string,
+    _tokenExpo: string,
+    _plataforma: Plataforma,
   ): Promise<void> {
-    const fila = {
-      tokenExpo,
-      usuarioId,
-      plataforma,
-      actualizadoEn: this.reloj.ahora(),
-    };
-    const existente = await this.repositorio.findOneBy({ tokenExpo });
-    if (existente) {
-      await this.repositorio.update({ tokenExpo }, fila);
-      return;
-    }
-    try {
-      await this.repositorio.insert(fila);
-    } catch (error) {
-      // Dos altas simultáneas del mismo token: la segunda actualiza.
-      if (!esViolacionDeUnicidad(error)) throw error;
-      await this.repositorio.update({ tokenExpo }, fila);
-    }
+    throw new ErrorApi('NO_IMPLEMENTADO');
   }
 
-  async borrar(tokenExpo: string): Promise<void> {
-    await this.repositorio.delete({ tokenExpo });
+  /**
+   * TODO(alumnos): dar de baja el token. Si no estaba guardado, no es un error.
+   */
+  async borrar(_tokenExpo: string): Promise<void> {
+    throw new ErrorApi('NO_IMPLEMENTADO');
   }
 
-  async tokensDe(usuarioIds: string[]): Promise<string[]> {
-    if (usuarioIds.length === 0) return [];
-    const filas = await this.repositorio.find({
-      where: { usuarioId: In(usuarioIds) },
-      order: { tokenExpo: 'ASC' },
-    });
-    return filas.map((f) => f.tokenExpo);
+  /**
+   * TODO(alumnos): devolver los tokens de todos esos usuarios, sin repetidos y siempre en el
+   * mismo orden. Con una lista vacía, devolver una lista vacía.
+   */
+  async tokensDe(_usuarioIds: string[]): Promise<string[]> {
+    throw new ErrorApi('NO_IMPLEMENTADO');
   }
 
-  async descartar(tokens: string[]): Promise<void> {
-    if (tokens.length > 0)
-      await this.repositorio.delete({ tokenExpo: In(tokens) });
+  /**
+   * TODO(alumnos): borrar de una vez estos tokens: son los que Expo dijo que ya no sirven.
+   */
+  async descartar(_tokens: string[]): Promise<void> {
+    throw new ErrorApi('NO_IMPLEMENTADO');
   }
 }

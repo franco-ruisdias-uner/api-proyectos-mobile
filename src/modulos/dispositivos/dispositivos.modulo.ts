@@ -1,6 +1,5 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { type Configuracion, valor } from '../../config/configuracion.js';
 import { Avisos } from '../../comun/notificaciones/avisos.js';
 import { EnviadorPorHacer } from '../../notificaciones-alumnos/enviador-por-hacer.js';
@@ -10,13 +9,12 @@ import {
   EnviadorPush,
 } from '../../comun/notificaciones/puertos.js';
 import { AlmacenTokensPorHacer } from '../../notificaciones-alumnos/almacen-tokens-por-hacer.js';
-import { DispositivoEntidad } from '../../notificaciones-alumnos/dispositivo.entidad.js';
 import { DispositivosControlador } from './dispositivos.controlador.js';
 
 /** Notificaciones: los dos puertos, el servicio `Avisos` y los endpoints `/dispositivos`. */
 @Global()
 @Module({
-  imports: [TypeOrmModule.forFeature([DispositivoEntidad])],
+  // TODO(alumnos): acá va `imports: [TypeOrmModule.forFeature([<su entidad>])]`.
   controllers: [DispositivosControlador],
   providers: [
     { provide: AlmacenTokensPush, useClass: AlmacenTokensPorHacer },

@@ -4,6 +4,16 @@ Todo lo que cambia en la API, escrito para los grupos que la usan desde la app.
 
 ## [Sin publicar]
 
+### M9 — Notificaciones para completar
+
+- **Los tres endpoints de `/dispositivos` los completan ustedes**: `POST /dispositivos`, `POST /dispositivos/prueba` y
+  `DELETE /dispositivos/:tokenExpo` responden **501 `NO_IMPLEMENTADO`** ("Esta parte la programan ustedes. Mirá
+  docs/NOTIFICACIONES.md.") hasta que programen el guardado de los tokens de Expo y el envío de las push. La forma de
+  las respuestas, las rutas y la validación no cambian.
+- Código de error nuevo: `NO_IMPLEMENTADO` (501).
+- `pnpm test:notificaciones` corre la consigna (`test/notificaciones/`); `docs/NOTIFICACIONES.md` explica qué hacer.
+- Mientras tanto, los flujos que avisan (asignar una ruta) siguen andando: la push se anota en el log y no se manda.
+
 ### M8 — Semillas completas y README
 
 - Datos de demo completos y validados contra el contrato: 20 usuarios, 580 suministros con sus medidores, las 20 rutas,

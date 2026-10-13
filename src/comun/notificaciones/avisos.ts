@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ErrorApi } from '../errores/error-api.js';
 import { AlmacenTokensPush, EnviadorPush } from './puertos.js';
 
 export interface Aviso {
@@ -35,8 +36,16 @@ export class Avisos {
     void tarea.finally(() => this.enCurso.delete(tarea));
   }
 
-  /** Manda y espera. Devuelve a cuántos dispositivos se intentó mandar. */
-  async enviarAhora(usuarioIds: string[], aviso: Aviso): Promise<number> {
+  /**
+   * Manda y espera. Devuelve a cuántos dispositivos se intentó mandar. Si el almacén o el
+   * enviador todavía están por hacer (AGENTS §19.3), lo deja en el log y sigue; con
+   * `propagarPendiente` el error `NO_IMPLEMENTADO` sale para que el endpoint lo devuelva.
+   */
+  async enviarAhora(
+    usuarioIds: string[],
+    aviso: Aviso,
+    opciones: { propagarPendiente?: boolean } = {},
+  ): Promise<number> {
     const destinatarios = [...new Set(usuarioIds)];
     if (destinatarios.length === 0) return 0;
     try {
@@ -54,6 +63,13 @@ export class Avisos {
         await this.almacen.descartar(tokensInvalidos);
       return tokens.length;
     } catch (error) {
+      if (error instanceof ErrorApi && error.codigo === 'NO_IMPLEMENTADO') {
+        this.log.warn(
+          `Push pendiente de implementar: ${aviso.titulo} → ${destinatarios.length} usuarios`,
+        );
+        if (opciones.propagarPendiente) throw error;
+        return 0;
+      }
       this.log.error(
         `No se pudo mandar el aviso "${aviso.titulo}": ${String(error)}`,
       );

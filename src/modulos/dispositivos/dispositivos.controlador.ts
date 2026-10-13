@@ -37,14 +37,15 @@ export class DispositivosControlador {
   @Post()
   @HttpCode(201)
   @Doc({
-    resumen: 'Registra el token de Expo del teléfono',
+    resumen: 'Registra el token de Expo del teléfono (lo completan ustedes)',
     descripcion:
+      '**Esta parte la programan los alumnos** (hoy responde 501 `NO_IMPLEMENTADO`; ver docs/NOTIFICACIONES.md). ' +
       'Idempotente por token: mandarlo dos veces deja un solo registro. Si el token lo tenía otro usuario ' +
       '(teléfono compartido entre turnos), pasa al de la sesión.',
     roles: [],
     estado: 201,
     ejemplo: { tokenExpo: TOKEN_EJEMPLO, plataforma: 'android' },
-    errores: ['VALIDACION_FALLIDA'],
+    errores: ['VALIDACION_FALLIDA', 'NO_IMPLEMENTADO'],
   })
   async registrar(
     @Sesion() sesion: SesionActual,
@@ -60,33 +61,40 @@ export class DispositivosControlador {
   @Post('prueba')
   @HttpCode(200)
   @Doc({
-    resumen: 'Manda una push de prueba a los teléfonos del usuario',
+    resumen: 'Manda una push de prueba a los teléfonos del usuario (lo completan ustedes)',
     descripcion:
+      '**Esta parte la programan los alumnos** (hoy responde 501 `NO_IMPLEMENTADO`). ' +
       'Para depurar: devuelve a cuántos dispositivos registrados se mandó.',
     roles: [],
     ejemplo: { dispositivos: 1 },
+    errores: ['NO_IMPLEMENTADO'],
   })
   async probar(
     @Sesion() sesion: SesionActual,
   ): Promise<RespuestaUno<PruebaPush>> {
-    const dispositivos = await this.avisos.enviarAhora([sesion.usuarioId], {
-      titulo: 'Prueba de avisos',
-      cuerpo: 'Si ves esto, las notificaciones andan.',
-      datos: { tipo: 'prueba' },
-    });
+    const dispositivos = await this.avisos.enviarAhora(
+      [sesion.usuarioId],
+      {
+        titulo: 'Prueba de avisos',
+        cuerpo: 'Si ves esto, las notificaciones andan.',
+        datos: { tipo: 'prueba' },
+      },
+      { propagarPendiente: true },
+    );
     return respuestaUno({ dispositivos });
   }
 
   @Delete(':tokenExpo')
   @HttpCode(204)
   @Doc({
-    resumen: 'Da de baja el token de Expo del teléfono',
+    resumen: 'Da de baja el token de Expo del teléfono (lo completan ustedes)',
     descripcion:
+      '**Esta parte la programan los alumnos** (hoy responde 501 `NO_IMPLEMENTADO`). ' +
       'Por ejemplo, al salir. Si el token no estaba registrado, responde igual 204.',
     roles: [],
     estado: 204,
     sinCuerpo: true,
-    errores: ['VALIDACION_FALLIDA'],
+    errores: ['VALIDACION_FALLIDA', 'NO_IMPLEMENTADO'],
   })
   async borrar(@Param('tokenExpo') tokenExpo: string): Promise<void> {
     if (!PATRON_TOKEN_EXPO.test(tokenExpo)) {
