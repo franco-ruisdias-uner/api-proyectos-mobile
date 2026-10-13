@@ -330,3 +330,5 @@ Dudas del verificador (M5), sin cambios de comportamiento: el mensaje mixto con 
 Estado: PROVISORIA (autónomo)
 Hueco: la sección 9 da el texto pero no el título, los `datos`, ni cuándo cuenta un "cambio de lector".
 Decisión: título `Ruta nueva`; cuerpo `Tenés una ruta nueva: <numero> <nombre>.` (con el nombre vigente tras el pedido); `datos: { tipo: 'ruta_nueva', rutaId }`. Se avisa al lector nuevo sólo si el `lectorId` del `PATCH` es distinto del actual, y sólo después de confirmar la transacción. No se avisa al lector anterior ni a administración. Se aplica también a rutas `en_curso`. Descartado: avisar al lector anterior que perdió la ruta (la especificación sólo lista al nuevo), `datos` con pantalla de destino (la app decide la navegación).
+
+Duda del verificador (M6), sin cambios de comportamiento: dos `PATCH` simultáneos que fijan el mismo lector nuevo pueden mandar el aviso dos veces, porque "distinto del actual" se evalúa antes de la transacción. Se acepta: es un aviso repetido, no una pérdida, y la ruta no se rompe.
