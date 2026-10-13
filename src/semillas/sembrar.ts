@@ -6,16 +6,19 @@ import { Reloj } from '../comun/reloj/reloj.js';
 import { normalizarParaBusqueda } from '../comun/texto/normalizar.js';
 import { normalizarLegajo } from '../modulos/usuarios/reglas/legajo.js';
 import { UsuarioEntidad } from '../modulos/usuarios/usuario.entidad.js';
+import { LecturaEntidad } from '../modulos/lecturas/lectura.entidad.js';
 import { RutaSuministroEntidad } from '../modulos/rutas/ruta-suministro.entidad.js';
 import { RutaEntidad } from '../modulos/rutas/ruta.entidad.js';
 import { MedidorEntidad } from '../modulos/suministros/medidor.entidad.js';
 import { SuministroEntidad } from '../modulos/suministros/suministro.entidad.js';
+import { generarLecturas } from './datos/lecturas.js';
 import { generarRutas } from './datos/rutas.js';
 import {
   generarSuministrosYMedidores,
   type SemillaSuministro,
 } from './datos/suministros.js';
 import { CONTRASENA_DEMO, USUARIOS } from './datos/usuarios.js';
+import { fotoDeMedidorDeDemo } from './medios/foto-demo.js';
 import { videoDeDemo } from './medios/video-demo.js';
 
 const MODELOS_CON_VIDEO = [
@@ -106,6 +109,33 @@ export class Sembrador {
       `Sembrados ${filasSuministros.length} suministros y ${filasMedidores.length} medidores.`,
     );
     await this.sembrarRutas(suministros);
+    await this.sembrarLecturas(
+      suministros,
+      new Map(medidores.map((m) => [m.id, m.multiplicador])),
+    );
+  }
+
+  /** Las lecturas de la ruta 07 de la app de clase; la foto de demo se sube por el puerto. */
+  private async sembrarLecturas(
+    suministros: SemillaSuministro[],
+    multiplicadores: Map<string, number>,
+  ): Promise<void> {
+    const fotoClave = await this.archivos.guardar(
+      fotoDeMedidorDeDemo(),
+      'imagen',
+      'jpg',
+      'image/jpeg',
+    );
+    const recibidaEn = this.reloj.ahora();
+    const filas = generarLecturas(suministros, multiplicadores).map((l) => ({
+      ...l,
+      fotoClave,
+      recibidaEn,
+    }));
+    await this.dataSource.transaction(async (m) => {
+      await m.getRepository(LecturaEntidad).insert(filas);
+    });
+    this.log.log(`Sembradas ${filas.length} lecturas.`);
   }
 
   /** Las rutas de la app de clase, con el recorrido en `posicion` (R4). */

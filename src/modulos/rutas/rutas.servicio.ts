@@ -21,6 +21,9 @@ import {
 import { Reloj } from '../../comun/reloj/reloj.js';
 import { paginar } from '../../comun/respuesta/paginacion.js';
 import type { Meta } from '../../comun/respuesta/respuesta.js';
+import { LecturaEntidad } from '../lecturas/lectura.entidad.js';
+import { aContrato as lecturaAContrato } from '../lecturas/lecturas.mapeador.js';
+import { lecturasVigentesDeRuta } from '../lecturas/vigentes.js';
 import { MedidorEntidad } from '../suministros/medidor.entidad.js';
 import { SuministroEntidad } from '../suministros/suministro.entidad.js';
 import {
@@ -83,6 +86,8 @@ export class RutasServicio {
     private readonly medidores: Repository<MedidorEntidad>,
     @InjectRepository(UsuarioEntidad)
     private readonly usuarios: Repository<UsuarioEntidad>,
+    @InjectRepository(LecturaEntidad)
+    private readonly lecturas: Repository<LecturaEntidad>,
     private readonly dataSource: DataSource,
     private readonly reloj: Reloj,
     private readonly archivos: ArchivosServicio,
@@ -126,6 +131,21 @@ export class RutasServicio {
     if (sesion.rol !== 'administracion' && ruta.lectorId !== sesion.usuarioId)
       throw new ErrorApi('SIN_PERMISO');
     return ruta;
+  }
+
+  /** R12: la ruta del lector del token. `administracion` tampoco carga: no es su ruta. */
+  async buscarDelLector(
+    id: string,
+    sesion: SesionActual,
+  ): Promise<RutaEntidad> {
+    const ruta = await this.buscar(id);
+    if (ruta.lectorId !== sesion.usuarioId) throw new ErrorApi('SIN_PERMISO');
+    return ruta;
+  }
+
+  /** El mensaje de RUTA_YA_CERRADA con la fecha del cierre (R22). */
+  errorDeRutaCerrada(ruta: RutaEntidad): never {
+    return this.errorCerrada(ruta);
   }
 
   async obtener(id: string, sesion: SesionActual): Promise<Ruta> {
@@ -243,21 +263,33 @@ export class RutasServicio {
         const m = medidores.get(s.medidorId);
         return m ? [medidorAContrato(m, (c) => this.archivos.url(c))] : [];
       }),
-      // Las lecturas y novedades vigentes se suman en M3 y M4.
-      lecturas: [],
+      lecturas: await this.lecturasVigentes(contrato.suministroIds, id),
+      // Las novedades vigentes se suman en M4.
       novedades: [],
     };
+  }
+
+  /** Las lecturas vigentes (R13) de la ruta, en el orden del recorrido. */
+  private async lecturasVigentes(suministroIds: string[], rutaId: string) {
+    const vigentes = await lecturasVigentesDeRuta(this.lecturas, rutaId);
+    return suministroIds.flatMap((sid) => {
+      const l = vigentes.get(sid);
+      return l ? [lecturaAContrato(l, (c) => this.archivos.url(c))] : [];
+    });
   }
 
   async avance(id: string, sesion: SesionActual): Promise<AvanceRuta> {
     await this.buscarAccesible(id, sesion);
     const suministros = await this.posiciones.countBy({ rutaId: id });
-    // Los resultados vigentes (R13) llegan con M3 y M4: hasta entonces no hay ninguno.
+    // R10: sólo los resultados vigentes (R13). Las novedades vigentes se suman en M4.
+    const vigentes = [
+      ...(await lecturasVigentesDeRuta(this.lecturas, id)).values(),
+    ];
     return calcularAvance(id, {
       suministros,
-      leidos: 0,
+      leidos: vigentes.length,
       conNovedad: 0,
-      fueraDeRango: 0,
+      fueraDeRango: vigentes.filter((l) => l.fueraDeRango).length,
     });
   }
 

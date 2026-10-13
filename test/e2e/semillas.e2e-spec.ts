@@ -1,4 +1,4 @@
-import type { Ruta, Suministro } from '../../contrato/tipos.js';
+import type { Lectura, Ruta, Suministro } from '../../contrato/tipos.js';
 import { ArchivosServicio } from '../../src/comun/archivos/archivos.servicio.js';
 import { MedidorEntidad } from '../../src/modulos/suministros/medidor.entidad.js';
 import { medidorAContrato } from '../../src/modulos/suministros/suministros.mapeador.js';
@@ -267,6 +267,43 @@ describe('ESPECIFICACION §8 — Semillas: las rutas de la app de clase', () => 
       .expect(200);
     const inactivos = (r.body.datos as Suministro[]).filter((s) => !s.activo);
     expect(inactivos.map((s) => s.numero)).toEqual(['020006']);
+  });
+
+  it('las 20 lecturas de Brasil cumplen el contrato y la foto se baja', async () => {
+    const ramon = await ingresar(c, { legajo: 'L-011', contrasena: 'lectura' });
+    const r = await c
+      .http()
+      .get('/rutas/rut-07-2026-05/lecturas?porPagina=200')
+      .set(bearer(ramon))
+      .expect(200);
+    esperarContrato(r.body, 'Lectura');
+    const lista = r.body.datos as Lectura[];
+    expect(lista).toHaveLength(20);
+    // D19: lec-88201 es de sum-004120, la primera de la ruta.
+    expect(lista[0]).toMatchObject({
+      id: 'lec-88201',
+      suministroId: 'sum-004120',
+      consumo: 18,
+    });
+    expect(lista.find((l) => l.id === 'lec-88240')).toMatchObject({
+      consumo: -4014,
+      fueraDeRango: true,
+      confirmadaPorLector: true,
+    });
+    const foto = new URL(lista[0].fotoUri);
+    const bajada = await c.http().get(foto.pathname).expect(200);
+    expect(bajada.headers['content-type']).toContain('image/jpeg');
+    const av = await c
+      .http()
+      .get('/rutas/rut-07-2026-05/avance')
+      .set(bearer(ramon))
+      .expect(200);
+    expect(av.body.datos).toMatchObject({
+      suministros: 200,
+      leidos: 20,
+      pendientes: 180,
+      fueraDeRango: 2,
+    });
   });
 
   it('un lector ve sus suministros pero no los de otro', async () => {

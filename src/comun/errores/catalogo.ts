@@ -80,6 +80,25 @@ export const CATALOGO = {
     mensaje: 'El suministro 004120 ya está en la ruta 07 de este bimestre.',
   },
 
+  // Lectura de Medidores — lecturas
+  SUMINISTRO_FUERA_DE_RUTA: {
+    estado: 422,
+    mensaje: 'Ese suministro no es de esta ruta.',
+  },
+  LECTURA_INVALIDA: {
+    estado: 422,
+    mensaje: 'Ese número no puede salir de este medidor. Revisalo.',
+  },
+  LECTURA_NO_ENCONTRADA: {
+    estado: 404,
+    mensaje: 'No encontramos esa lectura.',
+  },
+  FOTO_REQUERIDA: { estado: 422, mensaje: 'Falta la foto del medidor.' },
+  ID_EN_USO: {
+    estado: 409,
+    mensaje: 'Ese identificador ya lo usó otra persona.',
+  },
+
   // Lectura de Medidores — suministros y medidores
   SUMINISTRO_NO_ENCONTRADO: {
     estado: 404,

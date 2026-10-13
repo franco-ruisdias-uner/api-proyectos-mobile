@@ -202,6 +202,9 @@ interface PruebaPush { dispositivos: number }
 | `GET` | `/rutas/:id/suministros` | Con sesión (cualquier rol) | Los suministros de una ruta, en orden de recorrido |
 | `POST` | `/rutas/:id/descarga` | Con sesión (cualquier rol) | Descarga completa de la ruta |
 | `GET` | `/rutas/:id/avance` | Con sesión (cualquier rol) | Avance de la ruta según el servidor |
+| `POST` | `/lecturas` | Con sesión (cualquier rol) | Carga una lectura |
+| `GET` | `/lecturas/:id` | Con sesión (cualquier rol) | Una lectura |
+| `GET` | `/rutas/:id/lecturas` | Con sesión (cualquier rol) | Las lecturas vigentes de una ruta |
 | `POST` | `/auth/ingreso` | Público: no hace falta sesión | Ingresar con legajo y contraseña |
 | `POST` | `/auth/salida` | Con sesión (cualquier rol) | Salir: cierra todas las sesiones del usuario |
 <!-- tabla-endpoints:fin -->
@@ -216,11 +219,13 @@ interface PruebaPush { dispositivos: number }
 | `NO_AUTENTICADO` | 401 | Tenés que ingresar de nuevo con tu legajo y contraseña. |
 | `SIN_PERMISO` | 403 | No tenés permiso para hacer eso. |
 | `ARCHIVO_NO_ENCONTRADO` | 404 | No encontramos ese archivo. |
+| `LECTURA_NO_ENCONTRADA` | 404 | No encontramos esa lectura. |
 | `MEDIDOR_NO_ENCONTRADO` | 404 | No existe ese medidor. |
 | `RECURSO_NO_ENCONTRADO` | 404 | Esa dirección no existe en la API. |
 | `RUTA_NO_ENCONTRADA` | 404 | No existe esa ruta. |
 | `SUMINISTRO_NO_ENCONTRADO` | 404 | No existe ese suministro. |
 | `USUARIO_NO_ENCONTRADO` | 404 | No existe ese usuario. |
+| `ID_EN_USO` | 409 | Ese identificador ya lo usó otra persona. |
 | `LEGAJO_YA_REGISTRADO` | 409 | Ya hay una cuenta con ese legajo. |
 | `RUTA_EN_CURSO` | 409 | La ruta ya salió a la calle: no se le pueden cambiar los suministros. |
 | `RUTA_YA_CERRADA` | 409 | Esa ruta fue cerrada el DD/MM. |
@@ -230,7 +235,10 @@ interface PruebaPush { dispositivos: number }
 | `TIPO_DE_ARCHIVO_NO_PERMITIDO` | 415 | Ese tipo de archivo no se puede subir. Usá una foto, un audio o un video. |
 | `RANGO_NO_VALIDO` | 416 | No se pudo leer esa parte del archivo. |
 | `ARCHIVO_NO_SUBIDO` | 422 | El archivo todavía no se subió. Probá de nuevo cuando tengas señal. |
+| `FOTO_REQUERIDA` | 422 | Falta la foto del medidor. |
 | `LECTOR_NO_ENCONTRADO` | 422 | Ese usuario no existe o no es lector. |
+| `LECTURA_INVALIDA` | 422 | Ese número no puede salir de este medidor. Revisalo. |
+| `SUMINISTRO_FUERA_DE_RUTA` | 422 | Ese suministro no es de esta ruta. |
 | `SUMINISTRO_REPETIDO` | 422 | Hay un suministro repetido en la ruta. |
 | `ERROR_INTERNO` | 500 | Algo salió mal de nuestro lado. Probá de nuevo en un rato. |
 | `ALMACEN_NO_DISPONIBLE` | 503 | No pudimos acceder a los archivos. Probá de nuevo en un rato. |
