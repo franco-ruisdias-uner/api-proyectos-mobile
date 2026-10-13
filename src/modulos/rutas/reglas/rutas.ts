@@ -47,3 +47,22 @@ export function calcularAvance(
     ),
   };
 }
+
+/** R20: los ids que el teléfono dice haber cargado y el servidor no tiene, sin repetidos. */
+export function faltantesDelCierre(
+  declarados: string[],
+  recibidos: ReadonlySet<string>,
+): string[] {
+  return [...new Set(declarados)].filter((id) => !recibidos.has(id));
+}
+
+/** R20: "Faltan subir 3 lecturas y 1 novedad. …"; sólo nombra lo que falta. */
+export function mensajeFaltantes(lecturas: number, novedades: number): string {
+  const partes: string[] = [];
+  if (lecturas > 0)
+    partes.push(`${lecturas} ${lecturas === 1 ? 'lectura' : 'lecturas'}`);
+  if (novedades > 0)
+    partes.push(`${novedades} ${novedades === 1 ? 'novedad' : 'novedades'}`);
+  const total = lecturas + novedades;
+  return `${total === 1 ? 'Falta' : 'Faltan'} subir ${partes.join(' y ')}. Esperá a tener señal y probá de nuevo.`;
+}

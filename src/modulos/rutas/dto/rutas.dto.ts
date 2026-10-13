@@ -145,3 +145,36 @@ export class ActualizarRutaDto {
   })
   suministroIds?: string[];
 }
+
+const MENSAJE_LECTURAS =
+  'Faltan los identificadores de las lecturas que cargaste.';
+const MENSAJE_NOVEDADES =
+  'Faltan los identificadores de las novedades que cargaste.';
+/** Una ruta tiene hasta 300 suministros y cada uno puede tener varias lecturas corregidas. */
+const MAXIMO_IDS_CIERRE = 3000;
+
+export class CerrarRutaDto {
+  @ApiProperty({
+    example: ['lec-88201'],
+    description: 'Ids de todas las lecturas que el teléfono cargó en la ruta.',
+  })
+  @IsArray({ message: MENSAJE_LECTURAS })
+  @ArrayMaxSize(MAXIMO_IDS_CIERRE, { message: MENSAJE_LECTURAS })
+  @Matches(/^lec-[A-Za-z0-9_-]{3,36}$/, {
+    each: true,
+    message: 'Hay un identificador de lectura que no es válido.',
+  })
+  lecturaIds: string[];
+
+  @ApiProperty({
+    example: ['nov-3312'],
+    description: 'Ids de todas las novedades que el teléfono cargó en la ruta.',
+  })
+  @IsArray({ message: MENSAJE_NOVEDADES })
+  @ArrayMaxSize(MAXIMO_IDS_CIERRE, { message: MENSAJE_NOVEDADES })
+  @Matches(/^nov-[A-Za-z0-9_-]{3,36}$/, {
+    each: true,
+    message: 'Hay un identificador de novedad que no es válido.',
+  })
+  novedadIds: string[];
+}

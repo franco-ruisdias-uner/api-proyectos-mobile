@@ -8,8 +8,8 @@ Hasta ahora la app trabajó con datos inventados (mocks) detrás de una capa de 
 API devuelve **exactamente los mismos tipos** que copiaron del PRD en `src/tipos/`: el día que
 cambian el mock por `fetch`, no tienen que tocar los tipos.
 
-> **Estado:** están hechas la base (M0), los suministros y medidores (M1), las rutas (M2), las lecturas (M3)
-> y las novedades (M4). El cierre de ruta llega en el próximo módulo (mirá `CHANGELOG.md`).
+> **Estado:** están hechas la base (M0), los suministros y medidores (M1), las rutas (M2), las lecturas (M3),
+> las novedades (M4) y el cierre de ruta (M5). Los avisos llegan en el próximo módulo (mirá `CHANGELOG.md`).
 
 ---
 
@@ -208,6 +208,7 @@ interface PruebaPush { dispositivos: number }
 | `GET` | `/rutas/:id/suministros` | Con sesión (cualquier rol) | Los suministros de una ruta, en orden de recorrido |
 | `POST` | `/rutas/:id/descarga` | Con sesión (cualquier rol) | Descarga completa de la ruta |
 | `GET` | `/rutas/:id/avance` | Con sesión (cualquier rol) | Avance de la ruta según el servidor |
+| `POST` | `/rutas/:id/cierre` | Con sesión (cualquier rol) | Cierra la ruta |
 | `POST` | `/lecturas` | Con sesión (cualquier rol) | Carga una lectura |
 | `GET` | `/lecturas/:id` | Con sesión (cualquier rol) | Una lectura |
 | `GET` | `/rutas/:id/lecturas` | Con sesión (cualquier rol) | Las lecturas vigentes de una ruta |
@@ -237,6 +238,7 @@ interface PruebaPush { dispositivos: number }
 | `RUTA_NO_ENCONTRADA` | 404 | No existe esa ruta. |
 | `SUMINISTRO_NO_ENCONTRADO` | 404 | No existe ese suministro. |
 | `USUARIO_NO_ENCONTRADO` | 404 | No existe ese usuario. |
+| `HAY_DATOS_SIN_SUBIR` | 409 | Faltan subir N lecturas y N novedades. Esperá a tener señal y probá de nuevo. |
 | `ID_EN_USO` | 409 | Ese identificador ya lo usó otra persona. |
 | `LEGAJO_YA_REGISTRADO` | 409 | Ya hay una cuenta con ese legajo. |
 | `RUTA_EN_CURSO` | 409 | La ruta ya salió a la calle: no se le pueden cambiar los suministros. |

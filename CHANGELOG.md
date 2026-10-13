@@ -4,6 +4,20 @@ Todo lo que cambia en la API, escrito para los grupos que la usan desde la app.
 
 ## [Sin publicar]
 
+### M5 — Cierre de ruta
+
+- **Cerrar la ruta**: `POST /rutas/:id/cierre` con `{ lecturaIds, novedadIds }`, los ids de **todo** lo que el
+  teléfono cargó en esa ruta. Responde 200 con la `Ruta` en `cerrada` y `cerradaEn`.
+- Si al servidor le falta algo, 409 `HAY_DATOS_SIN_SUBIR` con cuántas lecturas y novedades faltan ("Faltan subir
+  3 lecturas y 1 novedad. Esperá a tener señal y probá de nuevo."): la ruta sigue abierta, así que la app no tiene
+  que dejar cerrar como si estuviera todo bien. Un id que existe pero es de otra ruta cuenta como faltante.
+- Con todo recibido se cierra **aunque queden suministros sin leer** (se facturan por promedio); `GET
+  /rutas/:id/avance` dice cuántos quedaron pendientes.
+- Cerrar una ruta ya cerrada: 409 `RUTA_YA_CERRADA`, "Esa ruta fue cerrada el 14/09.". Reintentar una lectura o
+  novedad que ya había llegado sigue dando 200 aunque la ruta esté cerrada.
+- Lo puede hacer el lector de la ruta o administración (con las dos listas vacías); otro lector recibe 403.
+- Error nuevo: `HAY_DATOS_SIN_SUBIR`.
+
 ### M4 — Novedades
 
 - **Cargar una novedad**: `POST /novedades` con la forma de `Novedad` (201; 200 si el `id` ya existía del mismo

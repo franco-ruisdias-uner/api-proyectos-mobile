@@ -71,6 +71,11 @@ export const CATALOGO = {
     mensaje:
       'La ruta ya salió a la calle: no se le pueden cambiar los suministros.',
   },
+  HAY_DATOS_SIN_SUBIR: {
+    estado: 409,
+    mensaje:
+      'Faltan subir N lecturas y N novedades. Esperá a tener señal y probá de nuevo.',
+  },
   SUMINISTRO_REPETIDO: {
     estado: 422,
     mensaje: 'Hay un suministro repetido en la ruta.',

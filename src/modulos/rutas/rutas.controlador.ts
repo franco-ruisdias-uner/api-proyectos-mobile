@@ -28,6 +28,7 @@ import {
 import { EJEMPLO_SUMINISTRO } from '../suministros/ejemplos.js';
 import {
   ActualizarRutaDto,
+  CerrarRutaDto,
   CrearRutaDto,
   ListarRutasDto,
   MisRutasDto,
@@ -207,5 +208,36 @@ export class RutasControlador {
     @Sesion() sesion: SesionActual,
   ): Promise<RespuestaUno<AvanceRuta>> {
     return respuestaUno(await this.rutas.avance(id, sesion));
+  }
+
+  @Post('rutas/:id/cierre')
+  @HttpCode(200)
+  @Doc({
+    resumen: 'Cierra la ruta',
+    descripcion:
+      'Cuerpo: `{ lecturaIds, novedadIds }`, los ids de **todo** lo que el teléfono cargó en esa ruta. ' +
+      'Si al servidor le falta algo, responde 409 `HAY_DATOS_SIN_SUBIR` (con cuántas lecturas y novedades faltan) ' +
+      'y la ruta sigue abierta. Con todo recibido, cierra aunque queden suministros sin leer: se facturan por promedio. ' +
+      'Lo puede hacer el lector de la ruta o administración (que manda las dos listas vacías).',
+    roles: [],
+    ejemplo: {
+      ...EJEMPLO_RUTA,
+      estado: 'cerrada',
+      cerradaEn: '2026-09-15T17:30:00-03:00',
+    },
+    errores: [
+      'VALIDACION_FALLIDA',
+      'SIN_PERMISO',
+      'RUTA_NO_ENCONTRADA',
+      'RUTA_YA_CERRADA',
+      'HAY_DATOS_SIN_SUBIR',
+    ],
+  })
+  async cerrar(
+    @Param('id', new IdPipe('rut')) id: string,
+    @Body() dto: CerrarRutaDto,
+    @Sesion() sesion: SesionActual,
+  ): Promise<RespuestaUno<Ruta>> {
+    return respuestaUno(await this.rutas.cerrar(id, dto, sesion));
   }
 }

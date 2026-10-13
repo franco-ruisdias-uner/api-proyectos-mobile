@@ -317,3 +317,9 @@ Decisión: una novedad es vigente si su suministro no tiene ninguna lectura en e
 ### A36 — Detalles de `POST /novedades` y `GET /novedades` que la especificación no fija
 Estado: PROVISORIA (autónomo)
 Decisión: `consumo` y otros campos que no son de `Novedad` dan 400 (sólo `lectorId` y `sincronizada` se ignoran). `desde` mayor que `hasta` devuelve la lista vacía. El resumen agrupa por el bimestre de la **ruta**, no por `fechaHora`. Un mismo `id` reenviado por el mismo lector es siempre un reintento (200 con la original).
+
+### A37 — Detalles del cierre de ruta que la especificación no fija
+Estado: PROVISORIA (autónomo)
+Hueco: R20 a R23 no dicen qué cuenta como "recibido", cuál error gana si hay dos, ni el formato del mensaje.
+Decisión: un id está recibido si existe como lectura (o novedad) **de esa ruta**; uno que existe en otra ruta cuenta como faltante, y uno que dejó de ser vigente (R13) cuenta como recibido (nada se borra). Los ids repetidos en el cuerpo se cuentan una vez. Orden de controles: ruta existe, permiso (R3), ruta ya cerrada (`RUTA_YA_CERRADA` gana sobre los faltantes), faltantes. El mensaje nombra sólo lo que falta y usa singular ("Falta subir 1 lectura."). Las listas son obligatorias (aunque vacías), con hasta 3000 ids cada una y el prefijo `lec-` / `nov-`. Se puede cerrar una ruta `asignada` que nunca se descargó. Dos cierres simultáneos se resuelven con un `UPDATE` condicionado al estado abierto: el que pierde recibe `RUTA_YA_CERRADA`. El cierre de administración sobre una ruta ajena queda en el log (R23). Descartado: aceptar un cierre administrativo con listas no vacías sin comprobarlas (siempre se comprueba).
+

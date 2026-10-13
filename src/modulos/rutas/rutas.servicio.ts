@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   DataSource,
@@ -36,13 +36,16 @@ import {
 import { UsuarioEntidad } from '../usuarios/usuario.entidad.js';
 import type {
   ActualizarRutaDto,
+  CerrarRutaDto,
   CrearRutaDto,
   ListarRutasDto,
   MisRutasDto,
 } from './dto/rutas.dto.js';
 import {
   calcularAvance,
+  faltantesDelCierre,
   idDeRuta,
+  mensajeFaltantes,
   mensajeRutaCerrada,
   primerRepetido,
 } from './reglas/rutas.js';
@@ -78,6 +81,8 @@ function alSegundo(instante: Date): Date {
 
 @Injectable()
 export class RutasServicio {
+  private readonly log = new Logger(RutasServicio.name);
+
   constructor(
     @InjectRepository(RutaEntidad)
     private readonly rutas: Repository<RutaEntidad>,
@@ -307,6 +312,60 @@ export class RutasServicio {
         .size,
       fueraDeRango: vigentes.filter((l) => l.fueraDeRango).length,
     });
+  }
+
+  // ---- cierre (M5) ----
+
+  /** Los ids de esa ruta que el servidor tiene, entre los pedidos (el id exacto: MySQL no distingue mayúsculas). */
+  private async recibidos<T extends { id: string; rutaId: string }>(
+    repo: Repository<T>,
+    rutaId: string,
+    ids: string[],
+  ): Promise<Set<string>> {
+    const pedidos = new Set(ids);
+    const tenidos = new Set<string>();
+    for (const tanda of enTandas([...pedidos])) {
+      const filas = await repo.findBy({
+        id: In(tanda),
+      } as FindOptionsWhere<T>);
+      for (const f of filas)
+        if (f.rutaId === rutaId && pedidos.has(f.id)) tenidos.add(f.id);
+    }
+    return tenidos;
+  }
+
+  /** R20 a R23: se cierra sólo si el servidor tiene todo lo que el teléfono dice haber cargado. */
+  async cerrar(
+    id: string,
+    dto: CerrarRutaDto,
+    sesion: SesionActual,
+  ): Promise<Ruta> {
+    const ruta = await this.buscarAccesible(id, sesion);
+    if (ruta.estado === 'cerrada') this.errorCerrada(ruta);
+    const faltanLecturas = faltantesDelCierre(
+      dto.lecturaIds,
+      await this.recibidos(this.lecturas, id, dto.lecturaIds),
+    );
+    const faltanNovedades = faltantesDelCierre(
+      dto.novedadIds,
+      await this.recibidos(this.novedades, id, dto.novedadIds),
+    );
+    if (faltanLecturas.length + faltanNovedades.length > 0)
+      throw new ErrorApi(
+        'HAY_DATOS_SIN_SUBIR',
+        mensajeFaltantes(faltanLecturas.length, faltanNovedades.length),
+      );
+    // Dos cierres a la vez: sólo uno encuentra la ruta abierta.
+    const { affected } = await this.rutas.update(
+      { id, estado: In(ESTADOS_ABIERTOS) },
+      { estado: 'cerrada', cerradaEn: alSegundo(this.reloj.ahora()) },
+    );
+    if (affected === 0) this.errorCerrada(await this.buscar(id));
+    if (sesion.rol === 'administracion' && ruta.lectorId !== sesion.usuarioId)
+      this.log.log(
+        `Cierre administrativo de ${id} por ${sesion.usuarioId} (lector ${ruta.lectorId}).`,
+      );
+    return (await this.aContratos([await this.buscar(id)]))[0];
   }
 
   private errorCerrada(ruta: RutaEntidad): never {

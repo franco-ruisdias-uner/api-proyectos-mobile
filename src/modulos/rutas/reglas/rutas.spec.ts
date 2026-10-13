@@ -1,7 +1,9 @@
 import {
   calcularAvance,
   esBimestreValido,
+  faltantesDelCierre,
   idDeRuta,
+  mensajeFaltantes,
   mensajeRutaCerrada,
   primerRepetido,
 } from './rutas.js';
@@ -85,5 +87,40 @@ describe('ESPECIFICACION R10 — Avance de la ruta', () => {
         fueraDeRango: 0,
       }).pendientes,
     ).toBe(0);
+  });
+});
+
+describe('R20 — Lo que le falta al servidor para cerrar', () => {
+  it('lo que el teléfono dice y el servidor no tiene, sin repetidos', () => {
+    expect(
+      faltantesDelCierre(
+        ['lec-a', 'lec-b', 'lec-b', 'lec-c'],
+        new Set(['lec-a']),
+      ),
+    ).toEqual(['lec-b', 'lec-c']);
+  });
+
+  it('si el servidor tiene todo, no falta nada', () => {
+    expect(faltantesDelCierre(['lec-a'], new Set(['lec-a', 'lec-z']))).toEqual(
+      [],
+    );
+    expect(faltantesDelCierre([], new Set())).toEqual([]);
+  });
+
+  it.each([
+    [
+      3,
+      1,
+      'Faltan subir 3 lecturas y 1 novedad. Esperá a tener señal y probá de nuevo.',
+    ],
+    [1, 0, 'Falta subir 1 lectura. Esperá a tener señal y probá de nuevo.'],
+    [0, 2, 'Faltan subir 2 novedades. Esperá a tener señal y probá de nuevo.'],
+    [
+      1,
+      1,
+      'Faltan subir 1 lectura y 1 novedad. Esperá a tener señal y probá de nuevo.',
+    ],
+  ])('mensaje con %i lecturas y %i novedades', (l, n, esperado) => {
+    expect(mensajeFaltantes(l, n)).toBe(esperado);
   });
 });
