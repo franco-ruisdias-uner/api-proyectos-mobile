@@ -10,7 +10,9 @@ export default defineConfig({
     root: './',
     include: ['test/e2e/**/*.e2e-spec.ts', 'test/verificacion/**/*.e2e-spec.ts'],
     exclude: ['**/node_modules/**', 'docs/**', 'dist/**'],
-    fileParallelism: motor === 'better-sqlite3',
+    // De a un archivo: en paralelo, con la máquina cargada (scrypt + SQLite), los hooks vencían por timeout;
+    // en serie la suite entera tarda menos de un minuto.
+    fileParallelism: false,
     testTimeout: 30_000,
     hookTimeout: 60_000,
   },
