@@ -344,3 +344,5 @@ Lo que no se pudo probar sin cuentas reales (Supabase, Render, R2, B2, AWS, Neon
 ### A40 — M8: las semillas ya estaban completas; se agrega la prueba de punta a punta
 Estado: PROVISORIA (autónomo)
 Decisión: los datos de la app de clase se sembraron módulo a módulo (M1 a M4). M8 no cambia datos: suma un test que recorre las 20 rutas (lecturas, novedades y avance) y los suministros contra el contrato, los casos feos (A14, A29, D19) y el README con la tabla de casos. Descartado: agregar datos nuevos que la app de clase no tiene.
+
+Dudas del verificador (M8), sin cambios de comportamiento: la especificación dice "cuatro videos" pero el medidor ×10 no lleva video, así que se sirven tres (uno por modelo común); `lec-88225` queda fuera de rango y confirmada (A29, D4); si otro lector manda un `id` existente en una ruta que no es suya, gana `SIN_PERMISO` (R12) antes que `ID_EN_USO`.
