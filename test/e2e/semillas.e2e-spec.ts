@@ -369,3 +369,89 @@ describe('ESPECIFICACION §8 — Semillas: las rutas de la app de clase', () => 
       .expect(403);
   });
 });
+
+describe('ESPECIFICACION §8 — Semillas completas: cada registro sembrado cumple el contrato', () => {
+  let c: AppDePrueba;
+  let laura: string;
+  beforeAll(async () => {
+    c = await crearApp();
+    await c.app.get(Sembrador).sembrar();
+    laura = await ingresar(c, { legajo: 'L-030', contrasena: 'lectura' });
+  });
+  afterAll(() => c.cerrar());
+
+  it('las 20 rutas, con sus lecturas, novedades y avance, validan contra el contrato', async () => {
+    const rutas = (
+      await c.http().get('/rutas?porPagina=100').set(bearer(laura)).expect(200)
+    ).body.datos as Ruta[];
+    expect(rutas).toHaveLength(20);
+    let lecturas = 0;
+    let novedades = 0;
+    for (const ruta of rutas) {
+      const l = await c
+        .http()
+        .get(`/rutas/${ruta.id}/lecturas?porPagina=200`)
+        .set(bearer(laura))
+        .expect(200);
+      esperarContrato(l.body, 'Lectura');
+      lecturas += l.body.datos.length;
+      const n = await c
+        .http()
+        .get(`/rutas/${ruta.id}/novedades?porPagina=200`)
+        .set(bearer(laura))
+        .expect(200);
+      esperarContrato(n.body, 'Novedad');
+      novedades += n.body.datos.length;
+      const a = await c
+        .http()
+        .get(`/rutas/${ruta.id}/avance`)
+        .set(bearer(laura))
+        .expect(200);
+      esperarContrato(a.body, 'AvanceRuta');
+      expect(a.body.datos.suministros).toBe(ruta.suministroIds.length);
+    }
+    expect(lecturas).toBe(20);
+    expect(novedades).toBe(20);
+  });
+
+  it('los 580 suministros y sus medidores salen sin huecos: cada medidor existe y su QR es el del PRD', async () => {
+    const r = await c
+      .http()
+      .get('/suministros?porPagina=100&pagina=6')
+      .set(bearer(laura))
+      .expect(200);
+    esperarContrato(r.body, 'Suministro');
+    expect(r.body.meta.total).toBe(580);
+    const ids = (r.body.datos as Suministro[]).map((s) => s.medidorId);
+    for (const id of ids.slice(0, 5)) {
+      const m = await c
+        .http()
+        .get(`/medidores/${id}`)
+        .set(bearer(laura))
+        .expect(200);
+      esperarContrato(m.body, 'Medidor');
+      expect(m.body.datos.codigoQr).toBe(`COOP-CHJ:${id}`);
+    }
+  });
+
+  it('casos feos: dos lecturas fuera de rango confirmadas, una con consumo negativo, y siete rutas cerradas', async () => {
+    const l = (
+      await c
+        .http()
+        .get('/rutas/rut-07-2026-05/lecturas?fueraDeRango=true')
+        .set(bearer(laura))
+        .expect(200)
+    ).body.datos as Lectura[];
+    expect(l.map((x) => x.id).sort()).toEqual(['lec-88225', 'lec-88240']);
+    expect(l.every((x) => x.confirmadaPorLector)).toBe(true);
+    expect(l.some((x) => x.consumo < 0)).toBe(true);
+    const cerradas = (
+      await c.http().get('/rutas?estado=cerrada').set(bearer(laura)).expect(200)
+    ).body.datos as Ruta[];
+    expect(cerradas.every((x) => x.cerradaEn !== null)).toBe(true);
+  });
+
+  it('sembrar de nuevo no duplica nada: la base ya no está vacía', async () => {
+    expect(await c.app.get(Sembrador).estaVacia()).toBe(false);
+  });
+});

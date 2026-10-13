@@ -340,3 +340,7 @@ Decisión: (1) sólo hay un adaptador S3 (`AlmacenS3`); con proveedores que no s
 Alternativas descartadas: un adaptador por proveedor; instalar un SDK por proveedor; firmar URLs a mano.
 
 Lo que no se pudo probar sin cuentas reales (Supabase, Render, R2, B2, AWS, Neon, Aiven, LocalStack): los endpoints y las reglas de los presets salen de la documentación de cada proveedor y están cubiertos con tests unitarios; la prueba de punta a punta la hace la cátedra o el grupo con `pnpm db:probar`, `pnpm archivos:probar` y `pnpm publicado:probar`.
+
+### A40 — M8: las semillas ya estaban completas; se agrega la prueba de punta a punta
+Estado: PROVISORIA (autónomo)
+Decisión: los datos de la app de clase se sembraron módulo a módulo (M1 a M4). M8 no cambia datos: suma un test que recorre las 20 rutas (lecturas, novedades y avance) y los suministros contra el contrato, los casos feos (A14, A29, D19) y el README con la tabla de casos. Descartado: agregar datos nuevos que la app de clase no tiene.

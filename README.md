@@ -8,8 +8,9 @@ Hasta ahora la app trabajó con datos inventados (mocks) detrás de una capa de 
 API devuelve **exactamente los mismos tipos** que copiaron del PRD en `src/tipos/`: el día que
 cambian el mock por `fetch`, no tienen que tocar los tipos.
 
-> **Estado:** están hechas la base (M0), los suministros y medidores (M1), las rutas (M2), las lecturas (M3),
-> las novedades (M4) y el cierre de ruta (M5). Los avisos llegan en el próximo módulo (mirá `CHANGELOG.md`).
+> **Estado:** la API está completa: base, suministros y medidores, rutas, lecturas, novedades, cierre de ruta, avisos,
+> nube y datos de demo. Lo único que falta es lo que programan ustedes (el guardado de tokens y el envío de push,
+> mirá `CHANGELOG.md`).
 
 ---
 
@@ -129,6 +130,22 @@ que no tienen lectura, con los siete motivos. `nov-3312` es la del PRD (`sum-004
 nota de voz). La foto y la nota de voz son de demo (sin imagen ni sonido reproducibles): sirven para probar
 la subida y `Range`. Con ellas, el resumen de la administración (`GET /novedades/resumen`, ingresando como
 `L-030`) trae datos.
+
+**Casos feos para probar** (los que pide el PRD, todos en los datos de demo):
+
+| Caso | Dónde está |
+|---|---|
+| Ruta de 200 suministros | `rut-07-2026-05` (ingresá como `L-011`) |
+| Conexión nueva, sin lectura anterior | décimo suministro de Brasil (`lecturaAnterior`, `fechaLecturaAnterior` y `consumoPromedio` en `null`) |
+| Medidor con multiplicador ×10, sin video | 26.º de Brasil (`lec-88225`, fuera de rango y confirmada) |
+| Consumo negativo (cambiaron el medidor) | `lec-88240`, fuera de rango y confirmada |
+| Suministro inactivo dentro de una ruta | `020006`, en la ruta `02` (sigue en su lugar del recorrido) |
+| Ruta cerrada | `rut-12-2026-05` (cerrada el 14/09: `POST /rutas/rut-12-2026-05/descarga` da `Esa ruta fue cerrada el 14/09.`) y otras seis de barrio |
+| Una novedad de cada motivo | las 20 de Brasil; `nov-3312` es la del PRD, con nota de voz |
+| Error de red | cabecera `X-Simular: error-500` (sección 7) |
+
+`lec-88201` es de `sum-004120` (Brasil 1420, Coronel, Ramona: anterior 1284, hoy 1302, consumo 18), como en el PRD.
+Los datos de demo no cambian solos: para volver a este estado, sección 9.
 
 **Rutas de demo.** Son las 20 de la app de clase, en el mismo orden de recorrido: la `07` de
 Barrio Brasil (200 suministros, `en_curso`) y la `12` de Quintas Norte (`cerrada` el 14/09) son

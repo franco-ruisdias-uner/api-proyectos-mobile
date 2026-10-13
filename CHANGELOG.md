@@ -4,6 +4,13 @@ Todo lo que cambia en la API, escrito para los grupos que la usan desde la app.
 
 ## [Sin publicar]
 
+### M8 — Semillas completas y README
+
+- Datos de demo completos y validados contra el contrato: 20 usuarios, 580 suministros con sus medidores, las 20 rutas,
+  las 20 lecturas y las 20 novedades de Barrio Brasil, con los casos feos del PRD (README, sección 5).
+- El README suma la tabla de casos para probar y deja de decir que faltan módulos. Sin cambios en ningún endpoint,
+  respuesta ni código de error.
+
 ### M7 — Nube
 
 - **Archivos en la nube**: `ARCHIVOS_PROVEEDOR` acepta `local` (por defecto), `aws`, `supabase`, `r2`, `b2`, `s3proxy`
