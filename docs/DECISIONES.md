@@ -313,3 +313,7 @@ Decisión: `audioUri` tiene que ser un audio subido a esta API: un `file://` u o
 ### A35 — Vigencia de las novedades y fotos
 Estado: PROVISORIA (autónomo)
 Decisión: una novedad es vigente si su suministro no tiene ninguna lectura en esa ruta y es la de `fechaHora` más reciente (desempata el id mayor). Se calcula al leer, como en A30. Los listados por ruta, el avance (`conNovedad`), la descarga, `GET /novedades` y el resumen usan esa misma función (`novedadesVigentes`). El comentario se recorta y, si queda vacío, es `null`. Las novedades sembradas comparten la foto de demo de las lecturas.
+
+### A36 — Detalles de `POST /novedades` y `GET /novedades` que la especificación no fija
+Estado: PROVISORIA (autónomo)
+Decisión: `consumo` y otros campos que no son de `Novedad` dan 400 (sólo `lectorId` y `sincronizada` se ignoran). `desde` mayor que `hasta` devuelve la lista vacía. El resumen agrupa por el bimestre de la **ruta**, no por `fechaHora`. Un mismo `id` reenviado por el mismo lector es siempre un reintento (200 con la original).
