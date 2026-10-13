@@ -4,6 +4,24 @@ Todo lo que cambia en la API, escrito para los grupos que la usan desde la app.
 
 ## [Sin publicar]
 
+### M4 — Novedades
+
+- **Cargar una novedad**: `POST /novedades` con la forma de `Novedad` (201; 200 si el `id` ya existía del mismo
+  lector, también con la ruta ya cerrada, para reintentar sin duplicar). La foto es obligatoria
+  (`FOTO_REQUERIDA`); la nota de voz es opcional y tiene que ser un audio subido con `POST /archivos`.
+  `comentario` admite hasta 500 caracteres y `""` se guarda como `null`. El servidor pone `lectorId` y
+  `sincronizada`; si los mandás, se ignoran.
+- `GET /novedades/:id` y `GET /rutas/:id/novedades` (las vigentes, en orden de recorrido; filtro `motivo`;
+  de a 50, hasta 200).
+- Administración: `GET /novedades` (filtros `motivo`, `zona`, `bimestre`, `desde`, `hasta`; de la más nueva a
+  la más vieja) y `GET /novedades/resumen` (`ResumenNovedades`: cantidad por motivo y zona del bimestre).
+- Un suministro tiene un solo resultado vigente: **si tiene una lectura, la lectura gana siempre** y la novedad
+  deja de listarse y de contarse (no se borra: se sigue pudiendo pedir por id). Entre novedades, la de
+  `fechaHora` más reciente.
+- La descarga de la ruta trae las novedades vigentes, y `GET /rutas/:id/avance` las cuenta en `conNovedad`.
+- Tipo nuevo en `contrato/api.ts`: `ResumenNovedades`. Error nuevo: `NOVEDAD_NO_ENCONTRADA`.
+- Datos de demo: las 20 novedades de Brasil (`nov-3312` es la del PRD, con nota de voz).
+
 ### M3 — Lecturas
 
 - **Cargar una lectura**: `POST /lecturas` con la forma de `Lectura` (201; 200 si el `id` ya existía del mismo

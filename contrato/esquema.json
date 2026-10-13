@@ -344,6 +344,24 @@
       "required": ["error"],
       "type": "object"
     },
+    "ResumenNovedades": {
+      "additionalProperties": false,
+      "description": "Un renglón de GET /novedades/resumen.",
+      "properties": {
+        "cantidad": {
+          "type": "number"
+        },
+        "motivo": {
+          "$ref": "#/definitions/MotivoNovedad"
+        },
+        "zona": {
+          "description": "Nombre de la ruta (D10).",
+          "type": "string"
+        }
+      },
+      "required": ["motivo", "zona", "cantidad"],
+      "type": "object"
+    },
     "Rol": {
       "enum": ["lector", "administracion"],
       "type": "string"

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LecturaEntidad } from '../lecturas/lectura.entidad.js';
+import { NovedadEntidad } from '../novedades/novedad.entidad.js';
 import { MedidorEntidad } from '../suministros/medidor.entidad.js';
 import { SuministroEntidad } from '../suministros/suministro.entidad.js';
 import { UsuarioEntidad } from '../usuarios/usuario.entidad.js';
@@ -18,6 +19,7 @@ import { RutasServicio } from './rutas.servicio.js';
       MedidorEntidad,
       UsuarioEntidad,
       LecturaEntidad,
+      NovedadEntidad,
     ]),
   ],
   controllers: [RutasControlador],

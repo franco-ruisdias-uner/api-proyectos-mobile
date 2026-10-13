@@ -6,12 +6,14 @@ import { Reloj } from '../comun/reloj/reloj.js';
 import { normalizarParaBusqueda } from '../comun/texto/normalizar.js';
 import { normalizarLegajo } from '../modulos/usuarios/reglas/legajo.js';
 import { UsuarioEntidad } from '../modulos/usuarios/usuario.entidad.js';
+import { NovedadEntidad } from '../modulos/novedades/novedad.entidad.js';
 import { LecturaEntidad } from '../modulos/lecturas/lectura.entidad.js';
 import { RutaSuministroEntidad } from '../modulos/rutas/ruta-suministro.entidad.js';
 import { RutaEntidad } from '../modulos/rutas/ruta.entidad.js';
 import { MedidorEntidad } from '../modulos/suministros/medidor.entidad.js';
 import { SuministroEntidad } from '../modulos/suministros/suministro.entidad.js';
 import { generarLecturas } from './datos/lecturas.js';
+import { generarNovedades } from './datos/novedades.js';
 import { generarRutas } from './datos/rutas.js';
 import {
   generarSuministrosYMedidores,
@@ -19,6 +21,7 @@ import {
 } from './datos/suministros.js';
 import { CONTRASENA_DEMO, USUARIOS } from './datos/usuarios.js';
 import { fotoDeMedidorDeDemo } from './medios/foto-demo.js';
+import { notaDeVozDeDemo } from './medios/audio-demo.js';
 import { videoDeDemo } from './medios/video-demo.js';
 
 const MODELOS_CON_VIDEO = [
@@ -136,6 +139,31 @@ export class Sembrador {
       await m.getRepository(LecturaEntidad).insert(filas);
     });
     this.log.log(`Sembradas ${filas.length} lecturas.`);
+    await this.sembrarNovedades(suministros, fotoClave);
+  }
+
+  /** Las novedades de la ruta 07 de la app de clase; foto y nota de voz de demo, por el puerto. */
+  private async sembrarNovedades(
+    suministros: SemillaSuministro[],
+    fotoClave: string,
+  ): Promise<void> {
+    const audioClave = await this.archivos.guardar(
+      notaDeVozDeDemo(),
+      'audio',
+      'm4a',
+      'audio/mp4',
+    );
+    const recibidaEn = this.reloj.ahora();
+    const filas = generarNovedades(suministros).map(({ conAudio, ...n }) => ({
+      ...n,
+      audioClave: conAudio ? audioClave : null,
+      fotoClave,
+      recibidaEn,
+    }));
+    await this.dataSource.transaction(async (m) => {
+      await m.getRepository(NovedadEntidad).insert(filas);
+    });
+    this.log.log(`Sembradas ${filas.length} novedades.`);
   }
 
   /** Las rutas de la app de clase, con el recorrido en `posicion` (R4). */

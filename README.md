@@ -8,8 +8,8 @@ Hasta ahora la app trabajó con datos inventados (mocks) detrás de una capa de 
 API devuelve **exactamente los mismos tipos** que copiaron del PRD en `src/tipos/`: el día que
 cambian el mock por `fetch`, no tienen que tocar los tipos.
 
-> **Estado:** están hechas la base (M0), los suministros y medidores (M1) y las rutas (M2).
-> Lecturas, novedades y el cierre de ruta llegan en los próximos módulos (mirá `CHANGELOG.md`).
+> **Estado:** están hechas la base (M0), los suministros y medidores (M1), las rutas (M2), las lecturas (M3)
+> y las novedades (M4). El cierre de ruta llega en el próximo módulo (mirá `CHANGELOG.md`).
 
 ---
 
@@ -124,6 +124,12 @@ medidor con multiplicador ×10 (sin video, el 26.º de Brasil) y el suministro `
 inactivo. Los videos instructivos de los medidores son de demo (sin imagen reproducible): sirven
 para probar la descarga y `Range`.
 
+**Novedades de demo**: las 20 de la app de clase, todas de la ruta 07 y de Ramón Duarte, en suministros
+que no tienen lectura, con los siete motivos. `nov-3312` es la del PRD (`sum-004150`, perro suelto, con
+nota de voz). La foto y la nota de voz son de demo (sin imagen ni sonido reproducibles): sirven para probar
+la subida y `Range`. Con ellas, el resumen de la administración (`GET /novedades/resumen`, ingresando como
+`L-030`) trae datos.
+
 **Rutas de demo.** Son las 20 de la app de clase, en el mismo orden de recorrido: la `07` de
 Barrio Brasil (200 suministros, `en_curso`) y la `12` de Quintas Norte (`cerrada` el 14/09) son
 de Ramón Duarte (`L-011`); las otras 18 son de barrio, con 20 suministros cada una y distintos
@@ -205,6 +211,11 @@ interface PruebaPush { dispositivos: number }
 | `POST` | `/lecturas` | Con sesión (cualquier rol) | Carga una lectura |
 | `GET` | `/lecturas/:id` | Con sesión (cualquier rol) | Una lectura |
 | `GET` | `/rutas/:id/lecturas` | Con sesión (cualquier rol) | Las lecturas vigentes de una ruta |
+| `POST` | `/novedades` | Con sesión (cualquier rol) | Carga una novedad |
+| `GET` | `/novedades` | Sólo con rol: administracion | Las novedades, para la administración |
+| `GET` | `/novedades/resumen` | Sólo con rol: administracion | Resumen de novedades por motivo y zona |
+| `GET` | `/novedades/:id` | Con sesión (cualquier rol) | Una novedad |
+| `GET` | `/rutas/:id/novedades` | Con sesión (cualquier rol) | Las novedades vigentes de una ruta |
 | `POST` | `/auth/ingreso` | Público: no hace falta sesión | Ingresar con legajo y contraseña |
 | `POST` | `/auth/salida` | Con sesión (cualquier rol) | Salir: cierra todas las sesiones del usuario |
 <!-- tabla-endpoints:fin -->
@@ -221,6 +232,7 @@ interface PruebaPush { dispositivos: number }
 | `ARCHIVO_NO_ENCONTRADO` | 404 | No encontramos ese archivo. |
 | `LECTURA_NO_ENCONTRADA` | 404 | No encontramos esa lectura. |
 | `MEDIDOR_NO_ENCONTRADO` | 404 | No existe ese medidor. |
+| `NOVEDAD_NO_ENCONTRADA` | 404 | No encontramos esa novedad. |
 | `RECURSO_NO_ENCONTRADO` | 404 | Esa dirección no existe en la API. |
 | `RUTA_NO_ENCONTRADA` | 404 | No existe esa ruta. |
 | `SUMINISTRO_NO_ENCONTRADO` | 404 | No existe ese suministro. |

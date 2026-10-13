@@ -1,4 +1,9 @@
-import type { Lectura, Ruta, Suministro } from '../../contrato/tipos.js';
+import type {
+  Lectura,
+  Novedad,
+  Ruta,
+  Suministro,
+} from '../../contrato/tipos.js';
 import { ArchivosServicio } from '../../src/comun/archivos/archivos.servicio.js';
 import { MedidorEntidad } from '../../src/modulos/suministros/medidor.entidad.js';
 import { medidorAContrato } from '../../src/modulos/suministros/suministros.mapeador.js';
@@ -301,9 +306,53 @@ describe('ESPECIFICACION §8 — Semillas: las rutas de la app de clase', () => 
     expect(av.body.datos).toMatchObject({
       suministros: 200,
       leidos: 20,
-      pendientes: 180,
+      conNovedad: 20,
+      pendientes: 160,
       fueraDeRango: 2,
     });
+  });
+
+  it('las 20 novedades de Brasil cumplen el contrato, con nov-3312 del PRD y su nota de voz con Range', async () => {
+    const ramon = await ingresar(c, { legajo: 'L-011', contrasena: 'lectura' });
+    const r = await c
+      .http()
+      .get('/rutas/rut-07-2026-05/novedades?porPagina=200')
+      .set(bearer(ramon))
+      .expect(200);
+    esperarContrato(r.body, 'Novedad');
+    const lista = r.body.datos as Novedad[];
+    expect(lista).toHaveLength(20);
+    const prd = lista.find((n) => n.id === 'nov-3312');
+    expect(prd).toMatchObject({
+      suministroId: 'sum-004150',
+      motivo: 'perro_suelto',
+      comentario: null,
+      fechaHora: '2026-09-15T08:31:00-03:00',
+    });
+    expect(new Set(lista.map((n) => n.motivo)).size).toBe(7);
+    const audio = new URL(prd!.audioUri!);
+    const bajada = await c
+      .http()
+      .get(audio.pathname)
+      .set('Range', 'bytes=0-9')
+      .expect(206);
+    expect(bajada.headers['content-type']).toContain('audio/mp4');
+    await c.http().get(new URL(prd!.fotoUri).pathname).expect(200);
+  });
+
+  it('el resumen de la administración tiene datos: los siete motivos en Barrio Brasil', async () => {
+    const laura = await ingresar(c, { legajo: 'L-030', contrasena: 'lectura' });
+    const r = await c
+      .http()
+      .get('/novedades/resumen?bimestre=2026-05&porPagina=100')
+      .set(bearer(laura))
+      .expect(200);
+    esperarContrato(r.body, 'ResumenNovedades');
+    const brasil = (
+      r.body.datos as { motivo: string; zona: string; cantidad: number }[]
+    ).filter((g) => g.zona === 'Barrio Brasil');
+    expect(brasil).toHaveLength(7);
+    expect(brasil.reduce((suma, g) => suma + g.cantidad, 0)).toBe(20);
   });
 
   it('un lector ve sus suministros pero no los de otro', async () => {

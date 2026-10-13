@@ -99,6 +99,12 @@ export const CATALOGO = {
     mensaje: 'Ese identificador ya lo usó otra persona.',
   },
 
+  // Lectura de Medidores — novedades
+  NOVEDAD_NO_ENCONTRADA: {
+    estado: 404,
+    mensaje: 'No encontramos esa novedad.',
+  },
+
   // Lectura de Medidores — suministros y medidores
   SUMINISTRO_NO_ENCONTRADO: {
     estado: 404,

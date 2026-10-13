@@ -11,6 +11,7 @@ import { SaludControlador } from './comun/salud/salud.controlador.js';
 import { AuthModulo } from './modulos/auth/auth.modulo.js';
 import { DispositivosModulo } from './modulos/dispositivos/dispositivos.modulo.js';
 import { LecturasModulo } from './modulos/lecturas/lecturas.modulo.js';
+import { NovedadesModulo } from './modulos/novedades/novedades.modulo.js';
 import { RutasModulo } from './modulos/rutas/rutas.modulo.js';
 import { SuministrosModulo } from './modulos/suministros/suministros.modulo.js';
 import { UsuariosModulo } from './modulos/usuarios/usuarios.modulo.js';
@@ -36,6 +37,7 @@ export class AppModule {
         SuministrosModulo,
         RutasModulo,
         LecturasModulo,
+        NovedadesModulo,
         AuthModulo,
         SemillasModulo,
       ],

@@ -296,3 +296,20 @@ Decisión: R13 se resuelve al leer con la función pura `elegirVigente` sobre to
 Estado: PROVISORIA (autónomo)
 Decisión: `porPagina` default 50, máximo 200 (como `/rutas/:id/suministros`). `fotoUri` tiene que ser una **imagen** subida a esta API: un audio o un video dan `FOTO_REQUERIDA`. `confirmadaPorLector` ausente se toma como `false`. Una fecha inválida o futura (más de 5 minutos) es `VALIDACION_FALLIDA`. Una lectura en una ruta `asignada` la pasa a `en_curso` sin tocar `descargadaEn` (la primera descarga lo completa). `ID_EN_USO` (409) entra al catálogo.
 
+
+### A32 — Qué lista `GET /novedades` y cómo se leen `desde`, `hasta` y `zona`
+Estado: PROVISORIA (autónomo)
+Hueco: la especificación no dice si el listado de administración trae todas las novedades o sólo las vigentes, ni el formato de `desde` y `hasta`.
+Decisión: trae las **vigentes** (las mismas que cuenta el resumen, así los dos números coinciden). `desde` y `hasta` son días `AAAA-MM-DD` de hora argentina y entran los dos extremos; un día que no existe (`2026-02-31`) es `VALIDACION_FALLIDA`. `zona` es el nombre de la ruta comparado sin distinguir mayúsculas ni tildes, igual a igual (no parcial). Descartadas: listar también las reemplazadas (agrega ruido y no coincide con el resumen), instantes completos en `desde`/`hasta`.
+
+### A33 — Bimestre por defecto del resumen
+Estado: PROVISORIA (autónomo)
+Decisión: "el actual" es el bimestre del día de hoy en Argentina según D9: `ceil(mes / 2)` (septiembre → `2026-05`). Un bimestre válido sin novedades devuelve la lista vacía.
+
+### A34 — Nota de voz que no es un audio
+Estado: PROVISORIA (autónomo)
+Decisión: `audioUri` tiene que ser un audio subido a esta API: un `file://` u otra URL dan `ARCHIVO_NO_SUBIDO` (422); una imagen o un video subidos dan `VALIDACION_FALLIDA` (400) "La nota de voz tiene que ser un audio.". `audioUri: ""` se toma como `null`. Una foto que sea un audio o un video da `FOTO_REQUERIDA`, igual que en las lecturas (A31).
+
+### A35 — Vigencia de las novedades y fotos
+Estado: PROVISORIA (autónomo)
+Decisión: una novedad es vigente si su suministro no tiene ninguna lectura en esa ruta y es la de `fechaHora` más reciente (desempata el id mayor). Se calcula al leer, como en A30. Los listados por ruta, el avance (`conNovedad`), la descarga, `GET /novedades` y el resumen usan esa misma función (`novedadesVigentes`). El comentario se recorta y, si queda vacío, es `null`. Las novedades sembradas comparten la foto de demo de las lecturas.

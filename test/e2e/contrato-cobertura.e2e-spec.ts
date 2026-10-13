@@ -17,7 +17,7 @@ const NO_SON_RESPUESTA = [
 ];
 
 /** Entidades que la API todavía no devuelve: se sacan de acá en el módulo que las agrega. */
-const TODAVIA_NO_SE_DEVUELVEN = ['Novedad'];
+const TODAVIA_NO_SE_DEVUELVEN: string[] = [];
 
 function archivos(dir: string): string[] {
   return readdirSync(dir).flatMap((nombre) => {

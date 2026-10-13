@@ -173,20 +173,48 @@ describe('Verificación M3 — caja negra con datos propios', () => {
   describe('Fechas de entrada y salida', () => {
     it.each([
       ['con Z', '2026-09-15T10:30:00Z', '2026-09-15T07:30:00-03:00'],
-      ['con milisegundos', '2026-09-15T07:30:00.123-03:00', '2026-09-15T07:30:00-03:00'],
-      ['con otro offset', '2026-09-15T11:30:00+01:00', '2026-09-15T07:30:00-03:00'],
-      ['cruce de medianoche UTC', '2026-09-15T02:59:59Z', '2026-09-14T23:59:59-03:00'],
-      ['medianoche argentina', '2026-09-14T03:00:00Z', '2026-09-14T00:00:00-03:00'],
+      [
+        'con milisegundos',
+        '2026-09-15T07:30:00.123-03:00',
+        '2026-09-15T07:30:00-03:00',
+      ],
+      [
+        'con otro offset',
+        '2026-09-15T11:30:00+01:00',
+        '2026-09-15T07:30:00-03:00',
+      ],
+      [
+        'cruce de medianoche UTC',
+        '2026-09-15T02:59:59Z',
+        '2026-09-14T23:59:59-03:00',
+      ],
+      [
+        'medianoche argentina',
+        '2026-09-14T03:00:00Z',
+        '2026-09-14T00:00:00-03:00',
+      ],
       ['31/12', '2025-12-31T23:59:59-03:00', '2025-12-31T23:59:59-03:00'],
-      ['fin de mes en UTC', '2026-08-31T23:30:00-03:00', '2026-08-31T23:30:00-03:00'],
-    ])('%s se normaliza a -03:00 sin milisegundos', async (_n, entrada, salida) => {
-      const r = await nueva({ cantidad: undefined, suministros: [{}] });
-      const res = await post(lector, cuerpo(r, 0, { fechaHora: entrada })).expect(201);
-      esperarContrato(res.body, 'Lectura');
-      expect(res.body.datos.fechaHora).toBe(salida);
-      const g = await get(`/lecturas/${res.body.datos.id}`, lector).expect(200);
-      expect(g.body.datos.fechaHora).toBe(salida);
-    });
+      [
+        'fin de mes en UTC',
+        '2026-08-31T23:30:00-03:00',
+        '2026-08-31T23:30:00-03:00',
+      ],
+    ])(
+      '%s se normaliza a -03:00 sin milisegundos',
+      async (_n, entrada, salida) => {
+        const r = await nueva({ cantidad: undefined, suministros: [{}] });
+        const res = await post(
+          lector,
+          cuerpo(r, 0, { fechaHora: entrada }),
+        ).expect(201);
+        esperarContrato(res.body, 'Lectura');
+        expect(res.body.datos.fechaHora).toBe(salida);
+        const g = await get(`/lecturas/${res.body.datos.id}`, lector).expect(
+          200,
+        );
+        expect(g.body.datos.fechaHora).toBe(salida);
+      },
+    );
 
     it.each([
       ['solo el día', '2026-09-15'],
@@ -204,8 +232,14 @@ describe('Verificación M3 — caja negra con datos propios', () => {
 
     it('futuro: +5 minutos justos entra, +5:01 no', async () => {
       const r = await nueva({ cantidad: undefined, suministros: [{}, {}] });
-      await post(lector, cuerpo(r, 0, { fechaHora: '2026-09-15T08:05:00-03:00' })).expect(201);
-      const x = await post(lector, cuerpo(r, 1, { fechaHora: '2026-09-15T08:05:01-03:00' })).expect(400);
+      await post(
+        lector,
+        cuerpo(r, 0, { fechaHora: '2026-09-15T08:05:00-03:00' }),
+      ).expect(201);
+      const x = await post(
+        lector,
+        cuerpo(r, 1, { fechaHora: '2026-09-15T08:05:01-03:00' }),
+      ).expect(400);
       esperarError(x.body, 'VALIDACION_FALLIDA');
     });
 
@@ -213,10 +247,20 @@ describe('Verificación M3 — caja negra con datos propios', () => {
       try {
         c.reloj.fijar('2026-12-31T23:59:00-03:00');
         const u = await conSesion(c, 'lector');
-        const r = await crearRuta(c, { lectorId: u.id, estado: 'en_curso', cantidad: 2 });
-        const ok = await post(u, cuerpo(r, 0, { fechaHora: '2027-01-01T00:04:00-03:00' })).expect(201);
+        const r = await crearRuta(c, {
+          lectorId: u.id,
+          estado: 'en_curso',
+          cantidad: 2,
+        });
+        const ok = await post(
+          u,
+          cuerpo(r, 0, { fechaHora: '2027-01-01T00:04:00-03:00' }),
+        ).expect(201);
         expect(ok.body.datos.fechaHora).toBe('2027-01-01T00:04:00-03:00');
-        await post(u, cuerpo(r, 1, { fechaHora: '2027-01-01T00:05:00-03:00' })).expect(400);
+        await post(
+          u,
+          cuerpo(r, 1, { fechaHora: '2027-01-01T00:05:00-03:00' }),
+        ).expect(400);
       } finally {
         c.reloj.fijar(AHORA);
       }
@@ -246,7 +290,10 @@ describe('Verificación M3 — caja negra con datos propios', () => {
       ['id numérico', { id: 123 }],
       ['confirmadaPorLector como texto', { confirmadaPorLector: 'true' }],
       ['coordenadas como texto', { coordenadas: '-30,-57' }],
-      ['coordenadas con campo de más', { coordenadas: { latitud: 1, longitud: 2, alt: 3 } }],
+      [
+        'coordenadas con campo de más',
+        { coordenadas: { latitud: 1, longitud: 2, alt: 3 } },
+      ],
       ['coordenadas con texto', { coordenadas: { latitud: 'a', longitud: 2 } }],
       ['fotoUri numérica', { fotoUri: 12 }],
     ])('%s → 400', async (_n, resto) => {
@@ -256,9 +303,7 @@ describe('Verificación M3 — caja negra con datos propios', () => {
       expect(res.body.error.mensaje).not.toMatch(JERGA);
     });
 
-    it.each([
-      ['cuerpo vacío', {}],
-    ])('%s → 400', async (_n, b) => {
+    it.each([['cuerpo vacío', {}]])('%s → 400', async (_n, b) => {
       const res = await post(lector, b).expect(400);
       esperarError(res.body, 'VALIDACION_FALLIDA');
     });
@@ -274,7 +319,12 @@ describe('Verificación M3 — caja negra con datos propios', () => {
       const r = await nueva({ cantidad: undefined, suministros: [{}] });
       const res = await post(
         lector,
-        cuerpo(r, 0, { lectorId: null, consumo: 'x', fueraDeRango: 'x', sincronizada: null }),
+        cuerpo(r, 0, {
+          lectorId: null,
+          consumo: 'x',
+          fueraDeRango: 'x',
+          sincronizada: null,
+        }),
       );
       expect([201, 400]).toContain(res.status);
       if (res.status === 201) esperarContrato(res.body, 'Lectura');
@@ -296,7 +346,9 @@ describe('Verificación M3 — caja negra con datos propios', () => {
     it('la foto de la respuesta es absoluta y se puede bajar', async () => {
       const r = await nueva({ cantidad: undefined, suministros: [{}] });
       const res = await post(lector, cuerpo(r, 0)).expect(201);
-      expect(res.body.datos.fotoUri).toMatch(/^http:\/\/.+\/archivos\/imagenes\//);
+      expect(res.body.datos.fotoUri).toMatch(
+        /^http:\/\/.+\/archivos\/imagenes\//,
+      );
       await c.http().get(new URL(res.body.datos.fotoUri).pathname).expect(200);
     });
 
@@ -305,23 +357,36 @@ describe('Verificación M3 — caja negra con datos propios', () => {
         .http()
         .post('/archivos')
         .set(bearer(lector.token))
-        .attach('archivo', Buffer.from('\x00\x00\x00\x20ftypM4A ' + 'x'.repeat(2000), 'latin1'), 'a.m4a')
+        .attach(
+          'archivo',
+          Buffer.from('\x00\x00\x00\x20ftypM4A ' + 'x'.repeat(2000), 'latin1'),
+          'a.m4a',
+        )
         .expect(201);
       const r = await nueva({ cantidad: undefined, suministros: [{}] });
-      const res = await post(lector, cuerpo(r, 0, { fotoUri: a.body.datos.url }));
+      const res = await post(
+        lector,
+        cuerpo(r, 0, { fotoUri: a.body.datos.url }),
+      );
       expect(res.status).toBeGreaterThanOrEqual(400);
       esperarError(res.body);
     });
 
     it('fotoUri con path traversal → ARCHIVO_NO_SUBIDO o 400, nunca 500', async () => {
       const r = await nueva({ cantidad: undefined, suministros: [{}] });
-      const res = await post(lector, cuerpo(r, 0, { fotoUri: 'http://x/archivos/../../etc/passwd' }));
+      const res = await post(
+        lector,
+        cuerpo(r, 0, { fotoUri: 'http://x/archivos/../../etc/passwd' }),
+      );
       expect([400, 422]).toContain(res.status);
     });
 
     it('orden: ruta cerrada antes que suministro fuera de ruta', async () => {
       const r = await nueva({ estado: 'cerrada' });
-      const res = await post(lector, cuerpo(r, 0, { suministroId: 'sum-999999' })).expect(409);
+      const res = await post(
+        lector,
+        cuerpo(r, 0, { suministroId: 'sum-999999' }),
+      ).expect(409);
       esperarError(res.body, 'RUTA_YA_CERRADA');
     });
 
@@ -339,13 +404,19 @@ describe('Verificación M3 — caja negra con datos propios', () => {
 
     it('orden: la foto falta y el valor es inválido → LECTURA_INVALIDA antes que FOTO_REQUERIDA (R12)', async () => {
       const r = await nueva({ cantidad: undefined, suministros: [{}] });
-      const res = await post(lector, cuerpo(r, 0, { valor: -1, fotoUri: null })).expect(422);
+      const res = await post(
+        lector,
+        cuerpo(r, 0, { valor: -1, fotoUri: null }),
+      ).expect(422);
       esperarError(res.body, 'LECTURA_INVALIDA');
     });
 
     it('un suministro con formato válido pero inexistente → SUMINISTRO_FUERA_DE_RUTA', async () => {
       const r = await nueva();
-      const res = await post(lector, cuerpo(r, 0, { suministroId: 'sum-no-existe' })).expect(422);
+      const res = await post(
+        lector,
+        cuerpo(r, 0, { suministroId: 'sum-no-existe' }),
+      ).expect(422);
       esperarError(res.body, 'SUMINISTRO_FUERA_DE_RUTA');
     });
 
@@ -354,15 +425,24 @@ describe('Verificación M3 — caja negra con datos propios', () => {
       ['2026-09-15T02:30:00Z', '14/09'], // 23:30 en Argentina
       ['2026-10-01T03:00:00Z', '01/10'], // 00:00 en Argentina
       ['2026-01-01T02:59:00Z', '31/12'],
-    ])('RUTA_YA_CERRADA: cerradaEn %s dice "%s" en hora argentina', async (cerradaEn, dia) => {
-      const r = await nueva({ estado: 'cerrada', cerradaEn: new Date(cerradaEn) });
-      const res = await post(lector, cuerpo(r, 0)).expect(409);
-      esperarError(res.body, 'RUTA_YA_CERRADA');
-      expect(res.body.error.mensaje).toBe(`Esa ruta fue cerrada el ${dia}.`);
-    });
+    ])(
+      'RUTA_YA_CERRADA: cerradaEn %s dice "%s" en hora argentina',
+      async (cerradaEn, dia) => {
+        const r = await nueva({
+          estado: 'cerrada',
+          cerradaEn: new Date(cerradaEn),
+        });
+        const res = await post(lector, cuerpo(r, 0)).expect(409);
+        esperarError(res.body, 'RUTA_YA_CERRADA');
+        expect(res.body.error.mensaje).toBe(`Esa ruta fue cerrada el ${dia}.`);
+      },
+    );
 
     it('un suministro inactivo acepta lectura (D11)', async () => {
-      const r = await nueva({ cantidad: undefined, suministros: [{ activo: false }] });
+      const r = await nueva({
+        cantidad: undefined,
+        suministros: [{ activo: false }],
+      });
       await post(lector, cuerpo(r, 0)).expect(201);
     });
 
@@ -381,7 +461,9 @@ describe('Verificación M3 — caja negra con datos propios', () => {
         .send({ lectorId: otro.id })
         .expect(200);
       await post(lector, cuerpo(r, 0)).expect(403);
-      const ok = await post(otro, cuerpo(r, 0, { id: 'lec-reasig1' })).expect(201);
+      const ok = await post(otro, cuerpo(r, 0, { id: 'lec-reasig1' })).expect(
+        201,
+      );
       expect(ok.body.datos.lectorId).toBe(otro.id);
       // lo ya cargado por el anterior sigue siendo suyo
       await c
@@ -414,15 +496,35 @@ describe('Verificación M3 — caja negra con datos propios', () => {
 
     it('token vencido (firmado bien, exp pasado) → 401 en los tres endpoints', async () => {
       const r = await nueva();
-      const t = firmar({ sub: lector.id, rol: 'lector', iat: 1, exp: 2 }, SECRETO);
-      await c.http().post('/lecturas').set('Authorization', `Bearer ${t}`).send(cuerpo(r, 0)).expect(401);
-      await c.http().get('/lecturas/lec-abcdef').set('Authorization', `Bearer ${t}`).expect(401);
-      await c.http().get(`/rutas/${r.id}/lecturas`).set('Authorization', `Bearer ${t}`).expect(401);
+      const t = firmar(
+        { sub: lector.id, rol: 'lector', iat: 1, exp: 2 },
+        SECRETO,
+      );
+      await c
+        .http()
+        .post('/lecturas')
+        .set('Authorization', `Bearer ${t}`)
+        .send(cuerpo(r, 0))
+        .expect(401);
+      await c
+        .http()
+        .get('/lecturas/lec-abcdef')
+        .set('Authorization', `Bearer ${t}`)
+        .expect(401);
+      await c
+        .http()
+        .get(`/rutas/${r.id}/lecturas`)
+        .set('Authorization', `Bearer ${t}`)
+        .expect(401);
     });
 
     it('token válido pero después de /auth/salida → 401', async () => {
       const u = await conSesion(c, 'lector');
-      const r = await crearRuta(c, { lectorId: u.id, estado: 'en_curso', cantidad: 1 });
+      const r = await crearRuta(c, {
+        lectorId: u.id,
+        estado: 'en_curso',
+        cantidad: 1,
+      });
       await post(u, cuerpo(r, 0)).expect(201);
       await c.http().post('/auth/salida').set(bearer(u.token)).expect(204);
       await post(u, cuerpo(r, 0, { id: 'lec-trasalida' })).expect(401);
@@ -430,7 +532,9 @@ describe('Verificación M3 — caja negra con datos propios', () => {
 
     it('GET de lectura de otro lector → 403 y de rutas ajenas → 403 con sobre de error', async () => {
       const r = await nueva();
-      const l = await post(lector, cuerpo(r, 0, { id: 'lec-permiso1' })).expect(201);
+      const l = await post(lector, cuerpo(r, 0, { id: 'lec-permiso1' })).expect(
+        201,
+      );
       const a = await get(`/lecturas/${l.body.datos.id}`, otro).expect(403);
       esperarError(a.body, 'SIN_PERMISO');
       const b = await get(`/rutas/${r.id}/lecturas`, otro).expect(403);
@@ -441,8 +545,14 @@ describe('Verificación M3 — caja negra con datos propios', () => {
   describe('R15 — idempotencia', () => {
     it('reintento con otro valor devuelve la lectura original, sin recalcular', async () => {
       const r = await nueva({ cantidad: undefined, suministros: [{}] });
-      const a = await post(lector, cuerpo(r, 0, { id: 'lec-idem-x1', valor: 1010 })).expect(201);
-      const b = await post(lector, cuerpo(r, 0, { id: 'lec-idem-x1', valor: 1020 })).expect(200);
+      const a = await post(
+        lector,
+        cuerpo(r, 0, { id: 'lec-idem-x1', valor: 1010 }),
+      ).expect(201);
+      const b = await post(
+        lector,
+        cuerpo(r, 0, { id: 'lec-idem-x1', valor: 1020 }),
+      ).expect(200);
       const sinHost = (x: { datos: { fotoUri: string } }) => ({
         ...x.datos,
         fotoUri: new URL(x.datos.fotoUri).pathname,
@@ -454,9 +564,15 @@ describe('Verificación M3 — caja negra con datos propios', () => {
 
     it('el reintento responde 200 aunque la lectura ya no sea la vigente', async () => {
       const r = await nueva({ cantidad: undefined, suministros: [{}] });
-      const vieja = cuerpo(r, 0, { id: 'lec-vieja-x1', fechaHora: '2026-09-15T06:00:00-03:00' });
+      const vieja = cuerpo(r, 0, {
+        id: 'lec-vieja-x1',
+        fechaHora: '2026-09-15T06:00:00-03:00',
+      });
       await post(lector, vieja).expect(201);
-      await post(lector, cuerpo(r, 0, { id: 'lec-nueva-x1', valor: 1030 })).expect(201);
+      await post(
+        lector,
+        cuerpo(r, 0, { id: 'lec-nueva-x1', valor: 1030 }),
+      ).expect(201);
       const b = await post(lector, vieja).expect(200);
       expect(b.body.datos.id).toBe('lec-vieja-x1');
       const l = await get(`/rutas/${r.id}/lecturas`, lector).expect(200);
@@ -466,15 +582,23 @@ describe('Verificación M3 — caja negra con datos propios', () => {
     it('un reintento con id existente de otro lector → ID_EN_USO 409 aunque el cuerpo sea de su ruta', async () => {
       const r = await nueva({ cantidad: undefined, suministros: [{}] });
       await post(lector, cuerpo(r, 0, { id: 'lec-ajeno-x1' })).expect(201);
-      const r2 = await crearRuta(c, { lectorId: otro.id, estado: 'en_curso', cantidad: 1 });
-      const x = await post(otro, cuerpo(r2, 0, { id: 'lec-ajeno-x1' })).expect(409);
+      const r2 = await crearRuta(c, {
+        lectorId: otro.id,
+        estado: 'en_curso',
+        cantidad: 1,
+      });
+      const x = await post(otro, cuerpo(r2, 0, { id: 'lec-ajeno-x1' })).expect(
+        409,
+      );
       esperarError(x.body, 'ID_EN_USO');
     });
 
     it('5 pedidos simultáneos con el mismo id → un 201, el resto 200, una sola lectura', async () => {
       const r = await nueva({ cantidad: undefined, suministros: [{}] });
       const rs = await Promise.all(
-        Array.from({ length: 5 }, () => post(lector, cuerpo(r, 0, { id: 'lec-conc-x01' }))),
+        Array.from({ length: 5 }, () =>
+          post(lector, cuerpo(r, 0, { id: 'lec-conc-x01' })),
+        ),
       );
       expect(rs.map((x) => x.status).sort()).toEqual([200, 200, 200, 200, 201]);
       const l = await get(`/rutas/${r.id}/lecturas`, lector).expect(200);
@@ -483,7 +607,11 @@ describe('Verificación M3 — caja negra con datos propios', () => {
 
     it('simultáneo mismo id de DOS lectores: uno 201 y el otro 409 ID_EN_USO', async () => {
       const r1 = await nueva({ cantidad: undefined, suministros: [{}] });
-      const r2 = await crearRuta(c, { lectorId: otro.id, estado: 'en_curso', cantidad: 1 });
+      const r2 = await crearRuta(c, {
+        lectorId: otro.id,
+        estado: 'en_curso',
+        cantidad: 1,
+      });
       const [a, b] = await Promise.all([
         post(lector, cuerpo(r1, 0, { id: 'lec-dos-lect1' })),
         post(otro, cuerpo(r2, 0, { id: 'lec-dos-lect1' })),
@@ -495,14 +623,23 @@ describe('Verificación M3 — caja negra con datos propios', () => {
 
     it('mismo id con un suministro distinto del mismo lector: 200 con la existente', async () => {
       const r = await nueva({ cantidad: undefined, suministros: [{}, {}] });
-      const a = await post(lector, cuerpo(r, 0, { id: 'lec-mismoid-1' })).expect(201);
-      const b = await post(lector, cuerpo(r, 1, { id: 'lec-mismoid-1' })).expect(200);
+      const a = await post(
+        lector,
+        cuerpo(r, 0, { id: 'lec-mismoid-1' }),
+      ).expect(201);
+      const b = await post(
+        lector,
+        cuerpo(r, 1, { id: 'lec-mismoid-1' }),
+      ).expect(200);
       expect(b.body.datos.suministroId).toBe(a.body.datos.suministroId);
     });
 
     it('el reintento a una ruta cerrada con un id inexistente → 409 RUTA_YA_CERRADA', async () => {
       const r = await nueva({ estado: 'cerrada' });
-      const x = await post(lector, cuerpo(r, 0, { id: 'lec-noexiste-1' })).expect(409);
+      const x = await post(
+        lector,
+        cuerpo(r, 0, { id: 'lec-noexiste-1' }),
+      ).expect(409);
       esperarError(x.body, 'RUTA_YA_CERRADA');
     });
   });
@@ -511,7 +648,10 @@ describe('Verificación M3 — caja negra con datos propios', () => {
     it('misma fechaHora exacta: queda exactamente una vigente', async () => {
       const r = await nueva({ cantidad: undefined, suministros: [{}] });
       await post(lector, cuerpo(r, 0, { id: 'lec-emp-aaa1' })).expect(201);
-      await post(lector, cuerpo(r, 0, { id: 'lec-emp-bbb1', valor: 1020 })).expect(201);
+      await post(
+        lector,
+        cuerpo(r, 0, { id: 'lec-emp-bbb1', valor: 1020 }),
+      ).expect(201);
       const l = await get(`/rutas/${r.id}/lecturas`, lector).expect(200);
       expect(l.body.meta.total).toBe(1);
       expect(l.body.datos).toHaveLength(1);
@@ -525,7 +665,14 @@ describe('Verificación M3 — caja negra con datos propios', () => {
       const horas = ['07:10', '07:50', '07:20', '07:40', '07:30'];
       await Promise.all(
         horas.map((h, i) =>
-          post(lector, cuerpo(r, 0, { id: `lec-par-${i}x1`, valor: 1001 + i, fechaHora: `2026-09-15T${h}:00-03:00` })),
+          post(
+            lector,
+            cuerpo(r, 0, {
+              id: `lec-par-${i}x1`,
+              valor: 1001 + i,
+              fechaHora: `2026-09-15T${h}:00-03:00`,
+            }),
+          ),
         ),
       );
       const l = await get(`/rutas/${r.id}/lecturas`, lector).expect(200);
@@ -534,20 +681,55 @@ describe('Verificación M3 — caja negra con datos propios', () => {
 
     it('la vigente más vieja por fecha no pisa a la nueva aunque llegue después; GET de la vieja sigue andando', async () => {
       const r = await nueva({ cantidad: undefined, suministros: [{}] });
-      await post(lector, cuerpo(r, 0, { id: 'lec-ord-new1', fechaHora: '2026-09-15T07:50:00-03:00' })).expect(201);
-      await post(lector, cuerpo(r, 0, { id: 'lec-ord-old1', fechaHora: '2026-09-15T07:00:00-03:00' })).expect(201);
+      await post(
+        lector,
+        cuerpo(r, 0, {
+          id: 'lec-ord-new1',
+          fechaHora: '2026-09-15T07:50:00-03:00',
+        }),
+      ).expect(201);
+      await post(
+        lector,
+        cuerpo(r, 0, {
+          id: 'lec-ord-old1',
+          fechaHora: '2026-09-15T07:00:00-03:00',
+        }),
+      ).expect(201);
       const l = await get(`/rutas/${r.id}/lecturas`, lector).expect(200);
       expect(l.body.datos.map((x: Lectura) => x.id)).toEqual(['lec-ord-new1']);
       await get('/lecturas/lec-ord-old1', lector).expect(200);
-      const p = await c.http().post(`/rutas/${r.id}/descarga`).set(bearer(lector.token)).expect(200);
-      expect(p.body.datos.lecturas.map((x: Lectura) => x.id)).toEqual(['lec-ord-new1']);
+      const p = await c
+        .http()
+        .post(`/rutas/${r.id}/descarga`)
+        .set(bearer(lector.token))
+        .expect(200);
+      expect(p.body.datos.lecturas.map((x: Lectura) => x.id)).toEqual([
+        'lec-ord-new1',
+      ]);
     });
 
     it('el avance cuenta fueraDeRango sólo de las vigentes', async () => {
       const r = await nueva({ cantidad: undefined, suministros: [{}, {}] });
-      await post(lector, cuerpo(r, 0, { id: 'lec-fr-a001', valor: 9000, fechaHora: '2026-09-15T06:00:00-03:00' })).expect(201);
-      await post(lector, cuerpo(r, 0, { id: 'lec-fr-a002', valor: 1010, fechaHora: '2026-09-15T07:00:00-03:00' })).expect(201);
-      await post(lector, cuerpo(r, 1, { id: 'lec-fr-b001', valor: 9000 })).expect(201);
+      await post(
+        lector,
+        cuerpo(r, 0, {
+          id: 'lec-fr-a001',
+          valor: 9000,
+          fechaHora: '2026-09-15T06:00:00-03:00',
+        }),
+      ).expect(201);
+      await post(
+        lector,
+        cuerpo(r, 0, {
+          id: 'lec-fr-a002',
+          valor: 1010,
+          fechaHora: '2026-09-15T07:00:00-03:00',
+        }),
+      ).expect(201);
+      await post(
+        lector,
+        cuerpo(r, 1, { id: 'lec-fr-b001', valor: 9000 }),
+      ).expect(201);
       const av = await get(`/rutas/${r.id}/avance`, lector).expect(200);
       expect(av.body.datos).toEqual({
         rutaId: r.id,
@@ -557,10 +739,18 @@ describe('Verificación M3 — caja negra con datos propios', () => {
         pendientes: 0,
         fueraDeRango: 1,
       });
-      const fr = await get(`/rutas/${r.id}/lecturas?fueraDeRango=true`, lector).expect(200);
+      const fr = await get(
+        `/rutas/${r.id}/lecturas?fueraDeRango=true`,
+        lector,
+      ).expect(200);
       expect(fr.body.datos.map((x: Lectura) => x.id)).toEqual(['lec-fr-b001']);
-      const nofr = await get(`/rutas/${r.id}/lecturas?fueraDeRango=false`, lector).expect(200);
-      expect(nofr.body.datos.map((x: Lectura) => x.id)).toEqual(['lec-fr-a002']);
+      const nofr = await get(
+        `/rutas/${r.id}/lecturas?fueraDeRango=false`,
+        lector,
+      ).expect(200);
+      expect(nofr.body.datos.map((x: Lectura) => x.id)).toEqual([
+        'lec-fr-a002',
+      ]);
       expect(nofr.body.meta.total).toBe(1);
     });
 
@@ -580,20 +770,32 @@ describe('Verificación M3 — caja negra con datos propios', () => {
       r = await nueva({ cantidad: 5 });
       // se cargan en desorden y con horas al revés
       for (const i of [3, 0, 4, 2, 1]) {
-        await post(lector, cuerpo(r, i, { id: `lec-lista-${i}x1`, fechaHora: `2026-09-15T0${7 - (i % 3)}:00:00-03:00`, valor: i === 2 ? 9000 : 1005 })).expect(201);
+        await post(
+          lector,
+          cuerpo(r, i, {
+            id: `lec-lista-${i}x1`,
+            fechaHora: `2026-09-15T0${7 - (i % 3)}:00:00-03:00`,
+            valor: i === 2 ? 9000 : 1005,
+          }),
+        ).expect(201);
       }
     });
 
     it('sale en el orden del recorrido, no por hora ni por llegada', async () => {
       const l = await get(`/rutas/${r.id}/lecturas`, lector).expect(200);
       esperarContrato(l.body, 'Lectura');
-      expect(l.body.datos.map((x: Lectura) => x.id)).toEqual([0, 1, 2, 3, 4].map((i) => `lec-lista-${i}x1`));
+      expect(l.body.datos.map((x: Lectura) => x.id)).toEqual(
+        [0, 1, 2, 3, 4].map((i) => `lec-lista-${i}x1`),
+      );
     });
 
     it('páginas de 2 con meta correcto, concatenadas dan todo sin repetir', async () => {
       const vistos: string[] = [];
       for (const p of [1, 2, 3]) {
-        const l = await get(`/rutas/${r.id}/lecturas?pagina=${p}&porPagina=2`, lector).expect(200);
+        const l = await get(
+          `/rutas/${r.id}/lecturas?pagina=${p}&porPagina=2`,
+          lector,
+        ).expect(200);
         expect(l.body.meta).toEqual({ total: 5, pagina: p, porPagina: 2 });
         vistos.push(...l.body.datos.map((x: Lectura) => x.id));
       }
@@ -601,13 +803,19 @@ describe('Verificación M3 — caja negra con datos propios', () => {
     });
 
     it('página fuera de rango → vacía y total correcto', async () => {
-      const l = await get(`/rutas/${r.id}/lecturas?pagina=99&porPagina=2`, lector).expect(200);
+      const l = await get(
+        `/rutas/${r.id}/lecturas?pagina=99&porPagina=2`,
+        lector,
+      ).expect(200);
       expect(l.body.datos).toEqual([]);
       expect(l.body.meta).toEqual({ total: 5, pagina: 99, porPagina: 2 });
     });
 
     it('filtro + paginación: meta.total es el filtrado', async () => {
-      const l = await get(`/rutas/${r.id}/lecturas?fueraDeRango=true&porPagina=1`, lector).expect(200);
+      const l = await get(
+        `/rutas/${r.id}/lecturas?fueraDeRango=true&porPagina=1`,
+        lector,
+      ).expect(200);
       expect(l.body.meta).toEqual({ total: 1, pagina: 1, porPagina: 1 });
       expect(l.body.datos[0].id).toBe('lec-lista-2x1');
     });
@@ -644,7 +852,12 @@ describe('Verificación M3 — caja negra con datos propios', () => {
     });
 
     it('GET /lecturas/:id con ids raros → 400 o 404, nunca 500', async () => {
-      for (const id of ['lec-', 'lec-%20', 'lec-' + 'a'.repeat(100), 'nov-12345']) {
+      for (const id of [
+        'lec-',
+        'lec-%20',
+        'lec-' + 'a'.repeat(100),
+        'nov-12345',
+      ]) {
         const x = await get(`/lecturas/${id}`, lector);
         expect([400, 404]).toContain(x.status);
         esperarError(x.body);
@@ -655,13 +868,31 @@ describe('Verificación M3 — caja negra con datos propios', () => {
   describe('Paquete de descarga y lecturas', () => {
     it('lecturas del paquete cumplen el contrato con todos los opcionales llenos y nulos', async () => {
       const r = await nueva({ cantidad: 2 });
-      await post(lector, cuerpo(r, 0, { id: 'lec-pq-nulo01', coordenadas: null })).expect(201);
-      await post(lector, cuerpo(r, 1, { id: 'lec-pq-lleno1', coordenadas: { latitud: -30.1, longitud: -57.2 }, confirmadaPorLector: true, valor: 9000 })).expect(201);
-      const pq = await c.http().post(`/rutas/${r.id}/descarga`).set(bearer(lector.token)).expect(200);
+      await post(
+        lector,
+        cuerpo(r, 0, { id: 'lec-pq-nulo01', coordenadas: null }),
+      ).expect(201);
+      await post(
+        lector,
+        cuerpo(r, 1, {
+          id: 'lec-pq-lleno1',
+          coordenadas: { latitud: -30.1, longitud: -57.2 },
+          confirmadaPorLector: true,
+          valor: 9000,
+        }),
+      ).expect(201);
+      const pq = await c
+        .http()
+        .post(`/rutas/${r.id}/descarga`)
+        .set(bearer(lector.token))
+        .expect(200);
       esperarContrato(pq.body, 'PaqueteRuta');
       expect(pq.body.datos.lecturas).toHaveLength(2);
       expect(pq.body.datos.lecturas[0].coordenadas).toBeNull();
-      expect(pq.body.datos.lecturas[1]).toMatchObject({ confirmadaPorLector: true, fueraDeRango: true });
+      expect(pq.body.datos.lecturas[1]).toMatchObject({
+        confirmadaPorLector: true,
+        fueraDeRango: true,
+      });
     });
 
     it('la lectura en una ruta asignada la pasa a en_curso; la descarga posterior no rompe descargadaEn', async () => {
@@ -690,7 +921,9 @@ describe('Verificación M3 — caja negra con datos propios', () => {
         expect(x.status).toBeLessThan(500);
         esperarError(x.body);
         expect(x.body.error.mensaje).not.toMatch(JERGA);
-        expect(x.body.error.mensaje).not.toMatch(/\b(lec|rut|sum|usr)-[A-Za-z0-9]+/);
+        expect(x.body.error.mensaje).not.toMatch(
+          /\b(lec|rut|sum|usr)-[A-Za-z0-9]+/,
+        );
       }
     });
   });
@@ -699,13 +932,22 @@ describe('Verificación M3 — caja negra con datos propios', () => {
     it('20 lecturas simultáneas de 20 suministros: todas 201 y la lista tiene 20', async () => {
       const r = await nueva({ cantidad: 20 });
       const rs = await Promise.all(
-        r.suministroIds.map((_s, i) => post(lector, cuerpo(r, i, { id: `lec-bulk-${i}x01` }))),
+        r.suministroIds.map((_s, i) =>
+          post(lector, cuerpo(r, i, { id: `lec-bulk-${i}x01` })),
+        ),
       );
       expect(rs.every((x) => x.status === 201)).toBe(true);
-      const l = await get(`/rutas/${r.id}/lecturas?porPagina=100`, lector).expect(200);
+      const l = await get(
+        `/rutas/${r.id}/lecturas?porPagina=100`,
+        lector,
+      ).expect(200);
       expect(l.body.meta.total).toBe(20);
       const av = await get(`/rutas/${r.id}/avance`, lector).expect(200);
-      expect(av.body.datos).toMatchObject({ suministros: 20, leidos: 20, pendientes: 0 });
+      expect(av.body.datos).toMatchObject({
+        suministros: 20,
+        leidos: 20,
+        pendientes: 0,
+      });
     });
   });
 

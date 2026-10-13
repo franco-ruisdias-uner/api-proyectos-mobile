@@ -4,6 +4,7 @@
 import type {
   Lectura,
   Medidor,
+  MotivoNovedad,
   Novedad,
   Ruta,
   Suministro,
@@ -92,4 +93,12 @@ export interface AvanceRuta {
   /** suministros - leidos - conNovedad */
   pendientes: number;
   fueraDeRango: number;
+}
+
+/** Un renglón de GET /novedades/resumen. */
+export interface ResumenNovedades {
+  motivo: MotivoNovedad;
+  /** Nombre de la ruta (D10). */
+  zona: string;
+  cantidad: number;
 }

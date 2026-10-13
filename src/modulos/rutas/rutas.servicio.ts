@@ -24,6 +24,9 @@ import type { Meta } from '../../comun/respuesta/respuesta.js';
 import { LecturaEntidad } from '../lecturas/lectura.entidad.js';
 import { aContrato as lecturaAContrato } from '../lecturas/lecturas.mapeador.js';
 import { lecturasVigentesDeRuta } from '../lecturas/vigentes.js';
+import { aContrato as novedadAContrato } from '../novedades/novedades.mapeador.js';
+import { NovedadEntidad } from '../novedades/novedad.entidad.js';
+import { novedadesVigentes } from '../novedades/vigentes.js';
 import { MedidorEntidad } from '../suministros/medidor.entidad.js';
 import { SuministroEntidad } from '../suministros/suministro.entidad.js';
 import {
@@ -88,6 +91,8 @@ export class RutasServicio {
     private readonly usuarios: Repository<UsuarioEntidad>,
     @InjectRepository(LecturaEntidad)
     private readonly lecturas: Repository<LecturaEntidad>,
+    @InjectRepository(NovedadEntidad)
+    private readonly novedades: Repository<NovedadEntidad>,
     private readonly dataSource: DataSource,
     private readonly reloj: Reloj,
     private readonly archivos: ArchivosServicio,
@@ -264,8 +269,7 @@ export class RutasServicio {
         return m ? [medidorAContrato(m, (c) => this.archivos.url(c))] : [];
       }),
       lecturas: await this.lecturasVigentes(contrato.suministroIds, id),
-      // Las novedades vigentes se suman en M4.
-      novedades: [],
+      novedades: await this.novedadesVigentes(contrato.suministroIds, id),
     };
   }
 
@@ -278,17 +282,29 @@ export class RutasServicio {
     });
   }
 
+  /** Las novedades vigentes (R13) de la ruta, en el orden del recorrido. */
+  private async novedadesVigentes(suministroIds: string[], rutaId: string) {
+    const vigentes = await novedadesVigentes(this.novedades, this.lecturas, [
+      rutaId,
+    ]);
+    return suministroIds.flatMap((sid) => {
+      const n = vigentes.get(`${rutaId}|${sid}`);
+      return n ? [novedadAContrato(n, (c) => this.archivos.url(c))] : [];
+    });
+  }
+
   async avance(id: string, sesion: SesionActual): Promise<AvanceRuta> {
     await this.buscarAccesible(id, sesion);
     const suministros = await this.posiciones.countBy({ rutaId: id });
-    // R10: sólo los resultados vigentes (R13). Las novedades vigentes se suman en M4.
+    // R10: sólo los resultados vigentes (R13).
     const vigentes = [
       ...(await lecturasVigentesDeRuta(this.lecturas, id)).values(),
     ];
     return calcularAvance(id, {
       suministros,
       leidos: vigentes.length,
-      conNovedad: 0,
+      conNovedad: (await novedadesVigentes(this.novedades, this.lecturas, [id]))
+        .size,
       fueraDeRango: vigentes.filter((l) => l.fueraDeRango).length,
     });
   }
