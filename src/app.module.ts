@@ -1,10 +1,11 @@
 import { type DynamicModule, Module } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import type { DataSourceOptions } from 'typeorm';
 import { moduloDeConfiguracion } from './config/configuracion.js';
 import { leerEntorno } from './config/entorno.js';
 import { ArchivosModulo } from './comun/archivos/archivos.modulo.js';
-import { opcionesDeBase } from './comun/db/opciones.js';
+import { crearDataSource, opcionesDeBase } from './comun/db/opciones.js';
 import { FiltroExcepciones } from './comun/errores/filtro-excepciones.js';
 import { RelojModulo } from './comun/reloj/reloj.modulo.js';
 import { SaludControlador } from './comun/salud/salud.controlador.js';
@@ -29,6 +30,8 @@ export class AppModule {
         moduloDeConfiguracion(variables),
         TypeOrmModule.forRootAsync({
           useFactory: () => opcionesDeBase(leerEntorno(variables)),
+          dataSourceFactory: async (opciones) =>
+            crearDataSource(opciones as DataSourceOptions),
         }),
         RelojModulo,
         ArchivosModulo,

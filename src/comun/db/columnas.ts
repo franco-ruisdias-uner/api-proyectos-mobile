@@ -1,3 +1,4 @@
+import { motorDelEntorno } from './proveedores.js';
 import { Column, type ColumnOptions, PrimaryColumn } from 'typeorm';
 
 // Tipos de columna portables a los cuatro motores (AGENTS §5.3). Las entidades usan
@@ -5,7 +6,7 @@ import { Column, type ColumnOptions, PrimaryColumn } from 'typeorm';
 
 /** El motor se lee al cargar las entidades: main.ts carga el .env antes de importarlas. */
 function motorActual(): string {
-  return process.env.DB_MOTOR?.trim() || 'better-sqlite3';
+  return motorDelEntorno(process.env);
 }
 
 export function ColumnaId(): PropertyDecorator {

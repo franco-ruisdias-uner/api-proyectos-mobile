@@ -1,6 +1,17 @@
 // Variables de entorno: se leen y se validan una sola vez, al arrancar.
 // Si falta algo o está mal, la API no arranca y dice en castellano qué arreglar.
 
+import {
+  type ConfiguracionS3,
+  configuracionS3,
+  esProblemas,
+} from '../comun/archivos/proveedores.js';
+import {
+  type ModoSsl,
+  configuracionBase,
+  hayProblemasDb,
+} from '../comun/db/proveedores.js';
+
 export const MOTORES = [
   'better-sqlite3',
   'postgres',
@@ -9,7 +20,6 @@ export const MOTORES = [
 ] as const;
 export type Motor = (typeof MOTORES)[number];
 
-export const PROVEEDORES_ARCHIVOS = ['local'] as const;
 export type ProveedorArchivos =
   'local' | 'aws' | 'supabase' | 'r2' | 'b2' | 's3proxy' | 'localstack';
 
@@ -28,6 +38,12 @@ export interface Entorno {
   URL_PUBLICA: string | null;
   DB_MOTOR: Motor;
   DB_URL: string | null;
+  /** Preset de base administrada (supabase, neon, aiven-…), o null. */
+  DB_PROVEEDOR: string | null;
+  DB_SSL: ModoSsl;
+  DB_SSL_CA: string | null;
+  /** Esquema de PostgreSQL donde van las tablas (null: el de la conexión). */
+  DB_ESQUEMA: string | null;
   DB_ARCHIVO: string;
   DB_SINCRONIZAR: boolean;
   /** Sólo para tests: borra el esquema al conectar (base limpia por archivo). */
@@ -35,6 +51,8 @@ export interface Entorno {
   JWT_SECRETO: string;
   ARCHIVOS_PROVEEDOR: ProveedorArchivos;
   DIRECTORIO_ARCHIVOS: string;
+  /** Configuración del cliente S3 del proveedor elegido (null con `local`). */
+  ARCHIVOS_S3: ConfiguracionS3 | null;
   NOTIFICACIONES: ModoNotificaciones;
   EXPO_PUSH_URL: string;
   RELOJ_FIJO: string | null;
@@ -81,15 +99,26 @@ export function leerEntorno(v: Variables): Entorno {
     );
   }
 
-  const DB_MOTOR = (texto(v, 'DB_MOTOR') ?? 'better-sqlite3') as Motor;
+  const base = configuracionBase(v);
+  if (hayProblemasDb(base)) problemas.push(...base.problemas);
+  const preset = base !== null && !hayProblemasDb(base) ? base : null;
+
+  const DB_MOTOR = (preset?.motor ??
+    texto(v, 'DB_MOTOR') ??
+    'better-sqlite3') as Motor;
   if (!MOTORES.includes(DB_MOTOR)) {
     problemas.push(
       `DB_MOTOR tiene que ser uno de: ${MOTORES.join(', ')} (vino "${DB_MOTOR}"). ` +
         'Si usás XAMPP, poné "mariadb".',
     );
   }
-  const DB_URL = texto(v, 'DB_URL') ?? null;
-  if (DB_MOTOR !== 'better-sqlite3' && MOTORES.includes(DB_MOTOR)) {
+  const DB_URL = preset?.url ?? texto(v, 'DB_URL') ?? null;
+  if (
+    preset === null &&
+    base === null &&
+    DB_MOTOR !== 'better-sqlite3' &&
+    MOTORES.includes(DB_MOTOR)
+  ) {
     if (DB_URL === null) {
       problemas.push(
         `Falta DB_URL: con DB_MOTOR=${DB_MOTOR} hace falta la dirección de la base, ` +
@@ -101,6 +130,23 @@ export function leerEntorno(v: Variables): Entorno {
       problemas.push('DB_URL no es una dirección válida.');
     }
   }
+  let DB_SSL: ModoSsl = preset?.ssl ?? 'no';
+  if (preset === null && base === null) {
+    const textoSsl = texto(v, 'DB_SSL')?.toLowerCase();
+    if (textoSsl === undefined) DB_SSL = 'no';
+    else if (['no', 'si', 'si-sin-verificar'].includes(textoSsl))
+      DB_SSL = textoSsl as ModoSsl;
+    else
+      problemas.push(
+        `DB_SSL tiene que ser "no", "si" o "si-sin-verificar" (vino "${textoSsl}").`,
+      );
+  }
+  const DB_ESQUEMA =
+    preset !== null
+      ? preset.esquema
+      : DB_MOTOR === 'postgres'
+        ? (texto(v, 'DB_ESQUEMA') ?? null)
+        : null;
 
   const JWT_SECRETO = texto(v, 'JWT_SECRETO');
   if (JWT_SECRETO === undefined) {
@@ -112,13 +158,8 @@ export function leerEntorno(v: Variables): Entorno {
 
   const ARCHIVOS_PROVEEDOR = (texto(v, 'ARCHIVOS_PROVEEDOR') ??
     'local') as ProveedorArchivos;
-  if (
-    !(PROVEEDORES_ARCHIVOS as readonly string[]).includes(ARCHIVOS_PROVEEDOR)
-  ) {
-    problemas.push(
-      `ARCHIVOS_PROVEEDOR="${ARCHIVOS_PROVEEDOR}" todavía no está disponible: por ahora sólo "local".`,
-    );
-  }
+  const archivosS3 = configuracionS3(v);
+  if (esProblemas(archivosS3)) problemas.push(...archivosS3.problemas);
 
   const NOTIFICACIONES = (texto(v, 'NOTIFICACIONES') ??
     'registro') as ModoNotificaciones;
@@ -152,6 +193,11 @@ export function leerEntorno(v: Variables): Entorno {
     );
   }
 
+  const SIMULACION_HABILITADA = booleano(
+    'SIMULACION_HABILITADA',
+    ENTORNO === 'desarrollo',
+  );
+
   const entorno: Entorno = {
     PUERTO,
     ENTORNO,
@@ -159,21 +205,51 @@ export function leerEntorno(v: Variables): Entorno {
     URL_PUBLICA,
     DB_MOTOR,
     DB_URL,
+    DB_PROVEEDOR: preset?.proveedor ?? null,
+    DB_SSL,
+    DB_SSL_CA: preset?.sslCa ?? texto(v, 'DB_SSL_CA') ?? null,
+    DB_ESQUEMA,
     DB_ARCHIVO: texto(v, 'DB_ARCHIVO') ?? 'datos/api.sqlite',
     DB_SINCRONIZAR: booleano('DB_SINCRONIZAR', true),
     DB_BORRAR_AL_CONECTAR: booleano('DB_BORRAR_AL_CONECTAR', false),
     JWT_SECRETO: JWT_SECRETO ?? '',
     ARCHIVOS_PROVEEDOR,
     DIRECTORIO_ARCHIVOS: texto(v, 'DIRECTORIO_ARCHIVOS') ?? './archivos',
+    ARCHIVOS_S3:
+      archivosS3 === null || esProblemas(archivosS3) ? null : archivosS3,
     NOTIFICACIONES,
     EXPO_PUSH_URL,
     RELOJ_FIJO,
-    SIMULACION_HABILITADA: booleano(
-      'SIMULACION_HABILITADA',
-      ENTORNO === 'desarrollo',
-    ),
+    SIMULACION_HABILITADA,
     SEMBRAR_SI_VACIA: booleano('SEMBRAR_SI_VACIA', false),
   };
+
+  if (ENTORNO === 'publicado') {
+    const pub = (texto_: string) =>
+      problemas.push(`ENTORNO=publicado: ${texto_}`);
+    if (DB_MOTOR === 'better-sqlite3')
+      pub(
+        'la base no puede ser SQLite, porque el disco del host se borra en cada reinicio. ' +
+          'Usá DB_PROVEEDOR=supabase (o neon, aiven-…) con su DB_URL.',
+      );
+    if (ARCHIVOS_PROVEEDOR === 'local')
+      pub(
+        'los archivos no pueden ser "local", porque el disco del host se borra en cada reinicio. ' +
+          'Usá ARCHIVOS_PROVEEDOR=supabase (o r2, b2, aws).',
+      );
+    if (JWT_SECRETO !== undefined) {
+      if (JWT_SECRETO === SECRETO_DE_DESARROLLO)
+        pub('JWT_SECRETO es el de desarrollo. Poné uno propio y secreto.');
+      else if (JWT_SECRETO.length < 32)
+        pub(
+          'JWT_SECRETO tiene que tener al menos 32 caracteres (generá uno largo y al azar).',
+        );
+    }
+    if (SIMULACION_HABILITADA)
+      pub(
+        'poné SIMULACION_HABILITADA=false: la simulación de fallas es sólo para desarrollo.',
+      );
+  }
 
   if (problemas.length > 0) {
     throw new Error(

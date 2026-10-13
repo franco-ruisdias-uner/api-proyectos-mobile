@@ -29,6 +29,8 @@ export abstract class AlmacenArchivos {
   abstract leer(clave: string, rango?: Rango): Promise<LecturaArchivo>;
   abstract existe(clave: string): Promise<boolean>;
   abstract borrar(clave: string): Promise<void>;
+  /** Sólo proveedores en la nube: URL firmada de lectura (ARCHIVOS_REDIRIGIR). */
+  urlFirmada?(clave: string, segundos: number): Promise<string>;
 }
 
 export class ArchivoNoEncontrado extends Error {

@@ -18,9 +18,21 @@ try {
   process.exit(1);
 }
 
-const app = await NestFactory.create<
-  import('@nestjs/platform-express').NestExpressApplication
->(AppModule.registrar(process.env));
+let app: import('@nestjs/platform-express').NestExpressApplication;
+try {
+  app = await NestFactory.create<
+    import('@nestjs/platform-express').NestExpressApplication
+  >(AppModule.registrar(process.env));
+} catch (error) {
+  // Un almacén de archivos o una base que no responden: se dice en castellano, sin el stack.
+  const { AlmacenNoDisponible } =
+    await import('./comun/archivos/almacen-archivos.js');
+  if (error instanceof AlmacenNoDisponible) {
+    console.error(`La API no puede arrancar: ${error.message}`);
+    process.exit(1);
+  }
+  throw error;
+}
 configurarApp(app, entorno);
 app.enableShutdownHooks();
 await app.listen(entorno.PUERTO, '0.0.0.0');

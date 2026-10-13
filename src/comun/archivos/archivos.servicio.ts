@@ -1,5 +1,7 @@
 import { randomBytes } from 'node:crypto';
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { type Configuracion, valor } from '../../config/configuracion.js';
 import type { ArchivoSubido } from '../../../contrato/api.js';
 import { ErrorApi } from '../errores/error-api.js';
 import { origenActual } from '../origen/origen.js';
@@ -28,7 +30,27 @@ export class ArchivosServicio {
   constructor(
     private readonly almacen: AlmacenArchivos,
     private readonly reloj: Reloj,
+    @Optional() @Inject(ConfigService) private readonly config?: Configuracion,
   ) {}
+
+  /**
+   * Con ARCHIVOS_REDIRIGIR=true (sólo proveedores en la nube): URL firmada de 15 minutos a la
+   * que redirigir en vez de pasar el archivo por la API. `null` si no corresponde.
+   */
+  async redireccion(clave: string): Promise<string | null> {
+    if (!this.config || !valor(this.config, 'ARCHIVOS_S3')?.redirigir)
+      return null;
+    if (!esClaveValida(clave) || !this.almacen.urlFirmada) return null;
+    try {
+      if (!(await this.almacen.existe(clave)))
+        throw new ErrorApi('ARCHIVO_NO_ENCONTRADO');
+      return await this.almacen.urlFirmada(clave, 15 * 60);
+    } catch (error) {
+      if (error instanceof ErrorApi) throw error;
+      this.log.error(`No se pudo firmar ${clave}: ${String(error)}`);
+      throw new ErrorApi('ALMACEN_NO_DISPONIBLE');
+    }
+  }
 
   /** Guarda lo que subió el teléfono. La clave la genera el servidor. */
   async subir(contenido: Buffer): Promise<ArchivoSubido> {

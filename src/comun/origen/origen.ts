@@ -10,8 +10,7 @@ export function middlewareOrigen(
   urlPublica: string | null,
 ): (req: Request, res: Response, next: NextFunction) => void {
   return (req, _res, next) => {
-    const origen =
-      urlPublica ?? `${req.protocol}://${req.get('host') ?? 'localhost'}`;
+    const origen = urlPublica ?? `${req.protocol}://${req.host || 'localhost'}`;
     almacen.run({ origen }, () => next());
   };
 }

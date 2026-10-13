@@ -20,9 +20,14 @@
     "test:e2e:matriz": "node scripts/matriz.mjs",
     "verificar": "pnpm tipos && pnpm lint && pnpm test && pnpm test:e2e",
     "docker:probar": "node scripts/probar-docker.mjs",
-    "docs:readme": "nest build && node dist/src/documentacion/actualizar-readme.js"
+    "docs:readme": "nest build && node dist/src/documentacion/actualizar-readme.js",
+    "db:probar": "nest build && node dist/src/herramientas/db-probar.js",
+    "archivos:probar": "nest build && node dist/src/herramientas/archivos-probar.js",
+    "publicado:probar": "node scripts/publicado-probar.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1150.0",
+    "@aws-sdk/s3-request-presigner": "^3.1150.0",
     "@date-fns/tz": "^1.5.0",
     "@nestjs/common": "^12.0.1",
     "@nestjs/config": "^12.0.1",

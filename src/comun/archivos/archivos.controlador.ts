@@ -86,6 +86,11 @@ export class ArchivosControlador {
     @Res() respuesta: Response,
   ): Promise<void> {
     const clave = Array.isArray(partes) ? partes.join('/') : partes;
+    const destino = await this.archivos.redireccion(clave);
+    if (destino) {
+      respuesta.redirect(302, destino);
+      return;
+    }
     // Primero se averigua el tamaño (y que exista) para poder validar el rango.
     const completo = await this.archivos.leer(clave);
     completo.flujo.destroy();
