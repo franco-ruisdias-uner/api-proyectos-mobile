@@ -1,6 +1,6 @@
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { EnviadorExpo } from './enviador-expo.js';
+import { EnviadorPorHacer } from '../../src/notificaciones-alumnos/enviador-por-hacer.js';
 
 interface MensajeExpo {
   to: string;
@@ -9,7 +9,7 @@ interface MensajeExpo {
   data: Record<string, string>;
 }
 
-describe('AGENTS §19.2 — El enviador de Expo, contra un servidor falso', () => {
+describe('Consigna 2 — Mandar las push a Expo (EnviadorPorHacer), contra un servidor falso', () => {
   let servidor: Server;
   let url: string;
   const tandas: MensajeExpo[][] = [];
@@ -45,7 +45,7 @@ describe('AGENTS §19.2 — El enviador de Expo, contra un servidor falso', () =
   beforeEach(() => (tandas.length = 0));
 
   it('manda un mensaje por token con título, cuerpo y datos', async () => {
-    const enviador = new EnviadorExpo(url);
+    const enviador = new EnviadorPorHacer(url);
     await enviador.enviar([
       {
         tokens: ['ExponentPushToken[a]'],
@@ -72,14 +72,14 @@ describe('AGENTS §19.2 — El enviador de Expo, contra un servidor falso', () =
       { length: 250 },
       (_, i) => `ExponentPushToken[t${i}]`,
     );
-    await new EnviadorExpo(url).enviar([
+    await new EnviadorPorHacer(url).enviar([
       { tokens, titulo: 't', cuerpo: 'c', datos: {} },
     ]);
     expect(tandas.map((t) => t.length)).toEqual([100, 100, 50]);
   });
 
   it('devuelve como inválidos los DeviceNotRegistered', async () => {
-    const r = await new EnviadorExpo(url).enviar([
+    const r = await new EnviadorPorHacer(url).enviar([
       {
         tokens: ['ExponentPushToken[vivo]', 'ExponentPushToken[muerto]'],
         titulo: 't',

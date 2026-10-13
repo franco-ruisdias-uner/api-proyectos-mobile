@@ -1,17 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
-import { esViolacionDeUnicidad } from '../../comun/errores/error-api.js';
+import { esViolacionDeUnicidad } from '../comun/errores/error-api.js';
 import {
   AlmacenTokensPush,
   type Plataforma,
-} from '../../comun/notificaciones/puertos.js';
-import { Reloj } from '../../comun/reloj/reloj.js';
+} from '../comun/notificaciones/puertos.js';
+import { Reloj } from '../comun/reloj/reloj.js';
 import { DispositivoEntidad } from './dispositivo.entidad.js';
 
 /** Los tokens de Expo en la tabla `dispositivos`. */
 @Injectable()
-export class AlmacenTokensBase extends AlmacenTokensPush {
+export class AlmacenTokensPorHacer extends AlmacenTokensPush {
   constructor(
     @InjectRepository(DispositivoEntidad)
     private readonly repositorio: Repository<DispositivoEntidad>,

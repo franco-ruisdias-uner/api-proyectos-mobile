@@ -3,8 +3,8 @@ import {
   ColumnaEnum,
   ColumnaInstante,
   ColumnaTexto,
-} from '../../comun/db/columnas.js';
-import type { Plataforma } from '../../comun/notificaciones/puertos.js';
+} from '../comun/db/columnas.js';
+import type { Plataforma } from '../comun/notificaciones/puertos.js';
 
 @Entity('dispositivos')
 export class DispositivoEntidad {

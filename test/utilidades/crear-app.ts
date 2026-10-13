@@ -25,8 +25,12 @@ export const AHORA_DE_PRUEBA = '2026-09-15T08:00:00-03:00';
 export interface OpcionesApp {
   /** Variables de entorno que pisan las de prueba. */
   entorno?: Record<string, string>;
-  /** Usar el almacén de tokens en memoria en vez de la tabla. */
-  tokensEnMemoria?: boolean;
+  /**
+   * Usar el almacén de tokens de la app (el que programan los alumnos) en vez del doble en
+   * memoria. Sólo lo piden los tests de `test/notificaciones/`: los de dominio verifican qué
+   * decidió `Avisos`, no dónde viven los tokens (AGENTS §19.2).
+   */
+  almacenReal?: boolean;
   /**
    * Proveedores que se sustituyen (`[token, valor]`). Sólo para módulos que todavía no existen
    * (p. ej. el acceso de los lectores a sus rutas antes de M2); nunca repositorios ni la base.
@@ -39,6 +43,8 @@ export interface AppDePrueba {
   http: () => ReturnType<typeof request>;
   reloj: RelojFijo;
   enviador: EnviadorMemoria;
+  /** El doble del almacén; en una app con `almacenReal` no se usa. */
+  almacenTokens: AlmacenTokensMemoria;
   avisos: Avisos;
   dataSource: DataSource;
   directorioArchivos: string;
@@ -81,10 +87,9 @@ export async function crearApp(
     .useValue(reloj)
     .overrideProvider(EnviadorPush)
     .useValue(enviador);
-  if (opciones.tokensEnMemoria) {
-    modulo = modulo
-      .overrideProvider(AlmacenTokensPush)
-      .useValue(new AlmacenTokensMemoria());
+  const almacenTokens = new AlmacenTokensMemoria();
+  if (!opciones.almacenReal) {
+    modulo = modulo.overrideProvider(AlmacenTokensPush).useValue(almacenTokens);
   }
   for (const [token, valor] of opciones.sustitutos ?? []) {
     modulo = modulo.overrideProvider(token as never).useValue(valor as never);
@@ -102,6 +107,7 @@ export async function crearApp(
     http: () => request(app.getHttpServer()),
     reloj,
     enviador,
+    almacenTokens,
     avisos: app.get(Avisos),
     dataSource: app.get(DataSource),
     directorioArchivos,

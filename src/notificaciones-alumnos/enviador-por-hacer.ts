@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { EnviadorPush, type MensajePush } from './puertos.js';
+import { EnviadorPush, type MensajePush } from '../comun/notificaciones/puertos.js';
 
 const TANDA = 100;
 
@@ -10,8 +10,8 @@ interface TicketExpo {
 }
 
 /** Manda las push con `fetch` a la API de Expo, en tandas de 100 mensajes. */
-export class EnviadorExpo extends EnviadorPush {
-  private readonly log = new Logger('EnviadorExpo');
+export class EnviadorPorHacer extends EnviadorPush {
+  private readonly log = new Logger('EnviadorPorHacer');
 
   constructor(private readonly url: string) {
     super();

@@ -29,12 +29,7 @@ describe('M6 — Avisos: push al lector cuando se le asigna una ruta (Especifica
       [b, TOKEN_B],
       [admin, TOKEN_ADMIN],
     ] as const)
-      await c
-        .http()
-        .post('/dispositivos')
-        .set(bearer(u.token))
-        .send({ tokenExpo, plataforma: 'android' })
-        .expect(201);
+      await c.almacenTokens.guardar(u.id, tokenExpo, 'android');
   });
   afterAll(() => c.cerrar());
   beforeEach(() => c.enviador.limpiar());

@@ -1,17 +1,24 @@
-import { DispositivoEntidad } from '../../src/modulos/dispositivos/dispositivo.entidad.js';
 import { type AppDePrueba, crearApp } from '../utilidades/crear-app.js';
 import { esperarContrato, esperarError } from '../utilidades/contrato.js';
 import { bearer, conSesion } from '../utilidades/usuarios.js';
 
 const TOKEN = 'ExponentPushToken[aaaaaaaaaaaaaaaaaaaaaa]';
 
-describe('AGENTS §9 — Dispositivos (tokens de Expo)', () => {
+describe('Consigna 1 — Guardar los tokens de Expo: /dispositivos', () => {
   let c: AppDePrueba;
   beforeAll(async () => (c = await crearApp()));
   afterAll(() => c.cerrar());
   beforeEach(() => c.enviador.limpiar());
 
-  const filas = () => c.dataSource.getRepository(DispositivoEntidad).find();
+  /** A cuántos teléfonos del usuario llega una push de prueba: lo que "tiene guardado" la API. */
+  const dispositivosDe = async (token: string) =>
+    (
+      await c
+        .http()
+        .post('/dispositivos/prueba')
+        .set(bearer(token))
+        .expect(200)
+    ).body.datos.dispositivos as number;
 
   it('POST /dispositivos registra el token: 201 con el Dispositivo', async () => {
     const u = await conSesion(c, 'lector');
@@ -41,9 +48,7 @@ describe('AGENTS §9 — Dispositivos (tokens de Expo)', () => {
       .send({ tokenExpo: token, plataforma: 'ios' })
       .expect(201);
     expect(b.body).toEqual(a.body);
-    expect((await filas()).filter((f) => f.tokenExpo === token)).toHaveLength(
-      1,
-    );
+    expect(await dispositivosDe(u.token)).toBe(1);
   });
 
   it('dos registros simultáneos del mismo token dejan uno', async () => {
@@ -57,9 +62,7 @@ describe('AGENTS §9 — Dispositivos (tokens de Expo)', () => {
         .send({ tokenExpo: token, plataforma: 'android' });
     const [a, b] = await Promise.all([alta(), alta()]);
     expect([a.status, b.status]).toEqual([201, 201]);
-    expect((await filas()).filter((f) => f.tokenExpo === token)).toHaveLength(
-      1,
-    );
+    expect(await dispositivosDe(u.token)).toBe(1);
   });
 
   it('teléfono compartido: si otro usuario tenía el token, pasa al actual', async () => {
@@ -78,8 +81,7 @@ describe('AGENTS §9 — Dispositivos (tokens de Expo)', () => {
       .set(bearer(turnoTarde.token))
       .send({ tokenExpo: token, plataforma: 'android' })
       .expect(201);
-    const fila = (await filas()).find((f) => f.tokenExpo === token);
-    expect(fila?.usuarioId).toBe(turnoTarde.id);
+    expect(await dispositivosDe(turnoTarde.token)).toBe(1);
 
     const r = await c
       .http()
@@ -129,7 +131,7 @@ describe('AGENTS §9 — Dispositivos (tokens de Expo)', () => {
       .post('/dispositivos/prueba')
       .set(bearer(u.token))
       .expect(200);
-    expect((await filas()).some((f) => f.tokenExpo === token)).toBe(false);
+    expect(await dispositivosDe(u.token)).toBe(0);
   });
 
   it('si Expo falla, la prueba responde igual (0) y no rompe', async () => {
@@ -164,7 +166,7 @@ describe('AGENTS §9 — Dispositivos (tokens de Expo)', () => {
       .set(bearer(u.token))
       .expect(204);
     expect(r.text).toBe('');
-    expect((await filas()).some((f) => f.tokenExpo === token)).toBe(false);
+    expect(await dispositivosDe(u.token)).toBe(0);
     await c
       .http()
       .delete(`/dispositivos/${encodeURIComponent(token)}`)

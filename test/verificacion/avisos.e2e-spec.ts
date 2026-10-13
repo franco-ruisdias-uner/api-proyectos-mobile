@@ -16,12 +16,7 @@ describe('Verificación M6 — Avisos de ruta nueva (Especificación §9, D17), 
   let n = 0;
 
   const alta = (s: Sesion, token: string) =>
-    c
-      .http()
-      .post('/dispositivos')
-      .set(bearer(s.token))
-      .send({ tokenExpo: token, plataforma: 'android' })
-      .expect(201);
+    c.almacenTokens.guardar(s.id, token, 'android');
   const suministros = async (k: number) => {
     const r: string[] = [];
     for (let i = 0; i < k; i++)
@@ -303,11 +298,7 @@ describe('Verificación M6 — Avisos de ruta nueva (Especificación §9, D17), 
     it('después de dar de baja su token, ya no recibe', async () => {
       const u = await conSesion(c, 'lector', { legajo: 'V6-BAJA' });
       await alta(u, tk('BAJA'));
-      await c
-        .http()
-        .delete(`/dispositivos/${encodeURIComponent(tk('BAJA'))}`)
-        .set(bearer(u.token))
-        .expect(204);
+      await c.almacenTokens.borrar(tk('BAJA'));
       await crear({ lectorId: u.id });
       await c.avisos.esperarPendientes();
       expect(c.enviador.enviados).toEqual([]);
@@ -363,28 +354,6 @@ describe('Verificación M6 — Avisos de ruta nueva (Especificación §9, D17), 
       await c.avisos.esperarPendientes();
       expect(tokensEnviados()).toEqual([tk('BUENO')]);
     });
-
-    it('/dispositivos sigue funcionando después de una falla de Expo', async () => {
-      c.enviador.fallar = true;
-      await crear();
-      await c.avisos.esperarPendientes();
-      c.enviador.limpiar();
-      const u = await conSesion(c, 'lector', { legajo: 'V6-POST' });
-      const r = await alta(u, tk('POSTFALLA'));
-      esperarContrato(r.body, 'Dispositivo');
-      const pr = await c
-        .http()
-        .post('/dispositivos/prueba')
-        .set(bearer(u.token));
-      expect([200, 201, 202, 204]).toContain(pr.status);
-      await c.avisos.esperarPendientes();
-      expect(tokensEnviados()).toEqual([tk('POSTFALLA')]);
-      await c
-        .http()
-        .delete(`/dispositivos/${encodeURIComponent(tk('POSTFALLA'))}`)
-        .set(bearer(u.token))
-        .expect(204);
-    });
   });
 
   describe('Concurrencia', () => {
@@ -427,12 +396,7 @@ describe('Verificación M6 — Avisos de ruta nueva (Especificación §9, D17), 
       try {
         const ad = await conSesion(d, 'administracion', { legajo: 'V6C-ADM' });
         const l = await conSesion(d, 'lector', { legajo: 'V6C-L' });
-        await d
-          .http()
-          .post('/dispositivos')
-          .set(bearer(l.token))
-          .send({ tokenExpo: tk('COLG'), plataforma: 'ios' })
-          .expect(201);
+        await d.almacenTokens.guardar(l.id, tk('COLG'), 'ios');
         d.enviador.enviar = () => new Promise(() => undefined);
         const sum = (await crearSuministro(d)).suministro.id;
         const r = await Promise.race([
