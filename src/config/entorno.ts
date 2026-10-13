@@ -8,6 +8,7 @@ import {
 } from '../comun/archivos/proveedores.js';
 import {
   type ModoSsl,
+  ESQUEMA_VALIDO,
   configuracionBase,
   hayProblemasDb,
 } from '../comun/db/proveedores.js';
@@ -147,6 +148,15 @@ export function leerEntorno(v: Variables): Entorno {
       : DB_MOTOR === 'postgres'
         ? (texto(v, 'DB_ESQUEMA') ?? null)
         : null;
+  if (
+    preset === null &&
+    DB_ESQUEMA !== null &&
+    !ESQUEMA_VALIDO.test(DB_ESQUEMA)
+  ) {
+    problemas.push(
+      'DB_ESQUEMA tiene que ser un nombre simple: letras, números y guion bajo, sin espacios ni símbolos.',
+    );
+  }
 
   const JWT_SECRETO = texto(v, 'JWT_SECRETO');
   if (JWT_SECRETO === undefined) {

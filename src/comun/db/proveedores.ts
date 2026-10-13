@@ -44,6 +44,7 @@ function limpio(v: Variables, nombre: string): string | undefined {
   return valor === undefined || valor === '' ? undefined : valor;
 }
 
+export const ESQUEMA_VALIDO = /^[A-Za-z_][A-Za-z0-9_]{0,62}$/;
 const SSL_VALIDOS: ModoSsl[] = ['no', 'si', 'si-sin-verificar'];
 
 /** Motor que corresponde según el entorno (el preset manda sobre DB_MOTOR). */
@@ -152,6 +153,12 @@ export function configuracionBase(
   if (sslTexto !== undefined && !SSL_VALIDOS.includes(sslTexto as ModoSsl)) {
     problemas.push(
       `DB_SSL tiene que ser "no", "si" o "si-sin-verificar" (vino "${sslTexto}").`,
+    );
+  }
+  const esquemaPedido = limpio(v, 'DB_ESQUEMA');
+  if (esquemaPedido !== undefined && !ESQUEMA_VALIDO.test(esquemaPedido)) {
+    problemas.push(
+      'DB_ESQUEMA tiene que ser un nombre simple: letras, números y guion bajo, sin espacios ni símbolos.',
     );
   }
   if (problemas.length > 0 || url === null) return { problemas };

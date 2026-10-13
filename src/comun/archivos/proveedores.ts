@@ -144,9 +144,10 @@ export function configuracionS3(
   const bucket = preset.emulador
     ? (limpio(entorno, 'S3_BUCKET') ?? 'archivos')
     : pedir('S3_BUCKET', DONDE_BUCKET);
+  // Con región fija (R2: "auto") S3_REGION no se tiene en cuenta: otra región rompe las firmas.
   const region =
-    limpio(entorno, 'S3_REGION') ??
     preset.region ??
+    limpio(entorno, 'S3_REGION') ??
     falta('S3_REGION', DONDE_REGION);
   const accessKeyId = preset.pideClaves
     ? pedir(

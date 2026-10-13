@@ -127,3 +127,17 @@ describe('AGENTS §17.2 — Presets de proveedores de archivos', () => {
     );
   });
 });
+
+describe('AGENTS §17.2 — R2 tiene región fija', () => {
+  it('S3_REGION no pisa "auto"', () => {
+    expect(
+      ok({
+        ARCHIVOS_PROVEEDOR: 'r2',
+        R2_CUENTA: 'c',
+        S3_BUCKET: 'b',
+        S3_REGION: 'eu-west-1',
+        ...claves,
+      }).region,
+    ).toBe('auto');
+  });
+});
