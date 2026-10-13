@@ -34,6 +34,12 @@ jobs:
         motor: [postgres, mysql, mariadb]
         tz: [UTC, America/Argentina/Buenos_Aires]
     services:
+      s3:
+        image: andrewgaul/s3proxy:sha-f892634
+        env: { S3PROXY_AUTHORIZATION: none, S3PROXY_ENDPOINT: "http://0.0.0.0:8080", JCLOUDS_PROVIDER: transient }
+        ports: ["58080:8080"]
+        options: >-
+          --health-cmd "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080'" --health-interval 2s --health-timeout 3s --health-retries 60
       postgres:
         image: postgres:17
         env: { POSTGRES_USER: api, POSTGRES_PASSWORD: api, POSTGRES_DB: api }

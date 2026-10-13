@@ -291,8 +291,60 @@ La API arranca "congelada" en ese momento: para ella, siempre es esa fecha y hor
 
 ## 9. Volver los datos al estado inicial
 
-- Sin Docker: `pnpm db:reiniciar` (borra todo, crea las tablas y carga los datos de demo).
+- Sin Docker: `pnpm db:reiniciar` (borra todo, crea las tablas y carga los datos de demo). Contra una base en la
+  nube (`DB_PROVEEDOR`) pide `--confirmar` y borra **sólo** el esquema de la API (`DB_ESQUEMA`), nunca otros.
 - Con Docker: `docker compose down -v` y `docker compose up`.
+
+## 9b. En la nube: base, archivos y publicación
+
+Con Docker la API corre en tu compu. **Publicada** tiene una dirección `https://` que anda desde cualquier red, y
+eso hace falta para el *build de producción* con EAS: una app instalada no puede apuntar a la IP de una notebook.
+La combinación gratis y sin tarjeta: la API en **Render**, la base y los archivos en **Supabase**.
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+*(el botón te lleva a Render: pegá la dirección del repo de tu grupo cuando te la pida; el archivo `render.yaml`
+ya trae toda la configuración)*
+
+### Paso a paso
+
+1. **Supabase → proyecto nuevo.** Anotá la *referencia* (las letras de `https://<referencia>.supabase.co`) y la región.
+2. **La base**: botón **Connect** → **Session pooler**. Copiá la cadena
+   (`postgres://postgres.<referencia>:<clave>@aws-0-<región>.pooler.supabase.com:5432/postgres`): es tu `DB_URL`.
+   No uses la conexión directa (sólo IPv6, Render no llega) ni el modo transacción (puerto 6543, la API no anda).
+3. **Los archivos**: **Storage** → creá un bucket (por ejemplo `archivos`, privado). Después **Project Settings →
+   Storage → S3 Connection**: generá un par de claves (`S3_ACCESS_KEY_ID` y `S3_SECRET_ACCESS_KEY`) y anotá la región.
+   Esas claves saltean los permisos de Supabase: sólo van en el servidor, nunca en la app ni en git.
+4. **Render → New → Blueprint** con el repo. Render lee `render.yaml` y te pide: `DB_URL`, `JWT_SECRETO` (una clave
+   larga y al azar, 32 caracteres o más), `SUPABASE_PROYECTO` (la referencia), `S3_REGION`, `S3_BUCKET`,
+   `S3_ACCESS_KEY_ID` y `S3_SECRET_ACCESS_KEY`.
+5. Esperá el primer deploy y probá desde tu compu: `pnpm publicado:probar https://tu-api.onrender.com`.
+
+Las tablas van en el esquema `api` de Supabase (no en `public`, que Supabase puede exponer). Con
+`ENTORNO=publicado` la API **no arranca** si la configuración es de juguete: base SQLite, archivos locales, el
+`JWT_SECRETO` de desarrollo o uno de menos de 32 caracteres, o la simulación de fallas prendida; el mensaje dice qué cambiar.
+
+**Cosas que conviene saber**
+
+- **Arranque en frío**: el servicio gratis de Render se duerme a los 15 minutos sin tráfico y tarda alrededor de un
+  minuto en despertar. La primera llamada puede demorar: la app tiene que mostrar que está cargando.
+- **Supabase gratis se pausa** después de una semana sin uso: se reactiva desde el panel.
+- Otras opciones: Koyeb para la API; Neon o Aiven para la base (`DB_PROVEEDOR=neon`, `aiven-postgres`, `aiven-mysql`);
+  Cloudflare R2, Backblaze B2 o AWS para los archivos. Cada una tiene su bloque comentado en `.env.example`.
+  Firebase Storage no se soporta.
+- Para comprobar una configuración **antes** de publicar: `pnpm db:probar` (la base) y `pnpm archivos:probar`
+  (los archivos). Te dicen en castellano qué salió mal.
+
+### Archivos en otro lugar (también en tu compu)
+
+Los archivos se guardan en una carpeta (`ARCHIVOS_PROVEEDOR=local`) o en cualquier servicio compatible con S3. La
+app no se entera: las URLs son siempre `<dirección de la API>/archivos/<clave>`. Para probar un S3 sin cuenta:
+
+```bash
+docker compose -f compose.yaml -f compose.almacen-s3.yaml up
+```
+
+(Con otra base: `docker compose -f compose.postgres.yaml -f compose.almacen-s3.yaml up`.) También hay
+`compose.almacen-localstack.yaml`, que necesita un token gratis de LocalStack (`LOCALSTACK_AUTH_TOKEN`).
 
 ## 10. Problemas frecuentes
 
@@ -304,6 +356,8 @@ La API arranca "congelada" en ese momento: para ella, siempre es esa fecha y hor
 | `Could not locate the bindings file` (better-sqlite3) | Corré `pnpm install` de nuevo con Node 24. Si usás npm en vez de pnpm, no anda: usá pnpm. |
 | Con XAMPP, errores raros al crear tablas | Poné `DB_MOTOR=mariadb`. |
 | Responde `NO_AUTENTICADO` de golpe | El token venció (12 horas), o alguien hizo `POST /auth/salida` con tu usuario en otro teléfono. Volvé a ingresar. |
+| `La API no puede arrancar: …bucket…` o `…credenciales…` | Los archivos en la nube: `pnpm archivos:probar` dice cuál variable revisar (`S3_BUCKET`, `S3_REGION`, las claves). |
+| `La DB_URL de Supabase tiene que ser…` | Usá el *Session pooler* (puerto 5432), no la conexión directa ni el modo transacción. `pnpm db:probar` prueba la conexión. |
 | Docker: `port is already allocated` | Otro contenedor usa el puerto. `docker ps` para ver cuál, o `PUERTO=3001 docker compose up`. |
 
 ---
@@ -313,7 +367,9 @@ La API arranca "congelada" en ese momento: para ella, siempre es esa fecha y hor
 | Comando | Qué hace |
 |---|---|
 | `pnpm verificar` | Tipos + lint + tests unitarios + e2e con SQLite. |
-| `pnpm test:e2e:matriz` | Los e2e contra SQLite, PostgreSQL, MySQL y MariaDB (con Docker). |
-| `pnpm docker:probar` | Levanta los cuatro compose y los prueba. |
+| `pnpm test:e2e:matriz` | Los e2e contra SQLite, PostgreSQL, MySQL y MariaDB (con Docker, más los archivos contra S3Proxy). |
+| `pnpm docker:probar` | Levanta los cuatro compose (y el de S3Proxy) y los prueba. |
+| `pnpm db:probar` / `pnpm archivos:probar` | Prueban la base y los archivos con la configuración del `.env` (no corren en la CI: necesitan cuentas). |
+| `pnpm publicado:probar <url>` | Prueba una API ya publicada: `/salud`, fotos con `https` y `Range`. |
 | `pnpm contrato:esquema` | Regenera `contrato/esquema.json` desde `contrato/*.ts`. |
 | `pnpm docs:readme` | Regenera las tablas de endpoints y errores de este README. |

@@ -4,6 +4,19 @@ Todo lo que cambia en la API, escrito para los grupos que la usan desde la app.
 
 ## [Sin publicar]
 
+### M7 — Nube
+
+- **Archivos en la nube**: `ARCHIVOS_PROVEEDOR` acepta `local` (por defecto), `aws`, `supabase`, `r2`, `b2`, `s3proxy`
+  y `localstack`. Para la app no cambia nada: las URLs siguen siendo `<dirección>/archivos/<clave>`, con `Range`.
+  `GET /salud` informa el proveedor en `almacen`. Opcional: `ARCHIVOS_REDIRIGIR=true` responde 302 a una URL firmada.
+- **Base en la nube**: `DB_PROVEEDOR` = `supabase`, `neon`, `aiven-postgres` o `aiven-mysql` completa motor, cifrado y
+  esquema (`DB_SSL`, `DB_SSL_CA`, `DB_ESQUEMA`). `pnpm db:reiniciar` pide `--confirmar` contra una base en la nube.
+- **Publicación**: `render.yaml`, `ENTORNO=publicado` (no arranca con una configuración de juguete) y
+  `CONFIAR_PROXY=true` para que las URLs de archivos salgan `https://` detrás del proxy de Render.
+- Herramientas: `pnpm db:probar`, `pnpm archivos:probar`, `pnpm publicado:probar <url>`. Compose nuevos:
+  `compose.almacen-s3.yaml` y `compose.almacen-localstack.yaml`.
+- Sin cambios en ningún endpoint, respuesta ni código de error.
+
 ### M6 — Avisos
 
 - **Push de ruta nueva**: cuando la administración crea una ruta (`POST /rutas`) o le cambia el lector

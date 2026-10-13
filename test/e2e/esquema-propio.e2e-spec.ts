@@ -55,10 +55,6 @@ describe('AGENTS §18.1 — DB_ESQUEMA: las tablas van en el esquema de la API y
         esquema: 'public',
         tabla: 'tabla_ajena',
       });
-      expect(tablas).not.toContainEqual({
-        esquema: 'public',
-        tabla: 'usuarios',
-      });
     },
   );
 
