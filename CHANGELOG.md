@@ -4,6 +4,18 @@ Todo lo que cambia en la API, escrito para los grupos que la usan desde la app.
 
 ## [Sin publicar]
 
+### M3 — Lecturas
+
+- **Cargar una lectura**: `POST /lecturas` con la forma de `Lectura` (201; 200 si el `id` ya existía del mismo
+  lector, para reintentar sin duplicar). El servidor calcula `lectorId`, `consumo`, `fueraDeRango` y
+  `sincronizada`; si los mandás, se ignoran. Una lectura rara se guarda igual y queda marcada `fueraDeRango`.
+- `GET /lecturas/:id` y `GET /rutas/:id/lecturas` (las vigentes, una por suministro, en orden de recorrido;
+  filtro `fueraDeRango`; de a 50, hasta 200).
+- Si hay dos resultados para un suministro, vale el de `fechaHora` más reciente; nada se borra.
+- La descarga de la ruta trae las lecturas vigentes y `GET /rutas/:id/avance` las cuenta.
+- Errores nuevos: `SUMINISTRO_FUERA_DE_RUTA`, `LECTURA_INVALIDA`, `LECTURA_NO_ENCONTRADA`, `FOTO_REQUERIDA`, `ID_EN_USO`.
+- Datos de demo: las 20 lecturas de Brasil (`lec-88201` es de `sum-004120`).
+
 ### M2 — Rutas
 
 - **Mis rutas**: `GET /yo/rutas` (por defecto las `asignada` y `en_curso`; `estado` acepta una lista

@@ -103,6 +103,9 @@ export class LecturasServicio {
     const fotoClave = await this.archivos.claveDeArchivoSubido(
       dto.fotoUri.trim(),
     );
+    // Una foto es una imagen: un audio o un video subidos no valen.
+    if (!fotoClave.startsWith('imagenes/'))
+      throw new ErrorApi('FOTO_REQUERIDA');
     const fechaHora = leerInstante(dto.fechaHora);
     if (fechaHora === null)
       throw new ErrorApi(

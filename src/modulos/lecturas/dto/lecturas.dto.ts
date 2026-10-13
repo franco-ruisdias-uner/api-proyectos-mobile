@@ -4,6 +4,7 @@ import {
   Allow,
   IsBoolean,
   IsNumber,
+  IsObject,
   IsOptional,
   IsString,
   Matches,
@@ -52,7 +53,8 @@ export class CargarLecturaDto {
 
   @ApiPropertyOptional({ nullable: true })
   @ValidateIf((_d: object, v: unknown) => v !== null && v !== undefined)
-  @ValidateNested()
+  @IsObject({ message: 'Las coordenadas no son válidas.' })
+  @ValidateNested({ message: 'Las coordenadas no son válidas.' })
   @Type(() => CoordenadasDto)
   coordenadas?: CoordenadasDto | null;
 

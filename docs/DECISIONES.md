@@ -259,7 +259,7 @@ pierde el acceso. Reemplaza al acceso vacío de A13.
 Estado: PROVISORIA (autónomo)
 Hueco: la especificación no dice el estado HTTP de `POST /rutas/:id/descarga` (un POST suele ser 201).
 Decisión: 200, porque no crea un recurso. Administración también puede descargar (🧑‍🔧) y, como dice R7, la primera descarga marca
-`descargadaEn` y pasa la ruta a `en_curso` sea quien sea el que la pida. `lecturas` y `novedades` del paquete salen `[]` hasta M3 y M4.
+`descargadaEn` y pasa la ruta a `en_curso` sea quien sea el que la pida. `lecturas` del paquete trae las vigentes desde M3; `novedades` sale `[]` hasta M4.
 
 ### A25 — Editar la ruta mandando los mismos suministros
 Estado: PROVISORIA (autónomo)
@@ -282,3 +282,17 @@ conflicto y responde `SUMINISTRO_EN_OTRA_RUTA` (409). Lo encontró el verificado
 ### A28 — Número de ruta con espacios y filtro `estado` en `/rutas`
 Estado: PROVISORIA (autónomo)
 Decisión: el `numero` se recorta antes de validar (`" 7"` crea `rut-7-…`); `/rutas` acepta `estado` con lista separada por comas, como `/yo/rutas`.
+
+### A29 — Lecturas sembradas fuera de rango y confirmadas
+Estado: PROVISORIA (autónomo)
+Hueco: el mock de la app de clase marca `fueraDeRango: false` en la lectura del medidor ×10 (`lec-88225`, consumo 110 contra un promedio de 18), pero D4 la deja fuera de rango.
+Decisión: las semillas calculan `fueraDeRango` con la misma regla que la API (D4), así que son dos (`lec-88225` y `lec-88240`), y las dos quedan `confirmadaPorLector: true` (la app pide confirmar). Descartada: copiar el `false` del mock (contradice D4).
+
+### A30 — Vigente calculado, no guardado
+Estado: PROVISORIA (autónomo)
+Decisión: R13 se resuelve al leer con la función pura `elegirVigente` sobre todas las lecturas de la ruta; no hay columna `vigente`. Nada se borra y no hay estado que se desincronice con la cola offline. M4 suma las novedades a la misma función.
+
+### A31 — Paginación y detalles de `GET /rutas/:id/lecturas` y de la carga
+Estado: PROVISORIA (autónomo)
+Decisión: `porPagina` default 50, máximo 200 (como `/rutas/:id/suministros`). `fotoUri` tiene que ser una **imagen** subida a esta API: un audio o un video dan `FOTO_REQUERIDA`. `confirmadaPorLector` ausente se toma como `false`. Una fecha inválida o futura (más de 5 minutos) es `VALIDACION_FALLIDA`. Una lectura en una ruta `asignada` la pasa a `en_curso` sin tocar `descargadaEn` (la primera descarga lo completa). `ID_EN_USO` (409) entra al catálogo.
+
