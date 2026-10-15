@@ -2,7 +2,7 @@
 // Uso: node scripts/probar-docker.mjs [sqlite|postgres|mysql|mariadb ...]
 import { spawnSync } from 'node:child_process';
 
-const PUERTO = 39990;
+const PORT = 39990;
 const CASOS = {
   sqlite: { archivos: ['compose.yaml'], motor: 'better-sqlite3' },
   postgres: { archivos: ['compose.postgres.yaml'], motor: 'postgres' },
@@ -26,8 +26,8 @@ const nombres =
     : Object.keys(CASOS).filter((n) => !CASOS[n].requiere || process.env[CASOS[n].requiere]);
 const env = {
   ...process.env,
-  PUERTO: String(PUERTO),
-  PUERTO_DB: String(PUERTO + 1),
+  PORT: String(PORT),
+  DB_PORT: String(PORT + 1),
 };
 
 function compose(caso, nombre, ...args) {
@@ -47,7 +47,7 @@ function esperar(condicion, mensaje) {
 }
 
 async function pedir(ruta, opciones = {}) {
-  const r = await fetch(`http://127.0.0.1:${PUERTO}${ruta}`, opciones);
+  const r = await fetch(`http://127.0.0.1:${PORT}${ruta}`, opciones);
   const tipo = r.headers.get('content-type') ?? '';
   return {
     estado: r.status,

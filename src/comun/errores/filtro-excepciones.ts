@@ -16,6 +16,7 @@ const POR_ESTADO: Record<number, CodigoError> = {
   404: 'RECURSO_NO_ENCONTRADO',
   413: 'ARCHIVO_DEMASIADO_GRANDE',
   415: 'TIPO_DE_ARCHIVO_NO_PERMITIDO',
+  429: 'DEMASIADOS_PEDIDOS',
 };
 
 const MENSAJE_400 = 'El pedido no está bien armado.';

@@ -1,7 +1,15 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 
 // `pnpm docs:readme`: regenera las tablas de endpoints y de errores del README.
-process.env.DB_MOTOR = 'better-sqlite3';
+// La app se levanta en memoria, sin .env: el entorno se fija antes de importar AppModule
+// (ConfigModule valida al importarse), por eso los imports de abajo son dinámicos.
+Object.assign(process.env, {
+  APP_ENV: 'test',
+  DB_ENGINE: 'better-sqlite3',
+  DB_FILE: ':memory:',
+  JWT_SECRET: 'solo-para-generar-el-readme',
+  STORAGE_DIR: '/tmp/api-medidores-readme',
+});
 
 const { NestFactory } = await import('@nestjs/core');
 const { DocumentBuilder, SwaggerModule } = await import('@nestjs/swagger');
@@ -9,15 +17,7 @@ const { AppModule } = await import('../app.module.js');
 const { MARCAS, reemplazarEntre, tablaDeEndpoints, tablaDeErrores } =
   await import('./tablas.js');
 
-const app = await NestFactory.create(
-  AppModule.registrar({
-    ENTORNO: 'test',
-    DB_ARCHIVO: ':memory:',
-    JWT_SECRETO: 'solo-para-generar-el-readme',
-    DIRECTORIO_ARCHIVOS: '/tmp/api-medidores-readme',
-  }),
-  { logger: ['error'] },
-);
+const app = await NestFactory.create(AppModule, { logger: ['error'] });
 await app.init();
 const documento = SwaggerModule.createDocument(
   app,

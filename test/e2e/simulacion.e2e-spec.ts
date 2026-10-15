@@ -5,7 +5,7 @@ describe('AGENTS §11.4 — Simulación de fallas con X-Simular', () => {
   let c: AppDePrueba;
   beforeAll(
     async () =>
-      (c = await crearApp({ entorno: { SIMULACION_HABILITADA: 'true' } })),
+      (c = await crearApp({ entorno: { SIMULATION_ENABLED: 'true' } })),
   );
   afterAll(() => c.cerrar());
 

@@ -1,13 +1,13 @@
 import { defineConfig } from 'vitest/config';
+import { ENTORNO_DE_PRUEBA } from './test/utilidades/entorno.js';
 
 // E2E: la app completa contra una base real. Con SQLite en memoria cada archivo tiene su
 // base y corren en paralelo; contra PostgreSQL/MySQL/MariaDB comparten base y van de a uno.
-const motor = process.env.DB_MOTOR ?? 'better-sqlite3';
-
 export default defineConfig({
   test: {
     globals: true,
     root: './',
+    env: ENTORNO_DE_PRUEBA,
     include: ['test/e2e/**/*.e2e-spec.ts', 'test/verificacion/**/*.e2e-spec.ts'],
     exclude: ['**/node_modules/**', 'docs/**', 'dist/**'],
     // De a un archivo: en paralelo, con la máquina cargada (scrypt + SQLite), los hooks vencían por timeout;

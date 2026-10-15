@@ -12,13 +12,8 @@ describe('Consigna 1 — Guardar los tokens de Expo: /dispositivos', () => {
 
   /** A cuántos teléfonos del usuario llega una push de prueba: lo que "tiene guardado" la API. */
   const dispositivosDe = async (token: string) =>
-    (
-      await c
-        .http()
-        .post('/dispositivos/prueba')
-        .set(bearer(token))
-        .expect(200)
-    ).body.datos.dispositivos as number;
+    (await c.http().post('/dispositivos/prueba').set(bearer(token)).expect(200))
+      .body.datos.dispositivos as number;
 
   it('POST /dispositivos registra el token: 201 con el Dispositivo', async () => {
     const u = await conSesion(c, 'lector');

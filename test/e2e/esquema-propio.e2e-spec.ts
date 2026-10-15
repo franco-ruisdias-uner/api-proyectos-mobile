@@ -2,10 +2,10 @@ import { type AppDePrueba, crearApp } from '../utilidades/crear-app.js';
 import { DataSource } from 'typeorm';
 
 // Sólo tiene sentido en PostgreSQL (MySQL y SQLite no tienen esquemas): en los otros motores,
-// el archivo comprueba que DB_ESQUEMA se ignora y la app anda igual.
-const motor = process.env.DB_MOTOR ?? 'better-sqlite3';
+// el archivo comprueba que DB_SCHEMA se ignora y la app anda igual.
+const motor = process.env.DB_ENGINE ?? 'better-sqlite3';
 
-describe('AGENTS §18.1 — DB_ESQUEMA: las tablas van en el esquema de la API y nada más', () => {
+describe('AGENTS §18.1 — DB_SCHEMA: las tablas van en el esquema de la API y nada más', () => {
   let c: AppDePrueba;
   beforeAll(async () => {
     if (motor === 'postgres') {
@@ -20,7 +20,7 @@ describe('AGENTS §18.1 — DB_ESQUEMA: las tablas van en el esquema de la API y
       await ajeno.destroy();
     }
     c = await crearApp({
-      entorno: motor === 'postgres' ? { DB_ESQUEMA: 'api_prueba' } : {},
+      entorno: motor === 'postgres' ? { DB_SCHEMA: 'api_prueba' } : {},
     });
   });
   afterAll(async () => {
@@ -62,7 +62,7 @@ describe('AGENTS §18.1 — DB_ESQUEMA: las tablas van en el esquema de la API y
     'al reconectar con borrado (db:reiniciar), la tabla ajena sobrevive',
     async () => {
       await c.cerrar();
-      c = await crearApp({ entorno: { DB_ESQUEMA: 'api_prueba' } });
+      c = await crearApp({ entorno: { DB_SCHEMA: 'api_prueba' } });
       const ajena = (await c.dataSource.query(
         `SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'tabla_ajena'`,
       )) as unknown[];

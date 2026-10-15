@@ -4,6 +4,19 @@ Todo lo que cambia en la API, escrito para los grupos que la usan desde la app.
 
 ## [Sin publicar]
 
+### Configuración y arranque
+
+- **Las variables del `.env` cambiaron de nombre** (ahora en inglés): `PUERTO` → `PORT`, `ENTORNO` → `APP_ENV`
+  (`development`, `test`, `production`), `DB_MOTOR` → `DB_ENGINE`, `DB_ARCHIVO` → `DB_FILE`, `JWT_SECRETO` → `JWT_SECRET`,
+  `NOTIFICACIONES` → `PUSH_PROVIDER` (`expo` o `log`), `ARCHIVOS_PROVEEDOR` → `STORAGE_PROVIDER`, y el resto igual.
+  Volvé a copiar `.env.example` a `.env`: si te quedó uno viejo, la API no arranca y te dice qué variable falta.
+- La base de SQLite pasa a `data/api.sqlite` y las fotos a `uploads/`. Para empezar de cero: `pnpm db:reiniciar`.
+- `pnpm dev` ahora es `pnpm start:dev`. `pnpm start` compila y levanta; `pnpm start:prod` levanta lo ya compilado.
+- Código de error nuevo: `DEMASIADOS_PEDIDOS` (429), con la cabecera `Retry-After`, si se hacen demasiados pedidos
+  seguidos (por ejemplo, muchos ingresos fallidos con el mismo legajo). Para la app es un error más: mostrá el `mensaje`.
+- La API manda cabeceras de seguridad (helmet), y CORS se puede limitar con `CORS_ORIGINS` (por defecto, cualquiera).
+  Rutas, respuestas y códigos de error existentes: sin cambios.
+
 ### M9 — Notificaciones para completar
 
 - **Los tres endpoints de `/dispositivos` los completan ustedes**: `POST /dispositivos`, `POST /dispositivos/prueba` y

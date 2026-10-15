@@ -1,6 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { type Configuracion, valor } from '../../config/configuracion.js';
+import type { AppConfigService } from '../../config/configuration.js';
 import { Reloj, RelojFijo, RelojSistema } from './reloj.js';
 
 @Global()
@@ -9,8 +9,8 @@ import { Reloj, RelojFijo, RelojSistema } from './reloj.js';
     {
       provide: Reloj,
       inject: [ConfigService],
-      useFactory: (config: Configuracion): Reloj => {
-        const fijo = valor(config, 'RELOJ_FIJO');
+      useFactory: (config: AppConfigService): Reloj => {
+        const fijo = config.get('app.fixedClock', { infer: true });
         return fijo === null ? new RelojSistema() : new RelojFijo(fijo);
       },
     },

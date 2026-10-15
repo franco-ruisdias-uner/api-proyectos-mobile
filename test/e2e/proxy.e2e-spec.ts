@@ -2,11 +2,11 @@ import { type AppDePrueba, crearApp } from '../utilidades/crear-app.js';
 import { jpeg } from '../utilidades/archivos.js';
 import { bearer, conSesion } from '../utilidades/usuarios.js';
 
-describe('AGENTS §18.2 — CONFIAR_PROXY: las URLs de archivos salen https detrás del proxy', () => {
-  describe('con CONFIAR_PROXY=true', () => {
+describe('AGENTS §18.2 — TRUST_PROXY: las URLs de archivos salen https detrás del proxy', () => {
+  describe('con TRUST_PROXY=true', () => {
     let c: AppDePrueba;
     beforeAll(
-      async () => (c = await crearApp({ entorno: { CONFIAR_PROXY: 'true' } })),
+      async () => (c = await crearApp({ entorno: { TRUST_PROXY: 'true' } })),
     );
     afterAll(() => c.cerrar());
 
@@ -26,7 +26,7 @@ describe('AGENTS §18.2 — CONFIAR_PROXY: las URLs de archivos salen https detr
     });
   });
 
-  describe('sin CONFIAR_PROXY', () => {
+  describe('sin TRUST_PROXY', () => {
     let c: AppDePrueba;
     beforeAll(async () => (c = await crearApp()));
     afterAll(() => c.cerrar());

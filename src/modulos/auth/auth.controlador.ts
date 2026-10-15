@@ -4,6 +4,7 @@ import type {
   RespuestaUno,
   Sesion as SesionContrato,
 } from '../../../contrato/api.js';
+import { LoginRateLimit } from '../../comun/http/rate-limit.js';
 import { Publico, Sesion } from '../../comun/auth/decoradores.js';
 import type { SesionActual } from '../../comun/auth/sesion-actual.js';
 import { Doc } from '../../comun/respuesta/documentacion.js';
@@ -19,6 +20,7 @@ export class AuthControlador {
 
   @Post('ingreso')
   @Publico()
+  @LoginRateLimit()
   @HttpCode(200)
   @Doc({
     resumen: 'Ingresar con legajo y contraseña',

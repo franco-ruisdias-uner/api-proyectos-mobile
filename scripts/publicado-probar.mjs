@@ -57,7 +57,7 @@ const ingreso = await pedir('/auth/ingreso', {
 });
 if (ingreso.status !== 200)
   falla(
-    `El ingreso con ${legajo} respondió ${ingreso.status}. ¿Se sembraron los datos de demo (SEMBRAR_SI_VACIA=true)?`,
+    `El ingreso con ${legajo} respondió ${ingreso.status}. ¿Se sembraron los datos de demo (SEED_IF_EMPTY=true)?`,
   );
 const { token } = (await ingreso.json()).datos;
 const auth = { authorization: `Bearer ${token}` };
@@ -70,7 +70,7 @@ if (novedades.length === 0)
   falla('GET /novedades no trae datos: ¿se sembró la base?');
 for (const n of novedades) {
   if (!n.fotoUri.startsWith('https://'))
-    falla(`La URL ${n.fotoUri} no es https: ¿falta CONFIAR_PROXY=true?`);
+    falla(`La URL ${n.fotoUri} no es https: ¿falta TRUST_PROXY=true?`);
   const r = await pedir(n.fotoUri);
   if (r.status !== 200) falla(`La foto ${n.fotoUri} respondió ${r.status}`);
   await r.arrayBuffer();

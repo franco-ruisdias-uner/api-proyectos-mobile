@@ -1,8 +1,8 @@
 node_modules
 dist
 coverage
-datos
-archivos
+data
+uploads
 .git
 .env
 test

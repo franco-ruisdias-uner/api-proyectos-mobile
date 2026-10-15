@@ -40,8 +40,8 @@ base que ya tengas instalada (XAMPP usa el 3306). Las podés mirar con DBeaver.
 - **Volver a cero** (borra los datos y los archivos subidos): `docker compose down -v` y
   `docker compose up` de nuevo. Con otro archivo, agregale el `-f`:
   `docker compose -f compose.postgres.yaml down -v`.
-- **Otro puerto** si el 3000 está ocupado: `PUERTO=3001 docker compose up` (en Windows con
-  PowerShell: `$env:PUERTO=3001; docker compose up`).
+- **Otro puerto** si el 3000 está ocupado: `PORT=3001 docker compose up` (en Windows con
+  PowerShell: `$env:PORT=3001; docker compose up`).
 
 ## 2. Sin Docker, con SQLite (tres comandos)
 
@@ -57,10 +57,13 @@ Y después:
 ```bash
 pnpm install        # instala las dependencias (una sola vez)
 pnpm db:reiniciar   # crea la base y carga los datos de demo
-pnpm dev            # levanta la API en http://localhost:3000
+pnpm start:dev      # levanta la API en http://localhost:3000 (se reinicia sola al cambiar el código)
 ```
 
-La base de SQLite queda en `datos/api.sqlite` y las fotos que suban, en `archivos/`.
+La base de SQLite queda en `data/api.sqlite` y las fotos que suban, en `uploads/`.
+
+Para correrla como en producción (compilada, sin recarga): `pnpm build` y `pnpm start:prod`.
+`pnpm start` hace las dos cosas juntas.
 
 ## 3. Sin Docker, con PostgreSQL, MySQL o MariaDB instalados
 
@@ -68,22 +71,22 @@ Creá una base vacía llamada `api` y cambiá en el `.env`:
 
 ```bash
 # PostgreSQL
-DB_MOTOR=postgres
+DB_ENGINE=postgres
 DB_URL=postgres://usuario:clave@localhost:5432/api
 
 # MySQL
-DB_MOTOR=mysql
+DB_ENGINE=mysql
 DB_URL=mysql://usuario:clave@localhost:3306/api
 
 # MariaDB
-DB_MOTOR=mariadb
+DB_ENGINE=mariadb
 DB_URL=mysql://root:@localhost:3306/api
 ```
 
 > **¿Usás XAMPP?** XAMPP instala **MariaDB**, no MySQL, aunque el panel diga "MySQL". Poné
-> `DB_MOTOR=mariadb`: con `mysql` las tablas no quedan bien.
+> `DB_ENGINE=mariadb`: con `mysql` las tablas no quedan bien.
 
-Después: `pnpm db:reiniciar` y `pnpm dev`. Las tablas se crean solas.
+Después: `pnpm db:reiniciar` y `pnpm start:dev`. Las tablas se crean solas.
 
 ## 4. Conectarse desde el teléfono
 
@@ -272,6 +275,7 @@ interface PruebaPush { dispositivos: number }
 | `LECTURA_INVALIDA` | 422 | Ese número no puede salir de este medidor. Revisalo. |
 | `SUMINISTRO_FUERA_DE_RUTA` | 422 | Ese suministro no es de esta ruta. |
 | `SUMINISTRO_REPETIDO` | 422 | Hay un suministro repetido en la ruta. |
+| `DEMASIADOS_PEDIDOS` | 429 | Hiciste demasiados intentos seguidos. Esperá un minuto y probá de nuevo. |
 | `ERROR_INTERNO` | 500 | Algo salió mal de nuestro lado. Probá de nuevo en un rato. |
 | `NO_IMPLEMENTADO` | 501 | Esta parte la programan ustedes. Mirá docs/NOTIFICACIONES.md. |
 | `ALMACEN_NO_DISPONIBLE` | 503 | No pudimos acceder a los archivos. Probá de nuevo en un rato. |
@@ -297,14 +301,14 @@ wifi, mandá la cabecera `X-Simular` en cualquier pedido:
 | `X-Simular: error-500` | Responde 500 con `ERROR_INTERNO`. |
 | `X-Simular: demora-3000` | Responde bien, pero 3 segundos tarde (el número son milisegundos, hasta 30000). |
 
-Anda cuando `SIMULACION_HABILITADA=true` (viene prendido en desarrollo y en Docker).
+Anda cuando `SIMULATION_ENABLED=true` (viene prendido en desarrollo y en Docker).
 
 ## 8. Congelar el reloj
 
 Para probar casos que dependen de la hora, poné en el `.env` (o en `environment:` del compose):
 
 ```bash
-RELOJ_FIJO=2026-09-15T08:00:00-03:00
+FIXED_CLOCK=2026-09-15T08:00:00-03:00
 ```
 
 La API arranca "congelada" en ese momento: para ella, siempre es esa fecha y hora.
@@ -312,7 +316,7 @@ La API arranca "congelada" en ese momento: para ella, siempre es esa fecha y hor
 ## 9. Volver los datos al estado inicial
 
 - Sin Docker: `pnpm db:reiniciar` (borra todo, crea las tablas y carga los datos de demo). Contra una base en la
-  nube (`DB_PROVEEDOR`) pide `--confirmar` y borra **sólo** el esquema de la API (`DB_ESQUEMA`), nunca otros.
+  nube (`DB_PROVIDER`) pide `--confirmar` y borra **sólo** el esquema de la API (`DB_SCHEMA`), nunca otros.
 - Con Docker: `docker compose down -v` y `docker compose up`.
 
 ## 9b. En la nube: base, archivos y publicación
@@ -334,21 +338,21 @@ ya trae toda la configuración)*
 3. **Los archivos**: **Storage** → creá un bucket (por ejemplo `archivos`, privado). Después **Project Settings →
    Storage → S3 Connection**: generá un par de claves (`S3_ACCESS_KEY_ID` y `S3_SECRET_ACCESS_KEY`) y anotá la región.
    Esas claves saltean los permisos de Supabase: sólo van en el servidor, nunca en la app ni en git.
-4. **Render → New → Blueprint** con el repo. Render lee `render.yaml` y te pide: `DB_URL`, `JWT_SECRETO` (una clave
-   larga y al azar, 32 caracteres o más), `SUPABASE_PROYECTO` (la referencia), `S3_REGION`, `S3_BUCKET`,
+4. **Render → New → Blueprint** con el repo. Render lee `render.yaml` y te pide: `DB_URL`, `JWT_SECRET` (una clave
+   larga y al azar, 32 caracteres o más), `SUPABASE_PROJECT_REF` (la referencia), `S3_REGION`, `S3_BUCKET`,
    `S3_ACCESS_KEY_ID` y `S3_SECRET_ACCESS_KEY`.
 5. Esperá el primer deploy y probá desde tu compu: `pnpm publicado:probar https://tu-api.onrender.com`.
 
 Las tablas van en el esquema `api` de Supabase (no en `public`, que Supabase puede exponer). Con
-`ENTORNO=publicado` la API **no arranca** si la configuración es de juguete: base SQLite, archivos locales, el
-`JWT_SECRETO` de desarrollo o uno de menos de 32 caracteres, o la simulación de fallas prendida; el mensaje dice qué cambiar.
+`APP_ENV=production` la API **no arranca** si la configuración es de juguete: base SQLite, archivos locales, el
+`JWT_SECRET` de desarrollo o uno de menos de 32 caracteres, o la simulación de fallas prendida; el mensaje dice qué cambiar.
 
 **Cosas que conviene saber**
 
 - **Arranque en frío**: el servicio gratis de Render se duerme a los 15 minutos sin tráfico y tarda alrededor de un
   minuto en despertar. La primera llamada puede demorar: la app tiene que mostrar que está cargando.
 - **Supabase gratis se pausa** después de una semana sin uso: se reactiva desde el panel.
-- Otras opciones: Koyeb para la API; Neon o Aiven para la base (`DB_PROVEEDOR=neon`, `aiven-postgres`, `aiven-mysql`);
+- Otras opciones: Koyeb para la API; Neon o Aiven para la base (`DB_PROVIDER=neon`, `aiven-postgres`, `aiven-mysql`);
   Cloudflare R2, Backblaze B2 o AWS para los archivos. Cada una tiene su bloque comentado en `.env.example`.
   Firebase Storage no se soporta.
 - Para comprobar una configuración **antes** de publicar: `pnpm db:probar` (la base) y `pnpm archivos:probar`
@@ -356,7 +360,7 @@ Las tablas van en el esquema `api` de Supabase (no en `public`, que Supabase pue
 
 ### Archivos en otro lugar (también en tu compu)
 
-Los archivos se guardan en una carpeta (`ARCHIVOS_PROVEEDOR=local`) o en cualquier servicio compatible con S3. La
+Los archivos se guardan en una carpeta (`STORAGE_PROVIDER=local`) o en cualquier servicio compatible con S3. La
 app no se entera: las URLs son siempre `<dirección de la API>/archivos/<clave>`. Para probar un S3 sin cuenta:
 
 ```bash
@@ -371,14 +375,15 @@ docker compose -f compose.yaml -f compose.almacen-s3.yaml up
 | Qué pasa | Qué hacer |
 |---|---|
 | `La API no puede arrancar porque hay problemas con la configuración` | Leé la lista que muestra: dice qué variable falta. Casi siempre es que no copiaste `.env.example` a `.env`. |
-| `EADDRINUSE` o "el puerto está ocupado" | Ya hay algo en el 3000 (¿otra API abierta?). Cerralo, o cambiá `PUERTO` en el `.env`. |
+| `DEMASIADOS_PEDIDOS` (429) | Hubo demasiados pedidos seguidos (o ingresos fallidos con el mismo legajo). Esperá lo que dice la cabecera `Retry-After` (un minuto como mucho). |
+| `EADDRINUSE` o "el puerto está ocupado" | Ya hay algo en el 3000 (¿otra API abierta?). Cerralo, o cambiá `PORT` en el `.env`. |
 | El teléfono no conecta | Sección 4: misma wifi, IP de la compu (no `localhost`), firewall. |
 | `Could not locate the bindings file` (better-sqlite3) | Corré `pnpm install` de nuevo con Node 24. Si usás npm en vez de pnpm, no anda: usá pnpm. |
-| Con XAMPP, errores raros al crear tablas | Poné `DB_MOTOR=mariadb`. |
+| Con XAMPP, errores raros al crear tablas | Poné `DB_ENGINE=mariadb`. |
 | Responde `NO_AUTENTICADO` de golpe | El token venció (12 horas), o alguien hizo `POST /auth/salida` con tu usuario en otro teléfono. Volvé a ingresar. |
 | `La API no puede arrancar: …bucket…` o `…credenciales…` | Los archivos en la nube: `pnpm archivos:probar` dice cuál variable revisar (`S3_BUCKET`, `S3_REGION`, las claves). |
 | `La DB_URL de Supabase tiene que ser…` | Usá el *Session pooler* (puerto 5432), no la conexión directa ni el modo transacción. `pnpm db:probar` prueba la conexión. |
-| Docker: `port is already allocated` | Otro contenedor usa el puerto. `docker ps` para ver cuál, o `PUERTO=3001 docker compose up`. |
+| Docker: `port is already allocated` | Otro contenedor usa el puerto. `docker ps` para ver cuál, o `PORT=3001 docker compose up`. |
 
 ---
 

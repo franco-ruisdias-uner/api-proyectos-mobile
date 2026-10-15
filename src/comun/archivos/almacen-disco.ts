@@ -17,7 +17,7 @@ import {
   type Rango,
 } from './almacen-archivos.js';
 
-/** Archivos en una carpeta del disco (`DIRECTORIO_ARCHIVOS`). */
+/** Archivos en una carpeta del disco (`STORAGE_DIR`). */
 export class AlmacenDisco extends AlmacenArchivos {
   readonly proveedor = 'local' as const;
   private readonly raiz: string;
@@ -40,7 +40,7 @@ export class AlmacenDisco extends AlmacenArchivos {
     } catch {
       throw new AlmacenNoDisponible(
         `No se puede escribir en la carpeta de archivos (${this.raiz}). ` +
-          'Revisá DIRECTORIO_ARCHIVOS y los permisos de esa carpeta.',
+          'Revisá STORAGE_DIR y los permisos de esa carpeta.',
       );
     }
   }

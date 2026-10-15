@@ -2,7 +2,7 @@ import { Controller, Get, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiTags } from '@nestjs/swagger';
 import type { RespuestaUno, Salud } from '../../../contrato/api.js';
-import { type Configuracion, valor } from '../../config/configuracion.js';
+import type { AppConfigService } from '../../config/configuration.js';
 import { AlmacenArchivos } from '../archivos/almacen-archivos.js';
 import { Publico } from '../auth/decoradores.js';
 import { Doc } from '../respuesta/documentacion.js';
@@ -15,7 +15,7 @@ export class SaludControlador {
   private readonly version = versionDeLaApi();
 
   constructor(
-    @Inject(ConfigService) private readonly config: Configuracion,
+    @Inject(ConfigService) private readonly config: AppConfigService,
     private readonly almacen: AlmacenArchivos,
   ) {}
 
@@ -35,7 +35,7 @@ export class SaludControlador {
   salud(): RespuestaUno<Salud> {
     return respuestaUno({
       estado: 'ok',
-      motor: valor(this.config, 'DB_MOTOR'),
+      motor: this.config.get('database.engine', { infer: true }),
       almacen: this.almacen.proveedor,
       version: this.version,
     });

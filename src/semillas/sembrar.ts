@@ -39,7 +39,7 @@ function enTandas<T>(filas: T[], tamano = 100): T[][] {
   return tandas;
 }
 
-/** Carga los datos de demo. Se usa desde `pnpm db:reiniciar` y con SEMBRAR_SI_VACIA. */
+/** Carga los datos de demo. Se usa desde `pnpm db:reiniciar` y con SEED_IF_EMPTY. */
 @Injectable()
 export class Sembrador {
   private readonly log = new Logger('Semillas');

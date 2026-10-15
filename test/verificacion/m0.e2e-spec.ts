@@ -58,7 +58,9 @@ describe('Verificación M0 — Base', () => {
     it('responde con el motor en uso y el almacén local', async () => {
       const r = await c.http().get('/salud').expect(200);
       esperarContrato(r.body, 'Salud');
-      expect(r.body.datos.motor).toBe(process.env.DB_MOTOR ?? 'better-sqlite3');
+      expect(r.body.datos.motor).toBe(
+        process.env.DB_ENGINE ?? 'better-sqlite3',
+      );
       expect(r.body.datos.almacen).toBe('local');
       expect(r.body.datos.version.length).toBeGreaterThan(0);
     });
@@ -855,7 +857,7 @@ describe('Verificación M0 — Base', () => {
       esperarError(r.body, 'NO_AUTENTICADO');
     });
 
-    it('sin CONFIAR_PROXY, X-Forwarded-Host/Proto no cambian la URL', async () => {
+    it('sin TRUST_PROXY, X-Forwarded-Host/Proto no cambian la URL', async () => {
       const r = await subir(jpeg(), 'f.jpg')
         .set('Host', '192.168.0.10:3000')
         .set('X-Forwarded-Proto', 'https')

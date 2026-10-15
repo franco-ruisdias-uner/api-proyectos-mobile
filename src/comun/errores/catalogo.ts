@@ -39,6 +39,11 @@ export const CATALOGO = {
     mensaje:
       'El archivo todavía no se subió. Probá de nuevo cuando tengas señal.',
   },
+  DEMASIADOS_PEDIDOS: {
+    estado: 429,
+    mensaje:
+      'Hiciste demasiados intentos seguidos. Esperá un minuto y probá de nuevo.',
+  },
   ERROR_INTERNO: {
     estado: 500,
     mensaje: 'Algo salió mal de nuestro lado. Probá de nuevo en un rato.',

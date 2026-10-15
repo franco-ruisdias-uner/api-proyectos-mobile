@@ -10,7 +10,7 @@ export class RelojSistema extends Reloj {
   }
 }
 
-/** Reloj congelado: para tests y para demos (`RELOJ_FIJO`). Se puede mover. */
+/** Reloj congelado: para tests y para demos (`FIXED_CLOCK`). Se puede mover. */
 export class RelojFijo extends Reloj {
   private instante: Date;
 

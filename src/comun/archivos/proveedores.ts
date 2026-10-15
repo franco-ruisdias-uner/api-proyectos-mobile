@@ -1,9 +1,10 @@
 // Presets de proveedores de archivos (AGENTS §17.2): una tabla de datos y una función pura.
 // Todos los proveedores en la nube hablan el protocolo de S3: no hay un adaptador por proveedor.
 
-export type Variables = Record<string, string | undefined>;
+/** Variables crudas del .env (texto) o ya validadas por Zod (con su tipo): se leen igual. */
+export type Variables = Readonly<Record<string, unknown>>;
 
-export const PROVEEDORES_S3 = [
+export const S3_PROVIDERS = [
   'aws',
   'supabase',
   'r2',
@@ -11,18 +12,18 @@ export const PROVEEDORES_S3 = [
   's3proxy',
   'localstack',
 ] as const;
-export type ProveedorS3 = (typeof PROVEEDORES_S3)[number];
+export type S3Provider = (typeof S3_PROVIDERS)[number];
 
-export interface ConfiguracionS3 {
-  proveedor: ProveedorS3;
+export interface S3Config {
+  provider: S3Provider;
   /** `undefined` en AWS: el SDK arma el endpoint según la región. */
   endpoint: string | undefined;
   region: string;
   forcePathStyle: boolean;
   bucket: string;
-  credenciales: { accessKeyId: string; secretAccessKey: string };
-  crearBucket: boolean;
-  redirigir: boolean;
+  credentials: { accessKeyId: string; secretAccessKey: string };
+  createBucket: boolean;
+  redirect: boolean;
 }
 
 interface Preset {
@@ -40,7 +41,7 @@ const DONDE_BUCKET =
 const DONDE_REGION =
   'la región del bucket, que se ve en el panel del proveedor';
 
-export const PRESETS: Record<ProveedorS3, Preset> = {
+export const S3_PRESETS: Record<S3Provider, Preset> = {
   aws: {
     endpoint: () => undefined,
     region: null,
@@ -51,12 +52,12 @@ export const PRESETS: Record<ProveedorS3, Preset> = {
   },
   supabase: {
     endpoint: (v) =>
-      `https://${v('SUPABASE_PROYECTO')}.storage.supabase.co/storage/v1/s3`,
+      `https://${v('SUPABASE_PROJECT_REF')}.storage.supabase.co/storage/v1/s3`,
     region: null,
     pathStyle: true,
     variables: [
       {
-        nombre: 'SUPABASE_PROYECTO',
+        nombre: 'SUPABASE_PROJECT_REF',
         donde:
           'la referencia del proyecto: las letras de la dirección https://<referencia>.supabase.co (Project Settings → General)',
       },
@@ -65,12 +66,12 @@ export const PRESETS: Record<ProveedorS3, Preset> = {
     emulador: false,
   },
   r2: {
-    endpoint: (v) => `https://${v('R2_CUENTA')}.r2.cloudflarestorage.com`,
+    endpoint: (v) => `https://${v('R2_ACCOUNT_ID')}.r2.cloudflarestorage.com`,
     region: 'auto',
     pathStyle: false,
     variables: [
       {
-        nombre: 'R2_CUENTA',
+        nombre: 'R2_ACCOUNT_ID',
         donde: 'el ID de cuenta de Cloudflare (panel de R2, a la derecha)',
       },
     ],
@@ -103,96 +104,98 @@ export const PRESETS: Record<ProveedorS3, Preset> = {
   },
 };
 
-const VERDADEROS = ['true', '1', 'si', 'sí'];
+const TRUE_VALUES = ['true', '1', 'yes'];
 
-function limpio(v: Variables, nombre: string): string | undefined {
-  const valor = v[nombre]?.trim();
-  return valor === undefined || valor === '' ? undefined : valor;
+function clean(v: Variables, nombre: string): string | undefined {
+  const valor = v[nombre];
+  if (valor === undefined || valor === null) return undefined;
+  const texto = String(valor).trim();
+  return texto === '' ? undefined : texto;
 }
 
 /**
  * Configuración del cliente S3 para el proveedor elegido, o la lista de problemas en castellano
  * (qué variable falta y dónde se consigue). `local` no usa S3: devuelve `null`.
  */
-export function configuracionS3(
+export function s3ConfigFromEnv(
   entorno: Variables,
-): ConfiguracionS3 | null | { problemas: string[] } {
-  const nombre = limpio(entorno, 'ARCHIVOS_PROVEEDOR') ?? 'local';
+): S3Config | null | { problems: string[] } {
+  const nombre = clean(entorno, 'STORAGE_PROVIDER') ?? 'local';
   if (nombre === 'local') return null;
-  if (!(PROVEEDORES_S3 as readonly string[]).includes(nombre)) {
+  if (!(S3_PROVIDERS as readonly string[]).includes(nombre)) {
     return {
-      problemas: [
-        `ARCHIVOS_PROVEEDOR="${nombre}" no existe. Opciones: local, ${PROVEEDORES_S3.join(', ')}.`,
+      problems: [
+        `STORAGE_PROVIDER="${nombre}" no existe. Opciones: local, ${S3_PROVIDERS.join(', ')}.`,
       ],
     };
   }
-  const proveedor = nombre as ProveedorS3;
-  const preset = PRESETS[proveedor];
-  const problemas: string[] = [];
+  const proveedor = nombre as S3Provider;
+  const preset = S3_PRESETS[proveedor];
+  const problems: string[] = [];
   const falta = (variable: string, donde: string): string => {
-    problemas.push(
-      `Falta ${variable} (obligatoria con ARCHIVOS_PROVEEDOR=${proveedor}): es ${donde}.`,
+    problems.push(
+      `Falta ${variable} (obligatoria con STORAGE_PROVIDER=${proveedor}): es ${donde}.`,
     );
     return '';
   };
   const pedir = (variable: string, donde: string): string =>
-    limpio(entorno, variable) ?? falta(variable, donde);
+    clean(entorno, variable) ?? falta(variable, donde);
 
   for (const { nombre: variable, donde } of preset.variables) {
     pedir(variable, donde);
   }
   const bucket = preset.emulador
-    ? (limpio(entorno, 'S3_BUCKET') ?? 'archivos')
+    ? (clean(entorno, 'S3_BUCKET') ?? 'archivos')
     : pedir('S3_BUCKET', DONDE_BUCKET);
   // Con región fija (R2: "auto") S3_REGION no se tiene en cuenta: otra región rompe las firmas.
   const region =
     preset.region ??
-    limpio(entorno, 'S3_REGION') ??
+    clean(entorno, 'S3_REGION') ??
     falta('S3_REGION', DONDE_REGION);
   const accessKeyId = preset.pideClaves
     ? pedir(
         'S3_ACCESS_KEY_ID',
         'la clave de acceso (access key) que generaste en el panel del proveedor',
       )
-    : (limpio(entorno, 'S3_ACCESS_KEY_ID') ?? 'clave-de-mentira');
+    : (clean(entorno, 'S3_ACCESS_KEY_ID') ?? 'clave-de-mentira');
   const secretAccessKey = preset.pideClaves
     ? pedir(
         'S3_SECRET_ACCESS_KEY',
         'la clave secreta (secret key) que se muestra una sola vez al generar la clave de acceso',
       )
-    : (limpio(entorno, 'S3_SECRET_ACCESS_KEY') ?? 'clave-de-mentira');
+    : (clean(entorno, 'S3_SECRET_ACCESS_KEY') ?? 'clave-de-mentira');
 
-  const endpointPisado = limpio(entorno, 'S3_ENDPOINT');
+  const endpointPisado = clean(entorno, 'S3_ENDPOINT');
   if (endpointPisado !== undefined && !URL.canParse(endpointPisado)) {
-    problemas.push('S3_ENDPOINT no es una dirección válida.');
+    problems.push('S3_ENDPOINT no es una dirección válida.');
   }
-  const pathPisado = limpio(entorno, 'S3_FORZAR_PATH_STYLE')?.toLowerCase();
+  const pathPisado = clean(entorno, 'S3_FORCE_PATH_STYLE')?.toLowerCase();
 
-  if (problemas.length > 0) return { problemas };
+  if (problems.length > 0) return { problems };
 
-  const valor = (n: string): string => limpio(entorno, n) ?? '';
+  const valor = (n: string): string => clean(entorno, n) ?? '';
   return {
-    proveedor,
+    provider: proveedor,
     endpoint: endpointPisado ?? preset.endpoint(valor),
     region,
     forcePathStyle:
       pathPisado === undefined
         ? preset.pathStyle
-        : VERDADEROS.includes(pathPisado),
+        : TRUE_VALUES.includes(pathPisado),
     bucket,
-    credenciales: { accessKeyId, secretAccessKey },
-    crearBucket: VERDADEROS.includes(
-      limpio(entorno, 'ARCHIVOS_CREAR_BUCKET')?.toLowerCase() ??
+    credentials: { accessKeyId, secretAccessKey },
+    createBucket: TRUE_VALUES.includes(
+      clean(entorno, 'S3_CREATE_BUCKET')?.toLowerCase() ??
         (preset.emulador ? 'true' : 'false'),
     ),
-    redirigir: VERDADEROS.includes(
-      limpio(entorno, 'ARCHIVOS_REDIRIGIR')?.toLowerCase() ?? 'false',
+    redirect: TRUE_VALUES.includes(
+      clean(entorno, 'STORAGE_REDIRECT')?.toLowerCase() ?? 'false',
     ),
   };
 }
 
-export function esProblemas(
-  r: ConfiguracionS3 | null | { problemas: string[] },
-): r is { problemas: string[] } {
-  return r !== null && 'problemas' in r;
+export function hasS3Problems(
+  r: S3Config | null | { problems: string[] },
+): r is { problems: string[] } {
+  return r !== null && 'problems' in r;
 }

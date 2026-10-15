@@ -4,14 +4,14 @@ services:
   api:
     extends: { file: compose.yaml, service: api }
     environment:
-      DB_MOTOR: mariadb
+      DB_ENGINE: mariadb
       DB_URL: mysql://api:api@mariadb:3306/api
     depends_on:
       mariadb: { condition: service_healthy }
   mariadb:
     image: mariadb:11
     environment: { MARIADB_ROOT_PASSWORD: api, MARIADB_DATABASE: api, MARIADB_USER: api, MARIADB_PASSWORD: api }
-    ports: ["${PUERTO_DB:-3308}:3306"]
+    ports: ["${DB_PORT:-3308}:3306"]
     volumes: [mariadb:/var/lib/mysql]
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
@@ -19,6 +19,6 @@ services:
       timeout: 3s
       retries: 60
 volumes:
-  datos:
-  archivos:
+  data:
+  uploads:
   mariadb:

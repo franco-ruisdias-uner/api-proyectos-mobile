@@ -158,10 +158,10 @@ describe('AGENTS §19.3 — los flujos que avisan siguen andando con los puertos
   let a: { id: string; token: string };
   let b: { id: string; token: string };
   beforeAll(async () => {
-    // Almacén y enviador reales de `main` (los que dejan a los alumnos), NOTIFICACIONES=expo.
+    // Almacén y enviador reales de `main` (los que dejan a los alumnos), PUSH_PROVIDER=expo.
     c = await crearApp({
       almacenReal: true,
-      entorno: { NOTIFICACIONES: 'expo' },
+      entorno: { PUSH_PROVIDER: 'expo' },
     });
     admin = await conSesion(c, 'administracion');
     a = await conSesion(c, 'lector');
@@ -243,7 +243,7 @@ describe('AGENTS §19.3 — los flujos que avisan siguen andando con los puertos
     );
   });
 
-  it('/salud sigue sano con NOTIFICACIONES=expo y sin implementación', async () => {
+  it('/salud sigue sano con PUSH_PROVIDER=expo y sin implementación', async () => {
     const r = await c.http().get('/salud').expect(200);
     expect(r.body.datos.estado).toBe('ok');
   });

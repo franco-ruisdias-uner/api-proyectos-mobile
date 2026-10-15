@@ -1,5 +1,5 @@
 import type { Readable } from 'node:stream';
-import type { ProveedorArchivos } from '../../config/entorno.js';
+import type { StorageProvider } from '../../config/env.validation.js';
 
 // El puerto de archivos (AGENTS §17.1). Cambiar de proveedor es cambiar la configuración:
 // las URLs que ve la app son siempre <origen>/archivos/<clave>.
@@ -18,7 +18,7 @@ export interface Rango {
 }
 
 export abstract class AlmacenArchivos {
-  abstract readonly proveedor: ProveedorArchivos;
+  abstract readonly proveedor: StorageProvider;
   /** Al arrancar: verifica que se pueda escribir. */
   abstract prepararse(): Promise<void>;
   abstract guardar(
@@ -29,7 +29,7 @@ export abstract class AlmacenArchivos {
   abstract leer(clave: string, rango?: Rango): Promise<LecturaArchivo>;
   abstract existe(clave: string): Promise<boolean>;
   abstract borrar(clave: string): Promise<void>;
-  /** Sólo proveedores en la nube: URL firmada de lectura (ARCHIVOS_REDIRIGIR). */
+  /** Sólo proveedores en la nube: URL firmada de lectura (STORAGE_REDIRECT). */
   urlFirmada?(clave: string, segundos: number): Promise<string>;
 }
 

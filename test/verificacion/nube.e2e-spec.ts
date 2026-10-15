@@ -4,7 +4,8 @@ import { type AppDePrueba, crearApp } from '../utilidades/crear-app.js';
 import { esperarError } from '../utilidades/contrato.js';
 import { crearRuta } from '../utilidades/rutas.js';
 import { bearer, conSesion } from '../utilidades/usuarios.js';
-import { leerEntorno } from '../../src/config/entorno.js';
+import { buildConfiguration } from '../../src/config/configuration.js';
+import { validateEnv } from '../../src/config/env.validation.js';
 
 const JERGA =
   /undefined|\[object|NaN|\bmust\b|\bshould\b|exception|QueryFailed|constraint|class-validator|stack|ECONN|ENOTFOUND|TypeError|ZodError/i;
@@ -12,17 +13,17 @@ const FUERTE = 'una-clave-larga-y-secreta-de-mas-de-32-caracteres';
 const SUPA =
   'postgres://postgres.abcdefgh:clave@aws-0-sa-east-1.pooler.supabase.com:5432/postgres';
 const BASE_PUBLICADA = {
-  ENTORNO: 'publicado',
-  JWT_SECRETO: FUERTE,
-  DB_PROVEEDOR: 'supabase',
+  APP_ENV: 'production',
+  JWT_SECRET: FUERTE,
+  DB_PROVIDER: 'supabase',
   DB_URL: SUPA,
-  ARCHIVOS_PROVEEDOR: 'supabase',
-  SUPABASE_PROYECTO: 'abcdefgh',
+  STORAGE_PROVIDER: 'supabase',
+  SUPABASE_PROJECT_REF: 'abcdefgh',
   S3_BUCKET: 'archivos',
   S3_REGION: 'sa-east-1',
   S3_ACCESS_KEY_ID: 'AK',
   S3_SECRET_ACCESS_KEY: 'SK',
-  SIMULACION_HABILITADA: 'false',
+  SIMULATION_ENABLED: 'false',
 };
 const mensajeDe = (f: () => unknown): string => {
   try {
@@ -41,32 +42,32 @@ const buffer = (
   res.on('end', () => cb(null, Buffer.concat(partes)));
 };
 
-describe('AGENTS §18.2 — ENTORNO=publicado: bordes de la configuración', () => {
-  it('JWT_SECRETO de exactamente 32 caracteres arranca; de 31 no', () => {
+describe('AGENTS §18.2 — APP_ENV=production: bordes de la configuración', () => {
+  it('JWT_SECRET de exactamente 32 caracteres arranca; de 31 no', () => {
     expect(() =>
-      leerEntorno({ ...BASE_PUBLICADA, JWT_SECRETO: 'x'.repeat(32) }),
+      validateEnv({ ...BASE_PUBLICADA, JWT_SECRET: 'x'.repeat(32) }),
     ).not.toThrow();
     expect(
       mensajeDe(() =>
-        leerEntorno({ ...BASE_PUBLICADA, JWT_SECRETO: 'x'.repeat(31) }),
+        validateEnv({ ...BASE_PUBLICADA, JWT_SECRET: 'x'.repeat(31) }),
       ),
     ).toMatch(/32 caracteres/);
   });
 
-  it('SIMULACION_HABILITADA=true falla aunque todo lo demás esté bien', () => {
+  it('SIMULATION_ENABLED=true falla aunque todo lo demás esté bien', () => {
     expect(
       mensajeDe(() =>
-        leerEntorno({ ...BASE_PUBLICADA, SIMULACION_HABILITADA: 'true' }),
+        validateEnv({ ...BASE_PUBLICADA, SIMULATION_ENABLED: 'true' }),
       ),
     ).not.toBe('');
   });
 
   it('con MariaDB, MySQL o Postgres administrado y archivos S3 arranca', () => {
     expect(() =>
-      leerEntorno({
+      validateEnv({
         ...BASE_PUBLICADA,
-        DB_PROVEEDOR: undefined,
-        DB_MOTOR: 'mariadb',
+        DB_PROVIDER: undefined,
+        DB_ENGINE: 'mariadb',
         DB_URL: 'mysql://a:b@host.ejemplo.com:3306/api',
       }),
     ).not.toThrow();
@@ -75,11 +76,11 @@ describe('AGENTS §18.2 — ENTORNO=publicado: bordes de la configuración', () 
   it('SQLite explícito en publicado no arranca', () => {
     expect(
       mensajeDe(() =>
-        leerEntorno({
+        validateEnv({
           ...BASE_PUBLICADA,
-          DB_PROVEEDOR: undefined,
+          DB_PROVIDER: undefined,
           DB_URL: undefined,
-          DB_MOTOR: 'better-sqlite3',
+          DB_ENGINE: 'better-sqlite3',
         }),
       ),
     ).toMatch(/SQLite/);
@@ -87,82 +88,86 @@ describe('AGENTS §18.2 — ENTORNO=publicado: bordes de la configuración', () 
 
   it('el problema de SQLite, archivos locales, JWT corto y simulación se juntan en un mensaje', () => {
     const m = mensajeDe(() =>
-      leerEntorno({
-        ENTORNO: 'publicado',
-        JWT_SECRETO: 'corto',
-        SIMULACION_HABILITADA: 'true',
+      validateEnv({
+        APP_ENV: 'production',
+        JWT_SECRET: 'corto',
+        SIMULATION_ENABLED: 'true',
       }),
     );
     expect(m).toMatch(/SQLite/);
     expect(m).toMatch(/local/);
     expect(m).toMatch(/32/);
-    expect(m).toMatch(/SIMULACION_HABILITADA/);
+    expect(m).toMatch(/SIMULATION_ENABLED/);
     expect(m).not.toMatch(JERGA);
   });
 
-  it('ENTORNO=desarrollo y test no imponen nada de lo anterior', () => {
+  it('APP_ENV=development y test no imponen nada de lo anterior', () => {
     expect(() =>
-      leerEntorno({ ENTORNO: 'desarrollo', JWT_SECRETO: 'corto' }),
+      validateEnv({ APP_ENV: 'development', JWT_SECRET: 'corto' }),
     ).not.toThrow();
     expect(() =>
-      leerEntorno({ ENTORNO: 'test', JWT_SECRETO: 'corto' }),
+      validateEnv({ APP_ENV: 'test', JWT_SECRET: 'corto' }),
     ).not.toThrow();
   });
 });
 
 describe('AGENTS §18.1 — Presets de base de datos', () => {
   const ok = (extra: Record<string, string | undefined>) =>
-    leerEntorno({ JWT_SECRETO: FUERTE, ...extra });
+    buildConfiguration({ JWT_SECRET: FUERTE, ...extra }).database;
 
   it.each([
     [
       'supabase por conexión directa (IPv6)',
       {
-        DB_PROVEEDOR: 'supabase',
+        DB_PROVIDER: 'supabase',
         DB_URL: 'postgres://postgres:x@db.abcdefgh.supabase.co:5432/postgres',
       },
     ],
     [
       'supabase pooler en modo transacción',
       {
-        DB_PROVEEDOR: 'supabase',
+        DB_PROVIDER: 'supabase',
         DB_URL: 'postgres://postgres.abc:x@h.pooler.supabase.com:6543/postgres',
       },
     ],
     [
       'supabase con usuario sin ref',
       {
-        DB_PROVEEDOR: 'supabase',
+        DB_PROVIDER: 'supabase',
         DB_URL: 'postgres://postgres:x@h.pooler.supabase.com:5432/postgres',
       },
     ],
-    ['supabase sin DB_URL', { DB_PROVEEDOR: 'supabase' }],
+    ['supabase sin DB_URL', { DB_PROVIDER: 'supabase' }],
     [
       'neon con host ajeno',
-      { DB_PROVEEDOR: 'neon', DB_URL: 'postgres://a:b@otro.com/db' },
+      { DB_PROVIDER: 'neon', DB_URL: 'postgres://a:b@otro.com/db' },
     ],
     [
       'aiven-postgres con host ajeno',
-      { DB_PROVEEDOR: 'aiven-postgres', DB_URL: 'postgres://a:b@otro.com/db' },
+      { DB_PROVIDER: 'aiven-postgres', DB_URL: 'postgres://a:b@otro.com/db' },
     ],
     [
       'aiven-mysql con host ajeno',
-      { DB_PROVEEDOR: 'aiven-mysql', DB_URL: 'mysql://a:b@otro.com/db' },
+      { DB_PROVIDER: 'aiven-mysql', DB_URL: 'mysql://a:b@otro.com/db' },
     ],
     [
       'proveedor desconocido',
-      { DB_PROVEEDOR: 'heroku', DB_URL: 'postgres://a@h/d' },
+      { DB_PROVIDER: 'heroku', DB_URL: 'postgres://a@h/d' },
     ],
     [
       'DB_SSL inválido',
-      { DB_MOTOR: 'postgres', DB_URL: 'postgres://a:b@h/d', DB_SSL: 'tal vez' },
+      {
+        DB_ENGINE: 'postgres',
+        DB_URL: 'postgres://a:b@h/d',
+        DB_SSL: 'tal vez',
+      },
     ],
     [
-      'DB_ESQUEMA con caracteres peligrosos',
+      'DB_SCHEMA con caracteres peligrosos',
       {
-        DB_MOTOR: 'postgres',
+        DB_ENGINE: 'postgres',
         DB_URL: 'postgres://a:b@h/d',
-        DB_ESQUEMA: 'api; DROP SCHEMA public',
+        DB_SCHEMA: 'api; DROP SCHEMA public',
       },
     ],
   ])('%s se rechaza con un mensaje en castellano sin jerga', (_n, extra) => {
@@ -174,7 +179,7 @@ describe('AGENTS §18.1 — Presets de base de datos', () => {
   it('el rechazo de Supabase en modo transacción dice cuál usar', () => {
     const m = mensajeDe(() =>
       ok({
-        DB_PROVEEDOR: 'supabase',
+        DB_PROVIDER: 'supabase',
         DB_URL: 'postgres://postgres.abc:x@h.pooler.supabase.com:6543/postgres',
       }),
     );
@@ -183,64 +188,64 @@ describe('AGENTS §18.1 — Presets de base de datos', () => {
 
   it('la contraseña con caracteres raros se decodifica y no rompe', () => {
     const e = ok({
-      DB_PROVEEDOR: 'supabase',
+      DB_PROVIDER: 'supabase',
       DB_URL:
         'postgres://postgres.abcdefgh:p%40ss%2Fw%3Ard%23@aws-0-sa-east-1.pooler.supabase.com:5432/postgres',
     });
-    expect(e.DB_MOTOR).toBe('postgres');
+    expect(e.engine).toBe('postgres');
   });
 
   it('los presets completan motor, SSL y esquema', () => {
     expect(
       ok({
-        DB_PROVEEDOR: 'neon',
+        DB_PROVIDER: 'neon',
         DB_URL: 'postgres://a:b@ep-x.us-east-2.aws.neon.tech/db',
       }),
     ).toMatchObject({
-      DB_MOTOR: 'postgres',
-      DB_SSL: 'si',
-      DB_ESQUEMA: 'public',
+      engine: 'postgres',
+      ssl: 'verify',
+      schema: 'public',
     });
     expect(
       ok({
-        DB_PROVEEDOR: 'aiven-postgres',
+        DB_PROVIDER: 'aiven-postgres',
         DB_URL: 'postgres://a:b@x-y.aivencloud.com:1234/db',
       }),
-    ).toMatchObject({ DB_MOTOR: 'postgres', DB_ESQUEMA: 'public' });
+    ).toMatchObject({ engine: 'postgres', schema: 'public' });
     expect(
       ok({
-        DB_PROVEEDOR: 'aiven-mysql',
+        DB_PROVIDER: 'aiven-mysql',
         DB_URL: 'mysql://a:b@x-y.aivencloud.com:1234/db',
-      }).DB_MOTOR,
+      }).engine,
     ).toBe('mysql');
   });
 
   it('con DB_SSL_CA, Aiven pasa a verificar (y sin ella no)', () => {
     const base = {
-      DB_PROVEEDOR: 'aiven-postgres',
+      DB_PROVIDER: 'aiven-postgres',
       DB_URL: 'postgres://a:b@x-y.aivencloud.com:1234/db',
     };
     const sin = ok(base);
     const con = ok({ ...base, DB_SSL_CA: '/tmp/ca.pem' });
-    expect(sin.DB_SSL).toBe('si-sin-verificar');
-    expect(sin.DB_SSL_CA ?? null).toBeNull();
-    expect(con.DB_SSL_CA).toBe('/tmp/ca.pem');
+    expect(sin.ssl).toBe('no-verify');
+    expect(sin.sslCa).toBeNull();
+    expect(con.sslCa).toBe('/tmp/ca.pem');
   });
 
-  it('DB_ESQUEMA explícito pisa el del preset', () => {
+  it('DB_SCHEMA explícito pisa el del preset', () => {
     expect(
       ok({
-        DB_PROVEEDOR: 'supabase',
+        DB_PROVIDER: 'supabase',
         DB_URL: SUPA,
-        DB_ESQUEMA: 'mi_esquema',
-      }).DB_ESQUEMA,
+        DB_SCHEMA: 'mi_esquema',
+      }).schema,
     ).toBe('mi_esquema');
   });
 });
 
 describe('AGENTS §17.2 — Presets de archivos', () => {
   const ok = (extra: Record<string, string | undefined>) =>
-    leerEntorno({ JWT_SECRETO: FUERTE, ...extra });
+    buildConfiguration({ JWT_SECRET: FUERTE, ...extra }).storage;
   const claves = { S3_ACCESS_KEY_ID: 'a', S3_SECRET_ACCESS_KEY: 'b' };
 
   it.each([
@@ -251,7 +256,7 @@ describe('AGENTS §17.2 — Presets de archivos', () => {
     [
       'supabase',
       [
-        'SUPABASE_PROYECTO',
+        'SUPABASE_PROJECT_REF',
         'S3_BUCKET',
         'S3_REGION',
         'S3_ACCESS_KEY_ID',
@@ -260,68 +265,73 @@ describe('AGENTS §17.2 — Presets de archivos', () => {
     ],
     [
       'r2',
-      ['R2_CUENTA', 'S3_BUCKET', 'S3_ACCESS_KEY_ID', 'S3_SECRET_ACCESS_KEY'],
+      [
+        'R2_ACCOUNT_ID',
+        'S3_BUCKET',
+        'S3_ACCESS_KEY_ID',
+        'S3_SECRET_ACCESS_KEY',
+      ],
     ],
     [
       'b2',
       ['S3_BUCKET', 'S3_REGION', 'S3_ACCESS_KEY_ID', 'S3_SECRET_ACCESS_KEY'],
     ],
   ])('%s nombra cada variable que falta', (prov, vars) => {
-    const m = mensajeDe(() => ok({ ARCHIVOS_PROVEEDOR: prov }));
+    const m = mensajeDe(() => ok({ STORAGE_PROVIDER: prov }));
     for (const v of vars) expect(m).toContain(v);
     expect(m).not.toMatch(JERGA);
   });
 
   it('endpoints y estilos de ruta de cada preset', () => {
     const e = (extra: Record<string, string>) =>
-      ok({ ...claves, S3_BUCKET: 'b', ...extra }).ARCHIVOS_S3;
-    expect(e({ ARCHIVOS_PROVEEDOR: 'r2', R2_CUENTA: 'cuenta1' })).toMatchObject(
-      {
-        endpoint: 'https://cuenta1.r2.cloudflarestorage.com',
-        region: 'auto',
-        forcePathStyle: false,
-      },
-    );
+      ok({ ...claves, S3_BUCKET: 'b', ...extra }).s3;
     expect(
-      e({ ARCHIVOS_PROVEEDOR: 'r2', R2_CUENTA: 'c', S3_REGION: 'eu-west-1' })
+      e({ STORAGE_PROVIDER: 'r2', R2_ACCOUNT_ID: 'cuenta1' }),
+    ).toMatchObject({
+      endpoint: 'https://cuenta1.r2.cloudflarestorage.com',
+      region: 'auto',
+      forcePathStyle: false,
+    });
+    expect(
+      e({ STORAGE_PROVIDER: 'r2', R2_ACCOUNT_ID: 'c', S3_REGION: 'eu-west-1' })
         ?.region,
     ).toBe('auto');
     expect(
-      e({ ARCHIVOS_PROVEEDOR: 'b2', S3_REGION: 'us-west-004' }),
+      e({ STORAGE_PROVIDER: 'b2', S3_REGION: 'us-west-004' }),
     ).toMatchObject({
       endpoint: 'https://s3.us-west-004.backblazeb2.com',
       region: 'us-west-004',
     });
     expect(
       e({
-        ARCHIVOS_PROVEEDOR: 'supabase',
-        SUPABASE_PROYECTO: 'proy',
+        STORAGE_PROVIDER: 'supabase',
+        SUPABASE_PROJECT_REF: 'proy',
         S3_REGION: 'sa-east-1',
       }),
     ).toMatchObject({
       endpoint: 'https://proy.storage.supabase.co/storage/v1/s3',
       forcePathStyle: true,
     });
-    expect(e({ ARCHIVOS_PROVEEDOR: 's3proxy' })).toMatchObject({
+    expect(e({ STORAGE_PROVIDER: 's3proxy' })).toMatchObject({
       endpoint: 'http://s3:8080',
       region: 'us-east-1',
       forcePathStyle: true,
     });
-    expect(e({ ARCHIVOS_PROVEEDOR: 'localstack' })).toMatchObject({
+    expect(e({ STORAGE_PROVIDER: 'localstack' })).toMatchObject({
       endpoint: 'http://localstack:4566',
       forcePathStyle: true,
     });
     expect(
-      e({ ARCHIVOS_PROVEEDOR: 'aws', S3_REGION: 'us-east-2' })?.forcePathStyle,
+      e({ STORAGE_PROVIDER: 'aws', S3_REGION: 'us-east-2' })?.forcePathStyle,
     ).toBe(false);
   });
 
-  it('S3_ENDPOINT y S3_FORZAR_PATH_STYLE pisan el preset', () => {
+  it('S3_ENDPOINT y S3_FORCE_PATH_STYLE pisan el preset', () => {
     const c = ok({
-      ARCHIVOS_PROVEEDOR: 's3proxy',
+      STORAGE_PROVIDER: 's3proxy',
       S3_ENDPOINT: 'http://otro:9000',
-      S3_FORZAR_PATH_STYLE: 'false',
-    }).ARCHIVOS_S3;
+      S3_FORCE_PATH_STYLE: 'false',
+    }).s3;
     expect(c).toMatchObject({
       endpoint: 'http://otro:9000',
       forcePathStyle: false,
@@ -329,7 +339,7 @@ describe('AGENTS §17.2 — Presets de archivos', () => {
   });
 
   it('local no trae configuración S3', () => {
-    expect(ok({}).ARCHIVOS_S3 ?? null).toBeNull();
+    expect(ok({}).s3 ?? null).toBeNull();
   });
 });
 
@@ -340,7 +350,7 @@ describe('AGENTS §17.1 — Almacén caído o mal configurado', () => {
     try {
       app = await crearApp({
         entorno: {
-          ARCHIVOS_PROVEEDOR: 's3proxy',
+          STORAGE_PROVIDER: 's3proxy',
           S3_ENDPOINT: 'http://127.0.0.1:1',
           S3_BUCKET: 'x',
         },
@@ -354,7 +364,7 @@ describe('AGENTS §17.1 — Almacén caído o mal configurado', () => {
   }, 120_000);
 });
 
-describe('AGENTS §18.2 — CONFIAR_PROXY y URL_PUBLICA', () => {
+describe('AGENTS §18.2 — TRUST_PROXY y PUBLIC_URL', () => {
   const subirCon = async (
     c: AppDePrueba,
     cabeceras: Record<string, string>,
@@ -367,10 +377,10 @@ describe('AGENTS §18.2 — CONFIAR_PROXY y URL_PUBLICA', () => {
     return p.attach('archivo', jpeg(), 'f.jpg');
   };
 
-  describe('CONFIAR_PROXY=true', () => {
+  describe('TRUST_PROXY=true', () => {
     let c: AppDePrueba;
     beforeAll(
-      async () => (c = await crearApp({ entorno: { CONFIAR_PROXY: 'true' } })),
+      async () => (c = await crearApp({ entorno: { TRUST_PROXY: 'true' } })),
     );
     afterAll(() => c.cerrar());
 
@@ -458,20 +468,20 @@ describe('AGENTS §18.2 — CONFIAR_PROXY y URL_PUBLICA', () => {
     });
   });
 
-  describe('CONFIAR_PROXY=true y URL_PUBLICA', () => {
+  describe('TRUST_PROXY=true y PUBLIC_URL', () => {
     let c: AppDePrueba;
     beforeAll(
       async () =>
         (c = await crearApp({
           entorno: {
-            CONFIAR_PROXY: 'true',
-            URL_PUBLICA: 'https://fija.ejemplo.com',
+            TRUST_PROXY: 'true',
+            PUBLIC_URL: 'https://fija.ejemplo.com',
           },
         })),
     );
     afterAll(() => c.cerrar());
 
-    it('URL_PUBLICA gana sobre las cabeceras y sobre el Host', async () => {
+    it('PUBLIC_URL gana sobre las cabeceras y sobre el Host', async () => {
       const r = await subirCon(c, {
         Host: '1.2.3.4:3000',
         'X-Forwarded-Proto': 'http',
@@ -483,7 +493,7 @@ describe('AGENTS §18.2 — CONFIAR_PROXY y URL_PUBLICA', () => {
     });
   });
 
-  describe('sin CONFIAR_PROXY', () => {
+  describe('sin TRUST_PROXY', () => {
     let c: AppDePrueba;
     beforeAll(async () => (c = await crearApp()));
     afterAll(() => c.cerrar());
@@ -499,12 +509,12 @@ describe('AGENTS §18.2 — CONFIAR_PROXY y URL_PUBLICA', () => {
     });
   });
 
-  it('CONFIAR_PROXY inválido no arranca', () => {
+  it('TRUST_PROXY inválido no arranca', () => {
     expect(
       mensajeDe(() =>
-        leerEntorno({ JWT_SECRETO: FUERTE, CONFIAR_PROXY: 'quizas' }),
+        validateEnv({ JWT_SECRET: FUERTE, TRUST_PROXY: 'quizas' }),
       ),
-    ).toMatch(/CONFIAR_PROXY/);
+    ).toMatch(/TRUST_PROXY/);
   });
 });
 

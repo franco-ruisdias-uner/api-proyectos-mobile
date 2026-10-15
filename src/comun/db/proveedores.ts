@@ -1,105 +1,96 @@
 // Presets de bases administradas en la nube (AGENTS §18.1): una tabla y una función pura.
 
-export type Variables = Record<string, string | undefined>;
-export type ModoSsl = 'no' | 'si' | 'si-sin-verificar';
-export type MotorBase = 'postgres' | 'mysql';
+/** Variables crudas del .env (texto) o ya validadas por Zod (con su tipo): se leen igual. */
+export type Variables = Readonly<Record<string, unknown>>;
+export type DbSslMode = 'off' | 'verify' | 'no-verify';
+export type PresetEngine = 'postgres' | 'mysql';
 
-export const PROVEEDORES_DB = [
+export const DB_PROVIDERS = [
   'supabase',
   'neon',
   'aiven-postgres',
   'aiven-mysql',
 ] as const;
-export type ProveedorDb = (typeof PROVEEDORES_DB)[number];
+export type DbProvider = (typeof DB_PROVIDERS)[number];
 
 interface Preset {
-  motor: MotorBase;
-  ssl: ModoSsl;
-  esquema: string | null;
+  engine: PresetEngine;
+  ssl: DbSslMode;
+  schema: string | null;
 }
 
-export const PRESETS_DB: Record<ProveedorDb, Preset> = {
-  supabase: { motor: 'postgres', ssl: 'si-sin-verificar', esquema: 'api' },
-  neon: { motor: 'postgres', ssl: 'si', esquema: 'public' },
-  'aiven-postgres': {
-    motor: 'postgres',
-    ssl: 'si-sin-verificar',
-    esquema: 'public',
-  },
-  'aiven-mysql': { motor: 'mysql', ssl: 'si-sin-verificar', esquema: null },
+export const DB_PRESETS: Record<DbProvider, Preset> = {
+  supabase: { engine: 'postgres', ssl: 'no-verify', schema: 'api' },
+  neon: { engine: 'postgres', ssl: 'verify', schema: 'public' },
+  'aiven-postgres': { engine: 'postgres', ssl: 'no-verify', schema: 'public' },
+  'aiven-mysql': { engine: 'mysql', ssl: 'no-verify', schema: null },
 };
 
-export interface ConfiguracionBase {
-  proveedor: ProveedorDb;
-  motor: MotorBase;
+export interface DbPreset {
+  provider: DbProvider;
+  engine: PresetEngine;
   url: string;
-  ssl: ModoSsl;
+  ssl: DbSslMode;
   /** Ruta al certificado de la CA del proveedor; con ella el certificado se verifica. */
   sslCa: string | null;
-  esquema: string | null;
+  schema: string | null;
 }
 
-function limpio(v: Variables, nombre: string): string | undefined {
-  const valor = v[nombre]?.trim();
-  return valor === undefined || valor === '' ? undefined : valor;
+function clean(v: Variables, nombre: string): string | undefined {
+  const valor = v[nombre];
+  if (valor === undefined || valor === null) return undefined;
+  const texto = String(valor).trim();
+  return texto === '' ? undefined : texto;
 }
 
-export const ESQUEMA_VALIDO = /^[A-Za-z_][A-Za-z0-9_]{0,62}$/;
-const SSL_VALIDOS: ModoSsl[] = ['no', 'si', 'si-sin-verificar'];
+export const SCHEMA_NAME = /^[A-Za-z_][A-Za-z0-9_]{0,62}$/;
+const SSL_MODES: DbSslMode[] = ['off', 'verify', 'no-verify'];
 
-/** Motor que corresponde según el entorno (el preset manda sobre DB_MOTOR). */
-export function motorDelEntorno(v: Variables): string {
-  const proveedor = limpio(v, 'DB_PROVEEDOR');
-  if (proveedor && proveedor in PRESETS_DB)
-    return PRESETS_DB[proveedor as ProveedorDb].motor;
-  return limpio(v, 'DB_MOTOR') ?? 'better-sqlite3';
-}
-
-/** `null` si no hay DB_PROVEEDOR; si no, la configuración o los problemas en castellano. */
-export function configuracionBase(
+/** `null` si no hay DB_PROVIDER; si no, la configuración o los problemas en castellano. */
+export function dbPresetFromEnv(
   v: Variables,
-): ConfiguracionBase | null | { problemas: string[] } {
-  const nombre = limpio(v, 'DB_PROVEEDOR');
+): DbPreset | null | { problems: string[] } {
+  const nombre = clean(v, 'DB_PROVIDER');
   if (nombre === undefined) return null;
-  if (!(PROVEEDORES_DB as readonly string[]).includes(nombre)) {
+  if (!(DB_PROVIDERS as readonly string[]).includes(nombre)) {
     return {
-      problemas: [
-        `DB_PROVEEDOR="${nombre}" no existe. Opciones: ${PROVEEDORES_DB.join(', ')} (o dejalo vacío para usar DB_MOTOR).`,
+      problems: [
+        `DB_PROVIDER="${nombre}" no existe. Opciones: ${DB_PROVIDERS.join(', ')} (o dejalo vacío para usar DB_ENGINE).`,
       ],
     };
   }
-  const proveedor = nombre as ProveedorDb;
-  const preset = PRESETS_DB[proveedor];
-  const problemas: string[] = [];
+  const proveedor = nombre as DbProvider;
+  const preset = DB_PRESETS[proveedor];
+  const problems: string[] = [];
 
-  const motorPedido = limpio(v, 'DB_MOTOR');
+  const motorPedido = clean(v, 'DB_ENGINE');
   if (
     motorPedido !== undefined &&
     motorPedido !== 'better-sqlite3' &&
-    motorPedido !== preset.motor
+    motorPedido !== preset.engine
   ) {
-    problemas.push(
-      `DB_PROVEEDOR=${proveedor} usa ${preset.motor}, pero DB_MOTOR dice "${motorPedido}". Borrá DB_MOTOR o poné "${preset.motor}".`,
+    problems.push(
+      `DB_PROVIDER=${proveedor} usa ${preset.engine}, pero DB_ENGINE dice "${motorPedido}". Borrá DB_ENGINE o poné "${preset.engine}".`,
     );
   }
 
-  const textoUrl = limpio(v, 'DB_URL');
+  const textoUrl = clean(v, 'DB_URL');
   let url: URL | null = null;
   if (textoUrl === undefined) {
-    problemas.push(
+    problems.push(
       `Falta DB_URL: es la cadena de conexión que da ${proveedor} (la copiás del panel de la base).`,
     );
   } else if (!URL.canParse(textoUrl)) {
-    problemas.push(
+    problems.push(
       'DB_URL no es una dirección válida. Si la contraseña tiene caracteres como @, / o #, hay que codificarlos (por ejemplo @ → %40).',
     );
   } else {
     url = new URL(textoUrl);
     const protocolo = url.protocol.replace(':', '');
     const protocolosOk =
-      preset.motor === 'postgres' ? ['postgres', 'postgresql'] : ['mysql'];
+      preset.engine === 'postgres' ? ['postgres', 'postgresql'] : ['mysql'];
     if (!protocolosOk.includes(protocolo)) {
-      problemas.push(
+      problems.push(
         `DB_URL con ${proveedor} tiene que empezar con ${protocolosOk[0]}:// (empieza con ${protocolo}://).`,
       );
     }
@@ -109,21 +100,21 @@ export function configuracionBase(
     const host = url.hostname;
     if (proveedor === 'supabase') {
       if (host.startsWith('db.') && host.endsWith('.supabase.co')) {
-        problemas.push(
+        problems.push(
           'Esa DB_URL es la conexión directa de Supabase, que sólo anda por IPv6 y no llega desde Render. ' +
             'Usá la del pooler en modo sesión: en Supabase, botón Connect → Session pooler (host …pooler.supabase.com, puerto 5432).',
         );
       } else if (!host.endsWith('.pooler.supabase.com')) {
-        problemas.push(
+        problems.push(
           'La DB_URL de Supabase tiene que ser la del pooler en modo sesión: host …pooler.supabase.com y puerto 5432 (Connect → Session pooler).',
         );
       } else if (url.port === '6543') {
-        problemas.push(
+        problems.push(
           'Esa DB_URL es del pooler en modo transacción (puerto 6543), que no admite prepared statements y la API no anda. ' +
             'Usá el modo sesión: mismo host, puerto 5432.',
         );
       } else if (url.port !== '' && url.port !== '5432') {
-        problemas.push(
+        problems.push(
           `La DB_URL de Supabase tiene que usar el puerto 5432 del pooler en modo sesión (tiene ${url.port}).`,
         );
       }
@@ -131,54 +122,54 @@ export function configuracionBase(
         host.endsWith('.pooler.supabase.com') &&
         !decodeURIComponent(url.username).startsWith('postgres.')
       ) {
-        problemas.push(
+        problems.push(
           'En el pooler de Supabase el usuario es postgres.<referencia-del-proyecto> (por ejemplo postgres.abcdefgh), no "postgres" a secas.',
         );
       }
     } else if (proveedor === 'neon' && !host.endsWith('.neon.tech')) {
-      problemas.push(
+      problems.push(
         'La DB_URL de Neon tiene que tener un host que termine en .neon.tech (copiala del panel de Neon, Connect).',
       );
     } else if (
       proveedor.startsWith('aiven') &&
       !host.endsWith('.aivencloud.com')
     ) {
-      problemas.push(
+      problems.push(
         'La DB_URL de Aiven tiene que tener un host que termine en .aivencloud.com (copiala de la pantalla del servicio).',
       );
     }
   }
 
-  const sslTexto = limpio(v, 'DB_SSL')?.toLowerCase();
-  if (sslTexto !== undefined && !SSL_VALIDOS.includes(sslTexto as ModoSsl)) {
-    problemas.push(
-      `DB_SSL tiene que ser "no", "si" o "si-sin-verificar" (vino "${sslTexto}").`,
+  const sslTexto = clean(v, 'DB_SSL')?.toLowerCase();
+  if (sslTexto !== undefined && !SSL_MODES.includes(sslTexto as DbSslMode)) {
+    problems.push(
+      `DB_SSL tiene que ser "off", "verify" o "no-verify" (vino "${sslTexto}").`,
     );
   }
-  const esquemaPedido = limpio(v, 'DB_ESQUEMA');
-  if (esquemaPedido !== undefined && !ESQUEMA_VALIDO.test(esquemaPedido)) {
-    problemas.push(
-      'DB_ESQUEMA tiene que ser un nombre simple: letras, números y guion bajo, sin espacios ni símbolos.',
+  const esquemaPedido = clean(v, 'DB_SCHEMA');
+  if (esquemaPedido !== undefined && !SCHEMA_NAME.test(esquemaPedido)) {
+    problems.push(
+      'DB_SCHEMA tiene que ser un nombre simple: letras, números y guion bajo, sin espacios ni símbolos.',
     );
   }
-  if (problemas.length > 0 || url === null) return { problemas };
+  if (problems.length > 0 || url === null) return { problems };
 
-  const esquema =
-    preset.motor === 'postgres'
-      ? (limpio(v, 'DB_ESQUEMA') ?? preset.esquema)
+  const schema =
+    preset.engine === 'postgres'
+      ? (clean(v, 'DB_SCHEMA') ?? preset.schema)
       : null;
   return {
-    proveedor,
-    motor: preset.motor,
+    provider: proveedor,
+    engine: preset.engine,
     url: textoUrl as string,
-    ssl: (sslTexto as ModoSsl | undefined) ?? preset.ssl,
-    sslCa: limpio(v, 'DB_SSL_CA') ?? null,
-    esquema,
+    ssl: (sslTexto as DbSslMode | undefined) ?? preset.ssl,
+    sslCa: clean(v, 'DB_SSL_CA') ?? null,
+    schema,
   };
 }
 
-export function hayProblemasDb(
-  r: ConfiguracionBase | null | { problemas: string[] },
-): r is { problemas: string[] } {
-  return r !== null && 'problemas' in r;
+export function hasDbProblems(
+  r: DbPreset | null | { problems: string[] },
+): r is { problems: string[] } {
+  return r !== null && 'problems' in r;
 }

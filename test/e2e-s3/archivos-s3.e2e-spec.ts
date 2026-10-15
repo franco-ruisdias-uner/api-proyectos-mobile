@@ -91,14 +91,14 @@ describe('AGENTS §17.4 — Archivos con un proveedor S3 (S3Proxy)', () => {
   });
 });
 
-describe('AGENTS §17.1 — ARCHIVOS_REDIRIGIR', () => {
+describe('AGENTS §17.1 — STORAGE_REDIRECT', () => {
   let c: AppDePrueba;
   beforeAll(async () => {
     c = await crearApp({
       entorno: {
         ...ENTORNO_S3PROXY,
         S3_BUCKET: 'e2e-redirigir',
-        ARCHIVOS_REDIRIGIR: 'true',
+        STORAGE_REDIRECT: 'true',
       },
     });
   });

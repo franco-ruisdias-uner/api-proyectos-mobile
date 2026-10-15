@@ -2,61 +2,64 @@ import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { DataSource, type DataSourceOptions } from 'typeorm';
 import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import type { Entorno } from '../../config/entorno.js';
+import type { DatabaseConfig } from '../../config/database.config.js';
+import { usarTipoDeInstante } from './columnas.js';
 
 /** Las opciones de TypeORM para cada motor salen de acá y de ningún otro lado. */
-export function opcionesDeBase(entorno: Entorno): TypeOrmModuleOptions {
+export function opcionesDeBase(db: DatabaseConfig): TypeOrmModuleOptions {
+  // Antes de que TypeORM arme el esquema: las columnas de instantes según el motor.
+  usarTipoDeInstante(db.engine);
   const comunes = {
     autoLoadEntities: true,
-    synchronize: entorno.DB_SINCRONIZAR,
-    dropSchema: entorno.DB_BORRAR_AL_CONECTAR,
-    retryAttempts: entorno.ENTORNO === 'test' ? 0 : 10,
+    synchronize: db.synchronize,
+    dropSchema: db.dropSchema,
+    retryAttempts: db.retryAttempts,
     retryDelay: 3000,
     logging: ['error'] as ('error' | 'warn')[],
   };
 
-  switch (entorno.DB_MOTOR) {
+  switch (db.engine) {
     case 'better-sqlite3': {
-      if (entorno.DB_ARCHIVO !== ':memory:') {
-        mkdirSync(dirname(entorno.DB_ARCHIVO), { recursive: true });
+      if (db.file !== ':memory:') {
+        mkdirSync(dirname(db.file), { recursive: true });
       }
       return {
         ...comunes,
         type: 'better-sqlite3',
-        database: entorno.DB_ARCHIVO,
+        database: db.file,
       };
     }
     case 'postgres':
       return {
         ...comunes,
         type: 'postgres',
-        url: entorno.DB_URL ?? undefined,
-        ssl: opcionesSsl(entorno),
-        ...(entorno.DB_ESQUEMA ? { schema: entorno.DB_ESQUEMA } : {}),
+        url: db.url ?? undefined,
+        ssl: opcionesSsl(db),
+        ...(db.schema ? { schema: db.schema } : {}),
       };
     case 'mysql':
     case 'mariadb':
       return {
         ...comunes,
-        type: entorno.DB_MOTOR,
-        url: entorno.DB_URL ?? undefined,
+        type: db.engine,
+        url: db.url ?? undefined,
         timezone: 'Z',
         charset: 'utf8mb4',
-        ssl: opcionesSsl(entorno),
+        ssl: opcionesSsl(db),
       };
   }
 }
 
 /**
- * `no` → sin SSL. `si-sin-verificar` → cifra sin verificar el certificado (como sslmode=require),
- * salvo que haya DB_SSL_CA: ahí verifica contra esa CA. `si` → cifra y verifica.
+ * `off` → sin SSL. `no-verify` → cifra sin verificar el certificado (como sslmode=require),
+ * salvo que haya DB_SSL_CA: ahí verifica contra esa CA. `verify` → cifra y verifica.
  */
 function opcionesSsl(
-  entorno: Entorno,
+  db: DatabaseConfig,
 ): false | { rejectUnauthorized: boolean; ca?: string } {
-  if (entorno.DB_SSL === 'no') return false;
-  const ca = entorno.DB_SSL_CA ? leerCa(entorno.DB_SSL_CA) : undefined;
-  const verificar = entorno.DB_SSL === 'si' || ca !== undefined;
+  if (db.ssl === 'off') return false;
+  const ca = db.sslCa ? leerCa(db.sslCa) : undefined;
+  const verificar = db.ssl === 'verify' || ca !== undefined;
   return { rejectUnauthorized: verificar, ...(ca ? { ca } : {}) };
 }
 
@@ -71,7 +74,7 @@ function leerCa(ruta: string): string {
 }
 
 /**
- * Crea el DataSource. En PostgreSQL con esquema propio (DB_ESQUEMA), primero crea el esquema
+ * Crea el DataSource. En PostgreSQL con esquema propio (DB_SCHEMA), primero crea el esquema
  * si no existe (`queryRunner.createSchema`, sin SQL a mano) y recién después conecta con él.
  */
 export async function crearDataSource(

@@ -2,12 +2,12 @@ import { type AppDePrueba, crearApp } from '../utilidades/crear-app.js';
 import { jpeg } from '../utilidades/archivos.js';
 import { bearer, conSesion } from '../utilidades/usuarios.js';
 
-describe('AGENTS §8 — Con URL_PUBLICA, las URLs de archivos salen con esa dirección', () => {
+describe('AGENTS §8 — Con PUBLIC_URL, las URLs de archivos salen con esa dirección', () => {
   let c: AppDePrueba;
   beforeAll(
     async () =>
       (c = await crearApp({
-        entorno: { URL_PUBLICA: 'https://medidores.ejemplo.com' },
+        entorno: { PUBLIC_URL: 'https://medidores.ejemplo.com' },
       })),
   );
   afterAll(() => c.cerrar());

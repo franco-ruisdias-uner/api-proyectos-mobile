@@ -54,7 +54,7 @@ try {
       ['exec', 'vitest', 'run', '--config', './vitest.config.e2e.ts'],
       {
         stdio: 'inherit',
-        env: { ...process.env, DB_MOTOR: motor, ...MOTORES[motor] },
+        env: { ...process.env, DB_ENGINE: motor, ...MOTORES[motor] },
       },
     );
     resultados[motor] = r.status === 0;
@@ -66,7 +66,7 @@ try {
     ['exec', 'vitest', 'run', '--config', './vitest.config.s3.ts'],
     {
       stdio: 'inherit',
-      env: { ...process.env, DB_MOTOR: 'better-sqlite3', DB_URL: '' },
+      env: { ...process.env, DB_ENGINE: 'better-sqlite3', DB_URL: '' },
     },
   );
   resultados['archivos-s3'] = s3.status === 0;

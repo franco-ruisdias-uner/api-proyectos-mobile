@@ -7,28 +7,28 @@ services:
     plan: free
     healthCheckPath: /salud
     envVars:
-      - key: ENTORNO
-        value: publicado
-      - key: CONFIAR_PROXY
+      - key: APP_ENV
+        value: production
+      - key: TRUST_PROXY
         value: "true"
-      - key: DB_PROVEEDOR
+      - key: DB_PROVIDER
         value: supabase
-      - key: ARCHIVOS_PROVEEDOR
+      - key: STORAGE_PROVIDER
         value: supabase
-      - key: DB_SINCRONIZAR
+      - key: DB_SYNCHRONIZE
         value: "true"
-      - key: SEMBRAR_SI_VACIA
+      - key: SEED_IF_EMPTY
         value: "true"
-      - key: SIMULACION_HABILITADA
+      - key: SIMULATION_ENABLED
         value: "false"
-      - key: NOTIFICACIONES
+      - key: PUSH_PROVIDER
         value: expo
       # Los de abajo los completás vos en Render (secretos o datos de tu proyecto de Supabase).
       - key: DB_URL
         sync: false
-      - key: JWT_SECRETO
+      - key: JWT_SECRET
         sync: false
-      - key: SUPABASE_PROYECTO
+      - key: SUPABASE_PROJECT_REF
         sync: false
       - key: S3_REGION
         sync: false

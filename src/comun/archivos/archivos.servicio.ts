@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { type Configuracion, valor } from '../../config/configuracion.js';
+import type { AppConfigService } from '../../config/configuration.js';
 import type { ArchivoSubido } from '../../../contrato/api.js';
 import { ErrorApi } from '../errores/error-api.js';
 import { origenActual } from '../origen/origen.js';
@@ -30,16 +30,17 @@ export class ArchivosServicio {
   constructor(
     private readonly almacen: AlmacenArchivos,
     private readonly reloj: Reloj,
-    @Optional() @Inject(ConfigService) private readonly config?: Configuracion,
+    @Optional()
+    @Inject(ConfigService)
+    private readonly config?: AppConfigService,
   ) {}
 
   /**
-   * Con ARCHIVOS_REDIRIGIR=true (sólo proveedores en la nube): URL firmada de 15 minutos a la
+   * Con STORAGE_REDIRECT=true (sólo proveedores en la nube): URL firmada de 15 minutos a la
    * que redirigir en vez de pasar el archivo por la API. `null` si no corresponde.
    */
   async redireccion(clave: string): Promise<string | null> {
-    if (!this.config || !valor(this.config, 'ARCHIVOS_S3')?.redirigir)
-      return null;
+    if (!this.config?.get('storage.s3', { infer: true })?.redirect) return null;
     if (!esClaveValida(clave) || !this.almacen.urlFirmada) return null;
     try {
       if (!(await this.almacen.existe(clave)))

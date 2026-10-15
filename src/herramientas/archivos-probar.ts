@@ -1,18 +1,19 @@
-import { existsSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import type { Readable } from 'node:stream';
+import { AlmacenDisco } from '../comun/archivos/almacen-disco.js';
+import { AlmacenS3 } from '../comun/archivos/almacen-s3.js';
+import {
+  buildConfiguration,
+  type Configuration,
+} from '../config/configuration.js';
 
 // `pnpm archivos:probar`: con la configuración del .env, sube un archivo chico al proveedor
 // elegido, lo lee entero y por rango, y lo borra. Dice en castellano qué salió mal.
-if (existsSync('.env')) process.loadEnvFile('.env');
+// El .env lo carga Node (`--env-file-if-exists=.env` en el script de package.json).
 
-const { leerEntorno } = await import('../config/entorno.js');
-const { AlmacenS3 } = await import('../comun/archivos/almacen-s3.js');
-const { AlmacenDisco } = await import('../comun/archivos/almacen-disco.js');
-
-let entorno;
+let config: Configuration;
 try {
-  entorno = leerEntorno(process.env);
+  config = buildConfiguration(process.env);
 } catch (error) {
   console.error((error as Error).message);
   process.exit(1);
@@ -24,9 +25,9 @@ async function todo(flujo: Readable): Promise<Buffer> {
   return Buffer.concat(partes);
 }
 
-const almacen = entorno.ARCHIVOS_S3
-  ? new AlmacenS3(entorno.ARCHIVOS_S3, 3)
-  : new AlmacenDisco(entorno.DIRECTORIO_ARCHIVOS);
+const almacen = config.storage.s3
+  ? new AlmacenS3(config.storage.s3, 3)
+  : new AlmacenDisco(config.storage.dir);
 console.log(`Proveedor: ${almacen.proveedor}`);
 const clave = `imagenes/2026/01/prueba${randomBytes(6).toString('hex')}.jpg`;
 const contenido = randomBytes(2048);

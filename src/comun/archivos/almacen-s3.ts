@@ -17,7 +17,7 @@ import {
   MIME_POR_EXTENSION,
   type Rango,
 } from './almacen-archivos.js';
-import type { ConfiguracionS3 } from './proveedores.js';
+import type { S3Config } from './proveedores.js';
 
 function nombreDeError(error: unknown): string {
   return (error as { name?: string }).name ?? '';
@@ -37,23 +37,23 @@ const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Archivos en cualquier servicio compatible con S3 (AWS, Supabase, R2, B2, S3Proxy, LocalStack). */
 export class AlmacenS3 extends AlmacenArchivos {
-  readonly proveedor: ConfiguracionS3['proveedor'];
+  readonly proveedor: S3Config['provider'];
   private readonly cliente: S3Client;
 
   constructor(
-    private readonly config: ConfiguracionS3,
+    private readonly config: S3Config,
     private readonly intentos = 10,
   ) {
     super();
-    this.proveedor = config.proveedor;
+    this.proveedor = config.provider;
     // Con cualquier proveedor que no sea AWS, el SDK no tiene que calcular ni validar checksums
     // por defecto: R2, B2 y los emuladores los rechazan o los calculan distinto.
-    const noAws = config.proveedor !== 'aws';
+    const noAws = config.provider !== 'aws';
     this.cliente = new S3Client({
       region: config.region,
       endpoint: config.endpoint,
       forcePathStyle: config.forcePathStyle,
-      credentials: config.credenciales,
+      credentials: config.credentials,
       ...(noAws
         ? {
             requestChecksumCalculation: 'WHEN_REQUIRED' as const,
@@ -73,7 +73,7 @@ export class AlmacenS3 extends AlmacenArchivos {
         return;
       } catch (error) {
         ultimo = error;
-        if (noExiste(error) && this.config.crearBucket) {
+        if (noExiste(error) && this.config.createBucket) {
           try {
             await this.cliente.send(
               new CreateBucketCommand({ Bucket: this.config.bucket }),
@@ -102,20 +102,20 @@ export class AlmacenS3 extends AlmacenArchivos {
     const estado = estadoHttp(error);
     const c = this.config;
     if (noExiste(error))
-      return `No existe el bucket "${c.bucket}" en ${c.proveedor}. Revisá S3_BUCKET (o creá el bucket en el panel del proveedor).`;
+      return `No existe el bucket "${c.bucket}" en ${c.provider}. Revisá S3_BUCKET (o creá el bucket en el panel del proveedor).`;
     if (
       estado === 403 ||
       ['InvalidAccessKeyId', 'SignatureDoesNotMatch', 'AccessDenied'].includes(
         nombre,
       )
     )
-      return `${c.proveedor} rechazó las credenciales. Revisá S3_ACCESS_KEY_ID y S3_SECRET_ACCESS_KEY (y que tengan permiso sobre el bucket "${c.bucket}").`;
+      return `${c.provider} rechazó las credenciales. Revisá S3_ACCESS_KEY_ID y S3_SECRET_ACCESS_KEY (y que tengan permiso sobre el bucket "${c.bucket}").`;
     if (
       nombre === 'AuthorizationHeaderMalformed' ||
       nombre === 'PermanentRedirect'
     )
       return `La región no coincide con la del bucket. Revisá S3_REGION (ahora es "${c.region}").`;
-    return `No se pudo conectar con los archivos de ${c.proveedor}${c.endpoint ? ` (${c.endpoint})` : ''}: ${nombre || String(error)}. Revisá el endpoint, la región y tu conexión.`;
+    return `No se pudo conectar con los archivos de ${c.provider}${c.endpoint ? ` (${c.endpoint})` : ''}: ${nombre || String(error)}. Revisá el endpoint, la región y tu conexión.`;
   }
 
   async guardar(

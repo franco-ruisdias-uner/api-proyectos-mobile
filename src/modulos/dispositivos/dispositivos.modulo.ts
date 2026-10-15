@@ -1,6 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { type Configuracion, valor } from '../../config/configuracion.js';
+import type { AppConfigService } from '../../config/configuration.js';
 import { Avisos } from '../../comun/notificaciones/avisos.js';
 import { EnviadorPorHacer } from '../../notificaciones-alumnos/enviador-por-hacer.js';
 import { EnviadorRegistro } from '../../comun/notificaciones/enviador-registro.js';
@@ -21,10 +21,14 @@ import { DispositivosControlador } from './dispositivos.controlador.js';
     {
       provide: EnviadorPush,
       inject: [ConfigService],
-      useFactory: (config: Configuracion): EnviadorPush =>
-        valor(config, 'NOTIFICACIONES') === 'expo'
-          ? new EnviadorPorHacer(valor(config, 'EXPO_PUSH_URL'))
-          : new EnviadorRegistro(),
+      useFactory: (config: AppConfigService): EnviadorPush => {
+        const { provider, expoPushUrl } = config.get('notifications', {
+          infer: true,
+        });
+        return provider === 'expo'
+          ? new EnviadorPorHacer(expoPushUrl)
+          : new EnviadorRegistro();
+      },
     },
     Avisos,
   ],

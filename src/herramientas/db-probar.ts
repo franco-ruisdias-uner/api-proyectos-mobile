@@ -1,20 +1,21 @@
-import { existsSync } from 'node:fs';
+import { crearDataSource, opcionesDeBase } from '../comun/db/opciones.js';
+import {
+  buildConfiguration,
+  type Configuration,
+} from '../config/configuration.js';
 
 // `pnpm db:probar`: con la configuración del .env, se conecta a la base, muestra motor, versión
 // y esquema, crea y borra una tabla de prueba, y dice en castellano qué salió mal.
-if (existsSync('.env')) process.loadEnvFile('.env');
+// El .env lo carga Node (`--env-file-if-exists=.env` en el script de package.json).
 
-const { leerEntorno } = await import('../config/entorno.js');
-const { opcionesDeBase, crearDataSource } =
-  await import('../comun/db/opciones.js');
-
-let entorno;
+let config: Configuration;
 try {
-  entorno = leerEntorno(process.env);
+  config = buildConfiguration(process.env);
 } catch (error) {
   console.error((error as Error).message);
   process.exit(1);
 }
+const db = config.database;
 
 function explicar(error: unknown): string {
   const m = String((error as Error).message ?? error);
@@ -26,7 +27,7 @@ function explicar(error: unknown): string {
   )
     return 'La base rechazó el usuario o la contraseña. Revisá DB_URL (si la clave tiene @, / o #, codificalos: @ → %40).';
   if (/SSL|TLS|certificate|self[- ]signed/i.test(m))
-    return 'Falló el cifrado (SSL). Probá DB_SSL=si-sin-verificar, o bajá el certificado de la CA del proveedor y poné su ruta en DB_SSL_CA.';
+    return 'Falló el cifrado (SSL). Probá DB_SSL=no-verify, o bajá el certificado de la CA del proveedor y poné su ruta en DB_SSL_CA.';
   if (/ENOTFOUND|EAI_AGAIN/.test(m + codigo))
     return 'No se encontró el servidor. Revisá el host de DB_URL (y que tengas internet).';
   if (/ENETUNREACH|EHOSTUNREACH/.test(m + codigo))
@@ -38,15 +39,13 @@ function explicar(error: unknown): string {
   return m;
 }
 
-console.log(
-  `Motor: ${entorno.DB_MOTOR}${entorno.DB_PROVEEDOR ? ` (${entorno.DB_PROVEEDOR})` : ''}`,
-);
+console.log(`Motor: ${db.engine}${db.provider ? ` (${db.provider})` : ''}`);
 let ds;
 try {
   const opciones = opcionesDeBase({
-    ...entorno,
-    DB_SINCRONIZAR: false,
-    DB_BORRAR_AL_CONECTAR: false,
+    ...db,
+    synchronize: false,
+    dropSchema: false,
   });
   ds = await crearDataSource({ ...opciones, entities: [] } as never);
 } catch (error) {
@@ -55,17 +54,17 @@ try {
 }
 try {
   const version = (await ds.query(
-    entorno.DB_MOTOR === 'better-sqlite3'
+    db.engine === 'better-sqlite3'
       ? 'SELECT sqlite_version() AS v'
       : 'SELECT version() AS v',
   )) as Array<{ v: string }>;
   console.log(`Versión: ${version[0]?.v}`);
-  if (entorno.DB_MOTOR === 'postgres') {
+  if (db.engine === 'postgres') {
     const esquema = (await ds.query('SELECT current_schema() AS e')) as Array<{
       e: string;
     }>;
     console.log(
-      `Esquema: ${esquema[0]?.e}${entorno.DB_ESQUEMA ? ` (DB_ESQUEMA=${entorno.DB_ESQUEMA})` : ''}`,
+      `Esquema: ${esquema[0]?.e}${db.schema ? ` (DB_SCHEMA=${db.schema})` : ''}`,
     );
   }
   const corredor = ds.createQueryRunner();

@@ -13,7 +13,7 @@ describe('M0 — Base común', () => {
       esperarContrato(r.body, 'Salud');
       expect(r.body.datos).toEqual({
         estado: 'ok',
-        motor: process.env.DB_MOTOR ?? 'better-sqlite3',
+        motor: process.env.DB_ENGINE ?? 'better-sqlite3',
         almacen: 'local',
         version: expect.stringMatching(/^\d+\.\d+\.\d+/),
       });
@@ -75,7 +75,7 @@ describe('M0 — Base común', () => {
   });
 
   describe('AGENTS §11.4 — Sin simulación en tests', () => {
-    it('X-Simular se ignora si SIMULACION_HABILITADA no está', async () => {
+    it('X-Simular se ignora si SIMULATION_ENABLED no está', async () => {
       await c.http().get('/salud').set('X-Simular', 'error-500').expect(200);
     });
   });

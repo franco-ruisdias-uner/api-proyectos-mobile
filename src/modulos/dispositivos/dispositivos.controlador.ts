@@ -61,7 +61,8 @@ export class DispositivosControlador {
   @Post('prueba')
   @HttpCode(200)
   @Doc({
-    resumen: 'Manda una push de prueba a los teléfonos del usuario (lo completan ustedes)',
+    resumen:
+      'Manda una push de prueba a los teléfonos del usuario (lo completan ustedes)',
     descripcion:
       '**Esta parte la programan los alumnos** (hoy responde 501 `NO_IMPLEMENTADO`). ' +
       'Para depurar: devuelve a cuántos dispositivos registrados se mandó.',

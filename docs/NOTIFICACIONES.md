@@ -64,7 +64,7 @@ No cambien esos tests. `pnpm verificar` tiene que seguir en verde: no lo rompan.
 
 ## Cómo probarlo con un teléfono
 
-1. Levantá la API (`pnpm dev`) con `NOTIFICACIONES=expo` en el `.env` (con `registro` sólo se escribe en
+1. Levantá la API (`pnpm start:dev`) con `PUSH_PROVIDER=expo` en el `.env` (con `log` sólo se escribe en
    la consola).
 2. En la app, con Expo Go en un teléfono real (los simuladores no reciben push), pedí el token con
    `expo-notifications` y mandalo con `POST /dispositivos` `{ tokenExpo, plataforma }`.

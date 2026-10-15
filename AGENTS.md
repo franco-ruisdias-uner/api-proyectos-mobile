@@ -111,7 +111,9 @@ decidís vos sin preguntar.
 | MySQL / MariaDB | `mysql2` | El paquete `mysql` ya no está soportado. |
 | Validación | `class-validator` + `class-transformer` | `ValidationPipe` global (sección 7.3). |
 | Documentación | `@nestjs/swagger` en `/docs` | |
-| Configuración | `@nestjs/config` con validación al arrancar | |
+| Configuración | `@nestjs/config` + **Zod** | `ConfigModule` lee el `.env`, lo valida con Zod y arma un `registerAs` por área; se lee con `ConfigService` tipado (sección 11.3). |
+| Seguridad HTTP | `helmet` + CORS de Nest + `@nestjs/throttler` | En `src/setup-app.ts` y `src/comun/http/` (sección 11.4). |
+| Logs | `ConsoleLogger` de Nest | Texto en la computadora, JSON en producción (sección 11.4). |
 | Autenticación | `@nestjs/jwt` + guard propio | Contraseñas con `node:crypto` (`scrypt`), sin dependencias nativas. |
 | Fechas | `date-fns` 4 + `@date-fns/tz` | |
 | Push | `fetch` nativo a la API de Expo | Sin SDK: detrás de dos puertos (secciones 9 y 19). |
@@ -217,9 +219,10 @@ resumen: un módulo con dependencias nuevas y cero consultas se nota.
 │   ├── DECISIONES.md
 │   └── informes/              ← un informe de cierre por módulo (modo autónomo, sección 15)
 ├── src/
-│   ├── main.ts
+│   ├── main.ts                ← arranca: logger, setupApp, listen
+│   ├── setup-app.ts           ← helmet, CORS, pipes y Swagger (lo usan main.ts y los tests)
 │   ├── app.module.ts
-│   ├── config/                ← esquema y validación de variables de entorno
+│   ├── config/                ← env.validation.ts (Zod) y un <área>.config.ts por área
 │   ├── comun/                 ← lo transversal (ver abajo)
 │   ├── modulos/<modulo>/
 │   │   ├── <entidad>.entidad.ts
@@ -245,10 +248,19 @@ opciones por motor), `geo/`, `texto/` (normalización para búsqueda), `auth/`, 
 `notificaciones/`, `simulacion/`. En `archivos/` van el puerto `AlmacenArchivos` y un driver
 por proveedor (sección 17).
 
-**Idioma del código:** el dominio va en castellano y con los mismos nombres que el PRD
-(`Lugar`, `Reserva`, `cancelableHasta`, `EstadoTurno`). Lo del framework queda en inglés porque
-así se llama (`Controller`, `Module`, `Injectable`). No traduzcas nombres del PRD ni les cambies
-la forma (`Resena` es `Resena`, no `Reseña` ni `Review`).
+**Idioma del código:**
+
+- **En inglés**: nombres de archivos y carpetas, clases, funciones, variables, propiedades
+  internas, variables de entorno y scripts de `package.json`.
+- **En castellano rioplatense**: los comentarios, los mensajes de error y de log, Swagger, el
+  README y los documentos para los alumnos.
+- **Como dice el PRD, sin traducir**: todo lo que ve la app de los alumnos (rutas, nombres de
+  los campos del JSON, valores de los enums, códigos de error) y los tipos de
+  `contrato/tipos.ts`. Es el contrato (sección 0): `Resena` es `Resena`, no `Reseña` ni `Review`.
+
+El repo se está pasando a esta regla: `src/config/`, `src/setup-app.ts` y `src/comun/http/` ya la
+siguen. Lo nuevo se escribe así; lo viejo se renombra en su propio cambio, sin mezclarlo con
+otra cosa.
 
 ---
 
@@ -357,19 +369,19 @@ distancia, ordena, pero no agrega el número.
 
 ### 5.1 Configuración
 
-`DB_MOTOR` = `better-sqlite3` (default) · `postgres` · `mysql` · `mariadb`.
+`DB_ENGINE` = `better-sqlite3` (default) · `postgres` · `mysql` · `mariadb`.
 
 | Motor | Conexión | Notas |
 |---|---|---|
-| `better-sqlite3` | `DB_ARCHIVO=datos/api.sqlite` | En tests, `:memory:`. |
+| `better-sqlite3` | `DB_FILE=data/api.sqlite` | En tests, `:memory:`. |
 | `postgres` | `DB_URL=postgres://…` | |
 | `mysql` | `DB_URL=mysql://…` | `timezone: 'Z'`, charset `utf8mb4`. |
-| `mariadb` | `DB_URL=mysql://…` | Ídem. **XAMPP instala MariaDB, no MySQL.** Con `DB_MOTOR=mysql` contra un servidor MariaDB el esquema no queda estable (verificado): usá `mariadb`. |
+| `mariadb` | `DB_URL=mysql://…` | Ídem. **XAMPP instala MariaDB, no MySQL.** Con `DB_ENGINE=mysql` contra un servidor MariaDB el esquema no queda estable (verificado): usá `mariadb`. |
 
 Las opciones de TypeORM por motor salen de una sola función en `src/comun/db/opciones.ts`.
 
 Para una base **administrada en la nube** (Supabase, Neon, Aiven) hay presets con
-`DB_PROVEEDOR`, más `DB_SSL`, `DB_SSL_CA` y `DB_ESQUEMA`: sección 18.1.
+`DB_PROVIDER`, más `DB_SSL`, `DB_SSL_CA` y `DB_SCHEMA`: sección 18.1.
 
 ### 5.2 Esquema: se genera desde las entidades
 
@@ -379,9 +391,9 @@ Para una base **administrada en la nube** (Supabase, Neon, Aiven) hay presets co
   sería el trabajo más caro del proyecto; (2) los datos son descartables: se reconstruyen con
   las semillas; (3) el contrato se congela al publicar (sección 11.7).
 - `pnpm db:reiniciar` borra el esquema, lo crea y siembra. Es el comando que usan los alumnos.
-  Contra una base en la nube (`DB_PROVEEDOR` definido) pide `--confirmar` y borra **sólo** el
-  esquema de la API (`DB_ESQUEMA`), nunca otros (en Supabase conviven `auth`, `storage`…).
-- `synchronize` corre sólo cuando `DB_SINCRONIZAR=true` (el default de desarrollo y tests).
+  Contra una base en la nube (`DB_PROVIDER` definido) pide `--confirmar` y borra **sólo** el
+  esquema de la API (`DB_SCHEMA`), nunca otros (en Supabase conviven `auth`, `storage`…).
+- `synchronize` corre sólo cuando `DB_SYNCHRONIZE=true` (el default de desarrollo y tests).
 - **Test obligatorio de estabilidad**: después de sincronizar,
   `dataSource.driver.createSchemaBuilder().log()` devuelve **cero** consultas pendientes, en
   los cuatro motores. Si da algo, hay un tipo de columna que no es portable.
@@ -442,7 +454,7 @@ preguntá.
 - Todo lo que depende de "ahora" (hoy, vencida, próximos horarios, turno pasado, cancelable
   hasta) usa el servicio `Reloj` (`ahora(): Date`) inyectado. **Prohibido `new Date()` sin
   argumentos y `Date.now()`** fuera de `src/comun/reloj/`.
-- En tests se usa `RelojFijo`, que se puede mover. En desarrollo, si `RELOJ_FIJO` tiene un
+- En tests se usa `RelojFijo`, que se puede mover. En desarrollo, si `FIXED_CLOCK` tiene un
   instante ISO, la API arranca "congelada" en ese momento: sirve para demos y para que los
   alumnos prueben casos como "el último colectivo ya pasó".
 - "Hoy", el día de la semana (`0` = domingo) y los cortes de medianoche se calculan en
@@ -478,7 +490,7 @@ preguntá.
 
 - JWT HS256 con `sub` = id de usuario y `rol`. Vence a los **30 días**: la app lo guarda en
   `expo-secure-store` y el reingreso con huella lo desbloquea en el teléfono; no hay refresh.
-  `JWT_SECRETO` es obligatorio (la app no arranca sin él; `.env.example` trae uno de
+  `JWT_SECRET` es obligatorio (la app no arranca sin él; `.env.example` trae uno de
   desarrollo que dice que es de desarrollo).
 - Contraseñas con `scrypt` de `node:crypto`, sal aleatoria por usuario y comparación con
   `timingSafeEqual`. Mínimo 8 caracteres. El hash jamás sale en una respuesta ni en un log.
@@ -511,7 +523,7 @@ preguntá.
   mandó el usuario). La API los sirve siempre ella misma en `/archivos/<clave>`, **con soporte
   de `Range`** (206), que es lo que necesitan `expo-audio` y `expo-video` para adelantar y para
   reproducir mientras descargan. Hay un test que pide un rango y espera 206.
-- En la base se guarda la **clave**, no una URL; el mapeador la hace absoluta con `URL_PUBLICA` si
+- En la base se guarda la **clave**, no una URL; el mapeador la hace absoluta con `PUBLIC_URL` si
   está definida y, si no, con el protocolo y el `Host` **del pedido**: la dirección que usó el
   teléfono para llegar (`http://192.168.0.10:3000`). Así anda sin configurar nada, también
   dentro de Docker, donde la API no conoce la IP de la computadora. El origen se guarda por
@@ -531,7 +543,7 @@ preguntá.
 - Los tokens y el envío pasan por dos puertos, `AlmacenTokensPush` y `EnviadorPush`
   (sección 19.2), y el dominio sólo usa el servicio `Avisos`. Enviadores: `EnviadorExpo`
   (`fetch` a la API de Expo, sin `expo-server-sdk`), `EnviadorMemoria` (tests; guarda lo que
-  "se mandó") y `EnviadorRegistro` (sólo escribe en el log). `NOTIFICACIONES=expo|registro`
+  "se mandó") y `EnviadorRegistro` (sólo escribe en el log). `PUSH_PROVIDER=expo|log`
   elige.
 - Se notifica **después de confirmar la transacción**, sin bloquear la respuesta. Un error de
   Expo se loguea y no rompe el pedido. Los tokens que Expo informa como inválidos se borran.
@@ -638,7 +650,8 @@ esas:
 
 | Comando | Qué hace |
 |---|---|
-| `pnpm dev` | Levanta la API en `0.0.0.0:3000` con recarga. |
+| `pnpm start:dev` | Levanta la API en `0.0.0.0:3000` con recarga. |
+| `pnpm start` / `pnpm start:prod` | Compila y levanta / levanta lo ya compilado (`node dist/src/main.js`, lo mismo que corre Docker). |
 | `pnpm db:reiniciar` | Borra, crea el esquema y siembra. |
 | `pnpm contrato:esquema` | Regenera `contrato/esquema.json`. |
 | `pnpm test` | Unitarios. |
@@ -659,24 +672,59 @@ esas:
 
 ### 11.3 Configuración
 
-`@nestjs/config` con un esquema que valida el entorno al arrancar. Si falta algo o está mal,
-la app **no arranca** y dice en castellano qué falta y cómo arreglarlo. Variables comunes:
-`PUERTO` (o `PORT`, que es lo que inyectan los hosts), `ENTORNO`, `CONFIAR_PROXY`, `URL_PUBLICA`,
-`DB_MOTOR`, `DB_URL`, `DB_ARCHIVO`, `DB_SINCRONIZAR`, `DB_PROVEEDOR`, `DB_SSL`, `DB_SSL_CA`,
-`DB_ESQUEMA`, `JWT_SECRETO`,
-`DIRECTORIO_ARCHIVOS`, `NOTIFICACIONES`, `RELOJ_FIJO`, `SIMULACION_HABILITADA`,
-`SEMBRAR_SI_VACIA`, y las de archivos de la sección 17.2.
+El patrón estándar de `@nestjs/config`, sin atajos:
+
+- `ConfigModule.forRoot({ isGlobal, validate, load, skipProcessEnv })` en `AppModule`. **Él**
+  lee el `.env`: nada de `process.loadEnvFile` ni `dotenv` en `main.ts`.
+- `src/config/env.validation.ts`: un esquema de **Zod** con cada variable (tipo, valores
+  posibles, default) y, aparte, las reglas que miran varias a la vez (presets de base y de
+  archivos, lo que exige `APP_ENV=production`). Si algo falla, la app **no arranca** y lista
+  **todos** los problemas juntos, en castellano, diciendo qué falta y dónde se consigue.
+- Un `registerAs` por área en `src/config/<área>.config.ts`: `app`, `http`, `database`, `auth`,
+  `storage`, `notifications`. Cada uno devuelve un objeto con nombres en camelCase y tipos de
+  verdad (números, booleanos, `null`), no textos sueltos.
+- Se lee **sólo** con `ConfigService<Configuration, true>` (alias `AppConfigService`):
+  `config.get('database.engine', { infer: true })`. Nunca `process.env` fuera de `src/config/`.
+- Los módulos que se configuran con otro (`TypeOrmModule`, `JwtModule`, `ThrottlerModule`) usan
+  `forRootAsync` / `registerAsync` con `inject: [ConfigService]`.
+- Los scripts sin Nest (`db:probar`, `archivos:probar`) usan `buildConfiguration(process.env)` y
+  el `.env` lo carga Node con `--env-file-if-exists=.env` en `package.json`.
+- Tests: Vitest pone el entorno base (`test.env`, `test/utilidades/entorno.ts`) antes de
+  importar nada, y `crearApp({ entorno })` pisa variables para una app.
+
+Variables: `PORT`, `APP_ENV` (`development` · `test` · `production`), `TRUST_PROXY`,
+`PUBLIC_URL`, `CORS_ORIGINS`, `LOG_LEVEL`, `LOG_FORMAT`, `THROTTLE_TTL_SECONDS`,
+`THROTTLE_LIMIT`, `LOGIN_THROTTLE_LIMIT`, `DB_ENGINE`, `DB_URL`, `DB_FILE`, `DB_SYNCHRONIZE`,
+`DB_PROVIDER`, `DB_SSL`, `DB_SSL_CA`, `DB_SCHEMA`, `JWT_SECRET`, `STORAGE_DIR`,
+`PUSH_PROVIDER` (`expo` · `log`), `FIXED_CLOCK`, `SIMULATION_ENABLED`, `SEED_IF_EMPTY`, y las de
+archivos de la sección 17.2. `.env.example` las trae todas, comentadas.
 
 ### 11.4 Pensado para que lo corran alumnos
 
 - Escucha en `0.0.0.0`: el teléfono con Expo Go no llega a `localhost`, entra por la IP de la
   computadora (`http://192.168.0.10:3000`). Al arrancar, la API imprime las URLs de las
   interfaces de red que encontró (dentro de Docker, avisa que hay que usar la IP de la
-  computadora, no la del contenedor). `URL_PUBLICA` no hace falta (sección 8).
-- CORS abierto (la app puede correr también en Expo web).
+  computadora, no la del contenedor). `PUBLIC_URL` no hace falta (sección 8).
+- **`main.ts` estándar**: `NestFactory.create` con `bufferLogs`, el logger según la
+  configuración, `setupApp(app, config)`, `enableShutdownHooks()` y `listen`. Lo que se aplica
+  sobre Express va en `src/setup-app.ts`, que usan también los tests e2e:
+  - **helmet** con dos ajustes: `crossOriginResourcePolicy: cross-origin` (Expo web muestra las
+    fotos de `/archivos`) y sin `upgrade-insecure-requests` (en la red local la API va por http y
+    Swagger no cargaría su JS);
+  - **CORS** con `CORS_ORIGINS` (`*` por defecto; publicada, conviene la lista). Las apps
+    nativas no lo usan; Expo web sí;
+  - `trust proxy` con `TRUST_PROXY`, el `ValidationPipe` global y Swagger.
+- **Límite de pedidos** (`@nestjs/throttler`, `src/comun/http/rate-limit.ts`): por IP y por
+  ruta (`THROTTLE_LIMIT` cada `THROTTLE_TTL_SECONDS`), y en el ingreso (`@LoginRateLimit()`) por
+  IP **y legajo** (`LOGIN_THROTTLE_LIMIT`), así un curso entero detrás del mismo wifi no se
+  bloquea. Responde 429 `DEMASIADOS_PEDIDOS` con `Retry-After`.
+- **Logs**: el `ConsoleLogger` de Nest, en texto con colores o en JSON (`LOG_FORMAT`; por defecto
+  JSON con `APP_ENV=production`), con `LOG_LEVEL`. Un middleware escribe una línea por pedido
+  (`GET /rutas/rut-07 200 12ms`; 4xx como warn, 5xx como error, `/salud` en debug). Nunca se
+  loguean cabeceras ni cuerpos.
 - `GET /salud` (público) → `{ datos: { estado: "ok", motor, almacen, version }, meta: null }`: lo
   primero que prueban desde el teléfono.
-- **Simulación de fallas**: si `SIMULACION_HABILITADA=true` (default en desarrollo, siempre
+- **Simulación de fallas**: si `SIMULATION_ENABLED=true` (default en desarrollo, siempre
   `false` en tests salvo el test de la propia simulación), la cabecera
   `X-Simular: error-500` devuelve un `ERROR_INTERNO` y `X-Simular: demora-3000` responde tres
   segundos tarde. Los PRD les piden a los alumnos manejar errores de red y estados de carga;
@@ -738,7 +786,7 @@ En castellano rioplatense, con voseo, y sin suponer que saben de backend. Tiene 
 2. **Con Docker, un solo comando** (va primero): `docker compose up`, y la tabla de la
    sección 16 para cada motor. Cómo volver a cero (`docker compose down -v`).
 3. Sin Docker: requisitos (Node 24, pnpm), cómo instalarlos y arrancar en tres comandos con
-   SQLite: `pnpm install`, `pnpm db:reiniciar`, `pnpm dev`.
+   SQLite: `pnpm install`, `pnpm db:reiniciar`, `pnpm start:dev`.
 4. Sin Docker con PostgreSQL, MySQL o MariaDB instalados a mano, incluida la advertencia de
    XAMPP → `mariadb`.
 5. Cómo conectarse desde el teléfono: misma red, IP de la computadora, firewall de Windows y
@@ -857,17 +905,17 @@ Multietapa, sobre `node:24-bookworm-slim`, con `corepack enable` y `"packageMana
    `package.json` y `pnpm-lock.yaml`, para aprovechar la caché.
 2. **build**: copia el resto, `pnpm build` y `pnpm prune --prod`.
 3. **final**: sólo `dist/`, el `node_modules` de producción, `package.json` y los medios de las
-   semillas; crea `/app/datos` y `/app/archivos` con dueño `node` **antes** de `USER node` (si
+   semillas; crea `/app/data` y `/app/uploads` con dueño `node` **antes** de `USER node` (si
    no, los volúmenes se montan como root y la API no puede escribir la base ni las fotos);
    usuario `node`; `EXPOSE 3000`; `HEALTHCHECK` con
    `node -e "fetch('http://127.0.0.1:3000/salud').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"`;
-   `CMD ["node", "dist/main.js"]`. Nada de scripts `.sh` como punto de entrada: con finales de
+   `CMD ["node", "dist/src/main.js"]` (no `npm start`: npm no le pasa SIGTERM a la app). Nada de scripts `.sh` como punto de entrada: con finales de
    línea de Windows se rompen.
 
-Verificado: el build ESM de Nest 12 arranca con `node dist/main.js`, y después de
+Verificado: el build ESM de Nest 12 arranca con `node dist/src/main.js` (`dist/src/` porque el build incluye `contrato/`), y después de
 `pnpm prune --prod` sigue andando, incluido `better-sqlite3`.
 
-`.dockerignore`: `node_modules`, `dist`, `coverage`, `datos`, `archivos`, `.git`, `.env`,
+`.dockerignore`: `node_modules`, `dist`, `coverage`, `data`, `uploads`, `.git`, `.env`,
 `test`.
 
 ### 16.2 Los compose
@@ -880,25 +928,25 @@ services:
   api:
     build: .
     ports:
-      - "${PUERTO:-3000}:3000"
+      - "${PORT:-3000}:3000"
     environment:
-      PUERTO: "3000"
-      DB_MOTOR: better-sqlite3
-      DB_ARCHIVO: /app/datos/api.sqlite
-      DB_SINCRONIZAR: "true"
-      SEMBRAR_SI_VACIA: "true"
-      JWT_SECRETO: solo-para-desarrollo-no-usar-en-produccion
-      DIRECTORIO_ARCHIVOS: /app/archivos
-      NOTIFICACIONES: expo
-      SIMULACION_HABILITADA: "true"
-      URL_PUBLICA: ${URL_PUBLICA:-}
+      PORT: "3000"
+      DB_ENGINE: better-sqlite3
+      DB_FILE: /app/data/api.sqlite
+      DB_SYNCHRONIZE: "true"
+      SEED_IF_EMPTY: "true"
+      JWT_SECRET: solo-para-desarrollo-no-usar-en-produccion
+      STORAGE_DIR: /app/uploads
+      PUSH_PROVIDER: expo
+      SIMULATION_ENABLED: "true"
+      PUBLIC_URL: ${PUBLIC_URL:-}
     volumes:
-      - datos:/app/datos
-      - archivos:/app/archivos
+      - data:/app/data
+      - uploads:/app/uploads
     restart: unless-stopped
 volumes:
-  datos:
-  archivos:
+  data:
+  uploads:
 ```
 
 `compose.postgres.yaml` extiende ese servicio y agrega la base:
@@ -909,14 +957,14 @@ services:
   api:
     extends: { file: compose.yaml, service: api }
     environment:
-      DB_MOTOR: postgres
+      DB_ENGINE: postgres
       DB_URL: postgres://api:api@postgres:5432/api
     depends_on:
       postgres: { condition: service_healthy }
   postgres:
     image: postgres:17
     environment: { POSTGRES_USER: api, POSTGRES_PASSWORD: api, POSTGRES_DB: api }
-    ports: ["${PUERTO_DB:-5433}:5432"]
+    ports: ["${DB_PORT:-5433}:5432"]
     volumes: [postgres:/var/lib/postgresql/data]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U api -d api"]
@@ -924,14 +972,14 @@ services:
       timeout: 3s
       retries: 40
 volumes:
-  datos:
-  archivos:
+  data:
+  uploads:
   postgres:
 ```
 
 Los otros dos, igual:
 
-| Archivo | Imagen | `DB_MOTOR` | Puerto en la compu | Healthcheck |
+| Archivo | Imagen | `DB_ENGINE` | Puerto en la compu | Healthcheck |
 |---|---|---|---|---|
 | `compose.mysql.yaml` | `mysql:8.4` | `mysql` | 3307 | `mysqladmin ping -h 127.0.0.1 -uapi -papi` |
 | `compose.mariadb.yaml` | `mariadb:11` | `mariadb` | 3308 | `healthcheck.sh --connect --innodb_initialized` |
@@ -942,13 +990,13 @@ Reglas:
   los volúmenes.
 - Las bases se publican en 5433, 3307 y 3308, no en los puertos de siempre: así no chocan con
   una base instalada (XAMPP usa 3306) y se pueden mirar con DBeaver.
-- **Datos de demo solos**: con `SEMBRAR_SI_VACIA=true`, al arrancar la API crea el esquema y
+- **Datos de demo solos**: con `SEED_IF_EMPTY=true`, al arrancar la API crea el esquema y
   siembra si la base no tiene datos; si ya tiene, no toca nada. Volver a cero:
   `docker compose down -v` y `up` de nuevo.
 - La API espera a la base (`depends_on` con `service_healthy`) y además reintenta la conexión
   (`retryAttempts` / `retryDelay` de `TypeOrmModule`), porque "healthy" no siempre quiere decir
   "acepta conexiones".
-- Sin secretos reales: el `JWT_SECRETO` de los compose dice que es de desarrollo.
+- Sin secretos reales: el `JWT_SECRET` de los compose dice que es de desarrollo.
 - Imágenes oficiales multiarquitectura: anda en Mac con Apple Silicon, Windows y Linux.
 
 `compose.matriz.yaml` es otra cosa: sólo las tres bases, en `tmpfs` (rápidas y descartables),
@@ -958,7 +1006,7 @@ en los puertos 55432, 53306 y 53307, más S3Proxy (sección 17.3), para
 ### 16.3 La prueba (`pnpm docker:probar`)
 
 `scripts/probar-docker.mjs`, sin dependencias. Para cada uno de los cuatro compose, con un
-nombre de proyecto propio y puertos que no choquen (`PUERTO=39990`, `PUERTO_DB=39991`):
+nombre de proyecto propio y puertos que no choquen (`PORT=39990`, `DB_PORT=39991`):
 
 1. `docker compose up -d --build --wait`;
 2. `GET /salud` → 200, sobre correcto y el `motor` que corresponde a ese archivo;
@@ -1011,7 +1059,7 @@ export interface AlmacenArchivos {
   `Content-Range`, `Accept-Ranges: bytes`, `Content-Type`, `Content-Length`, `ETag` y
   `Cache-Control: public, max-age=31536000, immutable` (la clave no cambia nunca). El soporte de
   `Range` se escribe una vez, no una por adaptador.
-- `ARCHIVOS_REDIRIGIR=true` (opcional, sólo proveedores en la nube): en vez de pasar el archivo
+- `STORAGE_REDIRECT=true` (opcional, sólo proveedores en la nube): en vez de pasar el archivo
   por la API, responde 302 a una URL firmada de 15 minutos. Por defecto `false`: con los
   emuladores dentro de Docker, la URL firmada apunta a un host que el teléfono no ve.
 - `/salud` informa el proveedor en `almacen`.
@@ -1023,20 +1071,20 @@ export interface AlmacenArchivos {
 
 ### 17.2 Proveedores
 
-Se elige con **una sola variable**, `ARCHIVOS_PROVEEDOR`:
+Se elige con **una sola variable**, `STORAGE_PROVIDER`:
 
-| `ARCHIVOS_PROVEEDOR` | Adaptador | Endpoint | `S3_REGION` | Ruta | Variables que pide |
+| `STORAGE_PROVIDER` | Adaptador | Endpoint | `S3_REGION` | Ruta | Variables que pide |
 |---|---|---|---|---|---|
-| `local` (default) | disco | — | — | — | `DIRECTORIO_ARCHIVOS` (default `./archivos`) |
+| `local` (default) | disco | — | — | — | `STORAGE_DIR` (default `./archivos`) |
 | `aws` | S3 | el de AWS | la del bucket | virtual | `S3_BUCKET`, `S3_REGION`, claves |
-| `supabase` | S3 | `https://<SUPABASE_PROYECTO>.storage.supabase.co/storage/v1/s3` | la del proyecto | **path** | `SUPABASE_PROYECTO`, `S3_BUCKET`, `S3_REGION`, claves |
-| `r2` | S3 | `https://<R2_CUENTA>.r2.cloudflarestorage.com` | `auto` (fija) | virtual | `R2_CUENTA`, `S3_BUCKET`, claves |
+| `supabase` | S3 | `https://<SUPABASE_PROJECT_REF>.storage.supabase.co/storage/v1/s3` | la del proyecto | **path** | `SUPABASE_PROJECT_REF`, `S3_BUCKET`, `S3_REGION`, claves |
+| `r2` | S3 | `https://<R2_ACCOUNT_ID>.r2.cloudflarestorage.com` | `auto` (fija) | virtual | `R2_ACCOUNT_ID`, `S3_BUCKET`, claves |
 | `b2` | S3 | `https://s3.<S3_REGION>.backblazeb2.com` | la del bucket (p. ej. `us-west-004`) | virtual | `S3_BUCKET`, `S3_REGION`, claves |
 | `s3proxy` | S3 | `http://s3:8080` | `us-east-1` | **path** | nada (emulador local; sección 17.3) |
 | `localstack` | S3 | `http://localstack:4566` | `us-east-1` | **path** | nada (emulador local; sección 17.3) |
 
 - "Claves" son `S3_ACCESS_KEY_ID` y `S3_SECRET_ACCESS_KEY`.
-- `S3_ENDPOINT` y `S3_FORZAR_PATH_STYLE`, si están, **pisan** lo que diga el preset (sirve para
+- `S3_ENDPOINT` y `S3_FORCE_PATH_STYLE`, si están, **pisan** lo que diga el preset (sirve para
   cualquier otro servicio compatible con S3 sin tocar código).
 - Los presets son una **tabla de datos** en `src/comun/archivos/proveedores.ts` y una función
   pura `configuracionS3(entorno) → { endpoint, region, forcePathStyle, … } | error` con test
@@ -1072,8 +1120,8 @@ LOCALSTACK_AUTH_TOKEN=… docker compose -f compose.postgres.yaml -f compose.alm
 
 | Archivo | Servicio | Y en `api` |
 |---|---|---|
-| `compose.almacen-s3.yaml` | `s3`: `andrewgaul/s3proxy`, puerto 8080, `S3PROXY_AUTHORIZATION=none`, `JCLOUDS_PROVIDER=filesystem`, `JCLOUDS_FILESYSTEM_BASEDIR=/data` en un volumen | `ARCHIVOS_PROVEEDOR=s3proxy`, `ARCHIVOS_CREAR_BUCKET=true`, `S3_BUCKET=archivos`, claves de mentira |
-| `compose.almacen-localstack.yaml` | `localstack`: `localstack/localstack`, puerto 4566, `SERVICES=s3`, `LOCALSTACK_AUTH_TOKEN: "${LOCALSTACK_AUTH_TOKEN:?Falta LOCALSTACK_AUTH_TOKEN. …}"`, **entre comillas** (sin comillas, el mensaje rompe el YAML; verificado), para que compose falle con un mensaje claro si falta | `ARCHIVOS_PROVEEDOR=localstack`, lo mismo que arriba |
+| `compose.almacen-s3.yaml` | `s3`: `andrewgaul/s3proxy`, puerto 8080, `S3PROXY_AUTHORIZATION=none`, `JCLOUDS_PROVIDER=filesystem`, `JCLOUDS_FILESYSTEM_BASEDIR=/data` en un volumen | `STORAGE_PROVIDER=s3proxy`, `S3_CREATE_BUCKET=true`, `S3_BUCKET=archivos`, claves de mentira |
+| `compose.almacen-localstack.yaml` | `localstack`: `localstack/localstack`, puerto 4566, `SERVICES=s3`, `LOCALSTACK_AUTH_TOKEN: "${LOCALSTACK_AUTH_TOKEN:?Falta LOCALSTACK_AUTH_TOKEN. …}"`, **entre comillas** (sin comillas, el mensaje rompe el YAML; verificado), para que compose falle con un mensaje claro si falta | `STORAGE_PROVIDER=localstack`, lo mismo que arriba |
 
 Para los proveedores en la nube no hay compose: se ponen las variables en `.env` (el
 `.env.example` trae un bloque comentado por proveedor, con dónde conseguir cada dato).
@@ -1128,7 +1176,7 @@ La combinación de referencia, gratis y sin tarjeta (septiembre de 2026):
 |---|---|---|
 | La API (la imagen de la sección 16) | **Render**, web service desde el `Dockerfile` | Plan gratis sin tarjeta, soporta Docker. |
 | Base de datos | **Supabase** (Postgres) | 500 MB en el plan gratis. |
-| Archivos | **Supabase Storage** (`ARCHIVOS_PROVEEDOR=supabase`, sección 17) | 1 GB; mismo proyecto que la base. |
+| Archivos | **Supabase Storage** (`STORAGE_PROVIDER=supabase`, sección 17) | 1 GB; mismo proyecto que la base. |
 
 Supabase no corre contenedores (sus Edge Functions son otra cosa), por eso la API va en Render.
 Alternativas que entran igual: Koyeb para la API; Neon o Aiven para la base; R2 o B2 para los
@@ -1136,22 +1184,22 @@ archivos.
 
 ### 18.1 Presets de base de datos
 
-Igual que con los archivos: una variable, `DB_PROVEEDOR`, que completa y valida lo que cada
-servicio necesita. Sin `DB_PROVEEDOR`, todo sigue como en la sección 5.1.
+Igual que con los archivos: una variable, `DB_PROVIDER`, que completa y valida lo que cada
+servicio necesita. Sin `DB_PROVIDER`, todo sigue como en la sección 5.1.
 
-| `DB_PROVEEDOR` | Motor | SSL | `DB_ESQUEMA` | Qué valida de `DB_URL` |
+| `DB_PROVIDER` | Motor | SSL | `DB_SCHEMA` | Qué valida de `DB_URL` |
 |---|---|---|---|---|
 | `supabase` | `postgres` | cifrado (como `sslmode=require`) | `api` | Que sea la del **pooler en modo sesión**: host `…pooler.supabase.com`, puerto **5432**, usuario `postgres.<ref>`. |
 | `neon` | `postgres` | cifrado y verificado | `public` | Host `….neon.tech`. |
 | `aiven-postgres` | `postgres` | cifrado (verificado si hay `DB_SSL_CA`) | `public` | Host `….aivencloud.com`. |
 | `aiven-mysql` | `mysql` | cifrado (verificado si hay `DB_SSL_CA`) | — | Host `….aivencloud.com`. |
 
-- `DB_SSL` = `no` · `si` (cifra y verifica el certificado) · `si-sin-verificar` (cifra sin
+- `DB_SSL` = `off` · `verify` (cifra y verifica el certificado) · `no-verify` (cifra sin
   verificar, lo mismo que `sslmode=require`). Supabase y Aiven firman con una CA propia, así
-  que su preset usa `si-sin-verificar`; con `DB_SSL_CA` (ruta al certificado de la CA que da el
+  que su preset usa `no-verify`; con `DB_SSL_CA` (ruta al certificado de la CA que da el
   proveedor, fuera de git) pasa a verificar contra esa CA. Neon usa un certificado público:
-  `si`. Un error de certificado se traduce a un mensaje que dice cuál de las dos opciones usar.
-- `DB_ESQUEMA` (sólo PostgreSQL) es el esquema donde van las tablas. La API lo crea al arrancar
+  `verify`. Un error de certificado se traduce a un mensaje que dice cuál de las dos opciones usar.
+- `DB_SCHEMA` (sólo PostgreSQL) es el esquema donde van las tablas. La API lo crea al arrancar
   si no existe (`queryRunner.createSchema(nombre, true)`, sin SQL a mano) y le dice a TypeORM
   que use ése.
 - Los presets son una tabla en `src/comun/db/proveedores.ts` y una función pura
@@ -1183,24 +1231,23 @@ un tiempo sin uso (avisa por mail) y, en MySQL, suele exigir clave primaria en t
 
 - **`render.yaml`** en la raíz (Blueprint de Render): un web service con `runtime: docker`,
   plan gratis, `healthCheckPath: /salud`, y las variables: las fijas con su valor
-  (`ENTORNO=publicado`, `CONFIAR_PROXY=true`, `DB_PROVEEDOR=supabase`,
-  `ARCHIVOS_PROVEEDOR=supabase`, `SEMBRAR_SI_VACIA=true`, `DB_SINCRONIZAR=true`) y los secretos
-  sin valor, para que Render los pida (`DB_URL`, `JWT_SECRETO`, `SUPABASE_PROYECTO`,
+  (`APP_ENV=production`, `TRUST_PROXY=true`, `DB_PROVIDER=supabase`,
+  `STORAGE_PROVIDER=supabase`, `SEED_IF_EMPTY=true`, `DB_SYNCHRONIZE=true`) y los secretos
+  sin valor, para que Render los pida (`DB_URL`, `JWT_SECRET`, `SUPABASE_PROJECT_REF`,
   `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`). Verificá el formato
   del Blueprint con Context7 antes de escribirlo.
 - El README trae el botón **"Deploy to Render"** que apunta al repo del grupo, y un paso a paso:
   crear el proyecto de Supabase, copiar la cadena del pooler de sesión, crear el bucket, generar
   las claves S3, pegar todo en Render.
-- **Puerto**: la API escucha en `PUERTO`, o si no está, en `PORT` (Render y Koyeb inyectan
-  `PORT`).
+- **Puerto**: la API escucha en `PORT`, que es la variable que inyectan Render y Koyeb.
 - **HTTPS en las URLs**: detrás del proxy del host, `req.protocol` dice `http`. Con
-  `CONFIAR_PROXY=true`, Express confía en `X-Forwarded-Proto` y `X-Forwarded-Host` (`trust
+  `TRUST_PROXY=true`, Express confía en `X-Forwarded-Proto` y `X-Forwarded-Host` (`trust
   proxy`), y las URLs de los archivos (sección 8) salen `https://…`. iOS bloquea `http` en una
   app publicada: hay un test que manda esas cabeceras y espera URLs `https`.
-- **`ENTORNO=publicado`** hace que la API **no arranque** (con un mensaje en castellano que dice
+- **`APP_ENV=production`** hace que la API **no arranque** (con un mensaje en castellano que dice
   qué cambiar) si: la base es SQLite (el disco del host se borra en cada reinicio), los archivos
-  son `local` (ídem), `JWT_SECRETO` es el de desarrollo o tiene menos de 32 caracteres, o
-  `SIMULACION_HABILITADA=true`.
+  son `local` (ídem), `JWT_SECRET` es el de desarrollo o tiene menos de 32 caracteres, o
+  `SIMULATION_ENABLED=true`.
 - **Arranque en frío**: el servicio gratis de Render se duerme a los 15 minutos sin tráfico y
   tarda alrededor de un minuto en despertar. El README se lo avisa a los alumnos: la primera
   llamada puede tardar, y la app tiene que mostrar que está cargando (los PRD ya lo piden).
@@ -1214,10 +1261,10 @@ un tiempo sin uso (avisa por mail) y, en MySQL, suele exigir clave primaria en t
 ### 18.3 Tests
 
 - `configuracionBase` y `configuracionS3`: unitarios, un caso por proveedor y por error.
-- En la matriz, con PostgreSQL: las tablas quedan en `DB_ESQUEMA` y `db:reiniciar` no toca
+- En la matriz, con PostgreSQL: las tablas quedan en `DB_SCHEMA` y `db:reiniciar` no toca
   otro esquema (el test crea una tabla ajena en `public` y verifica que sobrevive).
-- `ENTORNO=publicado`: un test por cada condición que impide arrancar.
-- `CONFIAR_PROXY`: con y sin las cabeceras `X-Forwarded-*`.
+- `APP_ENV=production`: un test por cada condición que impide arrancar.
+- `TRUST_PROXY`: con y sin las cabeceras `X-Forwarded-*`.
 - Lo que necesita cuentas reales (Supabase, Render) no corre en la CI: para eso están
   `db:probar`, `archivos:probar` y `publicado:probar`.
 

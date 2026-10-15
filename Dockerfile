@@ -25,9 +25,12 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/src/semillas/medios ./src/semillas/medios
 # Las carpetas de los volúmenes, del usuario node antes de dejar de ser root: si no, los
 # volúmenes se montan como root y la API no puede escribir la base ni las fotos.
-RUN mkdir -p /app/datos /app/archivos && chown -R node:node /app/datos /app/archivos
+RUN mkdir -p /app/data /app/uploads && chown -R node:node /app/data /app/uploads
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=10s --timeout=5s --start-period=20s --retries=5 \
   CMD node -e "fetch('http://127.0.0.1:3000/salud').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+# `node` directo y no `npm start`: npm no le pasa a la app las señales de Docker (SIGTERM al
+# hacer `docker compose down`) y la API no podría cerrar la base con orden. Es lo mismo que
+# `pnpm start:prod`.
 CMD ["node", "dist/src/main.js"]
