@@ -1,0 +1,11 @@
+node_modules/
+/dist/
+swagger.json
+/coverage/
+/data/
+/uploads/
+*.sqlite
+*.sqlite-journal
+.env
+.DS_Store
+*.tsbuildinfo

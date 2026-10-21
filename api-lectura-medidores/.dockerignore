@@ -1,0 +1,11 @@
+node_modules
+dist
+coverage
+data
+uploads
+.git
+.env
+test
+docs
+.claude
+*.sqlite

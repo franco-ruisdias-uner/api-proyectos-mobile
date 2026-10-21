@@ -1,0 +1,25 @@
+# `docker compose up`: la API con SQLite y los datos de demo. Volver a cero: `docker compose down -v`.
+name: api-lectura-medidores
+services:
+  api:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      PORT: "3000"
+      DB_ENGINE: better-sqlite3
+      DB_FILE: /app/data/api.sqlite
+      DB_SYNCHRONIZE: "true"
+      SEED_IF_EMPTY: "true"
+      JWT_SECRET: solo-para-desarrollo-no-usar-en-produccion
+      STORAGE_DIR: /app/uploads
+      PUSH_PROVIDER: expo
+      SIMULATION_ENABLED: "true"
+      PUBLIC_URL: ${PUBLIC_URL:-}
+    volumes:
+      - data:/app/data
+      - uploads:/app/uploads
+    restart: unless-stopped
+volumes:
+  data:
+  uploads:

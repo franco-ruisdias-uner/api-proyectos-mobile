@@ -1,0 +1,28 @@
+# Se suma a cualquier compose: los archivos van a S3Proxy (un S3 de mentira, sin cuenta ni claves).
+#   docker compose -f compose.yaml -f compose.storage-s3.yaml up
+services:
+  s3:
+    image: andrewgaul/s3proxy:sha-f892634
+    environment:
+      S3PROXY_AUTHORIZATION: none
+      S3PROXY_ENDPOINT: http://0.0.0.0:8080
+      JCLOUDS_PROVIDER: filesystem
+      JCLOUDS_FILESYSTEM_BASEDIR: /data
+    volumes:
+      - s3data:/data
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+  api:
+    environment:
+      STORAGE_PROVIDER: s3proxy
+      S3_CREATE_BUCKET: "true"
+      S3_BUCKET: archivos
+      S3_ACCESS_KEY_ID: clave-de-mentira
+      S3_SECRET_ACCESS_KEY: clave-de-mentira
+    depends_on:
+      s3: { condition: service_healthy }
+volumes:
+  s3data:

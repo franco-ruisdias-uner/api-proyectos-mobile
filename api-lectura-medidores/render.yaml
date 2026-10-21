@@ -1,0 +1,40 @@
+# Blueprint de Render: publica la API desde el Dockerfile, con la base y los archivos en Supabase.
+# Los datos que van sin valor (sync: false) los pide Render al crear el servicio: ver el README.
+services:
+  - type: web
+    name: api-lectura-medidores
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: TRUST_PROXY
+        value: "true"
+      - key: DB_PROVIDER
+        value: supabase
+      - key: STORAGE_PROVIDER
+        value: supabase
+      - key: DB_SYNCHRONIZE
+        value: "true"
+      - key: SEED_IF_EMPTY
+        value: "true"
+      - key: SIMULATION_ENABLED
+        value: "false"
+      - key: PUSH_PROVIDER
+        value: expo
+      # Los de abajo los completás vos en Render (secretos o datos de tu proyecto de Supabase).
+      - key: DB_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: SUPABASE_PROJECT_REF
+        sync: false
+      - key: S3_REGION
+        sync: false
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
