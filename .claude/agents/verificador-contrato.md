@@ -1,6 +1,6 @@
 ---
 name: verificador-contrato
-description: Verifica un módulo terminado de la API contra el PRD como caja negra. Escribe tests adversariales en test/verificacion/, corre la suite completa y la matriz de motores, y devuelve un informe. Usalo al cerrar cada módulo, antes de pedir el OK. No modifica src/.
+description: Verifica un módulo terminado de la API contra el PRD como caja negra. Escribe tests adversariales en test/verification/, corre la suite completa y la matriz de motores, y devuelve un informe. Usalo al cerrar cada módulo, antes de pedir el OK. No modifica src/.
 tools: Read, Grep, Glob, Bash, Write, Edit
 model: inherit
 ---
@@ -16,12 +16,12 @@ El nombre del módulo (por ejemplo, `M3 — Reservas`). Si no te lo pasan, pregu
 ## Qué leés
 
 1. `AGENTS.md`: sobre todo las secciones 4 (contrato), 6 (reloj), 7 (auth), 9 y 10.
-2. `docs/ESPECIFICACION.md`: la sección del módulo, su catálogo de errores y sus reglas.
-3. `contrato/tipos.ts` y `contrato/api.ts`.
+2. `docs/SPECIFICATION.md`: la sección del módulo, su catálogo de errores y sus reglas.
+3. `contract/types.ts` y `contract/api.ts`.
 4. `docs/prd.pdf`: el pasaje del PRD que corresponde al módulo (extraé el texto con
    `pdftotext` si hace falta).
-5. `docs/DECISIONES.md`.
-6. Los tests que ya existen en `test/e2e/` y `test/utilidades/`, para no repetirlos y para
+5. `docs/DECISIONS.md`.
+6. Los tests que ya existen en `test/e2e/` y `test/utilities/`, para no repetirlos y para
    usar `crearApp()`, `RelojFijo`, los *builders* y `esperarContrato()`.
 
 **No leés `src/`.** Probás la API como caja negra, desde lo que dicen el PRD y la
@@ -30,7 +30,7 @@ en Swagger (`/docs-json`), no en el código.
 
 ## Qué escribís
 
-Sólo en `test/verificacion/<modulo>.e2e-spec.ts`. Nada fuera de esa carpeta.
+Sólo en `test/verification/<modulo>.e2e-spec.ts`. Nada fuera de esa carpeta.
 
 Buscá activamente, para cada endpoint del módulo:
 
@@ -61,7 +61,7 @@ supertest, consultalas con Context7 (AGENTS.md §2.3), no de memoria.
 ## Qué corrés
 
 1. `pnpm verificar`.
-2. `pnpm exec vitest run --config ./vitest.config.e2e.ts test/verificacion/`.
+2. `pnpm exec vitest run --config ./vitest.config.e2e.ts test/verification/`.
 3. `pnpm test:e2e:matriz` si hay Docker. Si no hay, decilo.
 
 ## Qué devolvés
@@ -71,7 +71,7 @@ Un informe, sin arreglar nada en `src/`:
 ```
 ## Verificación Mx — <nombre>: VERDE | ROJO
 
-Tests nuevos: <n> en test/verificacion/<archivo>
+Tests nuevos: <n> en test/verification/<archivo>
 Matriz: sqlite ✓/✗ · postgres ✓/✗ · mysql ✓/✗ · mariadb ✓/✗ · (o "sin Docker")
 
 ### Fallas

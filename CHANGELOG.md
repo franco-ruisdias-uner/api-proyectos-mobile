@@ -12,7 +12,7 @@ forma de las respuestas no cambia: sólo se agregan endpoints y códigos de erro
   programan los alumnos: hasta entonces responden `501 NO_IMPLEMENTADO`. La forma de sus
   respuestas, cuando funcionen, es la de siempre. Mientras tanto, los demás flujos (cambiar un
   estado, sumarse) responden igual que antes; la push queda pendiente y se anota en el log.
-- Guía en `docs/NOTIFICACIONES.md`; la consigna se corre con `pnpm test:notificaciones`.
+- Guía en `docs/NOTIFICATIONS.md`; la consigna se corre con `pnpm test:notificaciones`.
 - Variable nueva: `EXPO_PUSH_URL` (dirección del servicio de Expo; los tests usan uno falso).
 
 ### M7 — Datos de demo y README
@@ -28,7 +28,7 @@ Sin endpoints ni cambios en las respuestas. Lo que cambia es dónde puede correr
 - **Base de datos** administrada con `DB_PROVEEDOR=supabase | neon | aiven-postgres | aiven-mysql` (más `DB_SSL`, `DB_SSL_CA`, `DB_ESQUEMA`).
 - **Publicación**: `render.yaml`, `ENTORNO=publicado` y `CONFIAR_PROXY=true` (las URLs de los archivos salen `https://`). Guía en el README, sección 9.
 - Comandos nuevos: `pnpm archivos:probar`, `pnpm db:probar`, `pnpm publicado:probar <url>`. `pnpm db:reiniciar` contra una base en la nube pide `--confirmar`.
-- Docker: `compose.almacen-s3.yaml` y `compose.almacen-localstack.yaml` se suman a cualquier compose.
+- Docker: `compose.storage-s3.yaml` y `compose.storage-localstack.yaml` se suman a cualquier compose.
 
 ### M5 — Avisos
 

@@ -9,13 +9,13 @@ if (existsSync('.env')) process.loadEnvFile('.env');
 
 const { NestFactory } = await import('@nestjs/core');
 const { AppModule } = await import('./app.module.js');
-const { configurarAplicacion, OPCIONES_NEST } = await import('./aplicacion.js');
-const { ENTORNO } = await import('./config/entorno.modulo.js');
+const { configurarAplicacion, OPCIONES_NEST } = await import('./setup-app.js');
+const { ENTORNO } = await import('./config/environment.module.js');
 const { ErrorDeConfiguracion, validarEntorno } =
-  await import('./config/entorno.js');
+  await import('./config/environment.js');
 type NestExpressApplication =
   import('@nestjs/platform-express').NestExpressApplication;
-type Entorno = import('./config/entorno.js').Entorno;
+type Entorno = import('./config/environment.js').Entorno;
 
 const logger = new Logger('Arranque');
 

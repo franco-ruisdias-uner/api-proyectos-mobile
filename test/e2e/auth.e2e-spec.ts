@@ -1,11 +1,11 @@
-import { crearApp, type AppDePrueba } from '../utilidades/crear-app.js';
-import { esperarContrato, esperarError } from '../utilidades/contrato.js';
+import { crearApp, type AppDePrueba } from '../utilities/create-app.js';
+import { esperarContrato, esperarError } from '../utilities/contract.js';
 import {
   crearOperador,
   crearVecino,
   CONTRASENA_DE_PRUEBA,
-} from '../utilidades/usuarios.js';
-import { Usuario } from '../../src/modulos/usuarios/usuario.entidad.js';
+} from '../utilities/users.js';
+import { Usuario } from '../../src/modules/users/user.entity.js';
 
 let ctx: AppDePrueba;
 beforeAll(async () => {

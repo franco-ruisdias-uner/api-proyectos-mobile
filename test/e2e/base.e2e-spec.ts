@@ -1,6 +1,6 @@
-import { crearApp, type AppDePrueba } from '../utilidades/crear-app.js';
-import { esperarContrato, esperarError } from '../utilidades/contrato.js';
-import { crearVecino } from '../utilidades/usuarios.js';
+import { crearApp, type AppDePrueba } from '../utilities/create-app.js';
+import { esperarContrato, esperarError } from '../utilities/contract.js';
+import { crearVecino } from '../utilities/users.js';
 
 let ctx: AppDePrueba;
 beforeAll(async () => {

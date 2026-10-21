@@ -10,26 +10,26 @@ import {
 import { APP_FILTER, APP_PIPE } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { AlmacenArchivos } from './comun/archivos/almacen-archivos.js';
-import { ArchivosModulo } from './comun/archivos/archivos.modulo.js';
-import { MiddlewareOrigen } from './comun/archivos/origen.js';
-import { AuthComunModulo } from './comun/auth/auth-comun.modulo.js';
-import { crearDataSource, opcionesTypeOrm } from './comun/db/opciones.js';
-import { FiltroErrores } from './comun/errores/filtro-errores.js';
-import { NotificacionesModulo } from './comun/notificaciones/notificaciones.modulo.js';
-import { Reloj } from './comun/reloj/reloj.js';
-import { RelojModulo } from './comun/reloj/reloj.modulo.js';
-import { MiddlewareSimulacion } from './comun/simulacion/simulacion.middleware.js';
-import { crearPipeValidacion } from './comun/validacion/pipe.js';
-import { ENTORNO, EntornoModulo } from './config/entorno.modulo.js';
-import type { Entorno } from './config/entorno.js';
-import { AuthModulo } from './modulos/auth/auth.modulo.js';
-import { CatalogosModulo } from './modulos/catalogos/catalogos.modulo.js';
-import { DispositivosModulo } from './modulos/dispositivos/dispositivos.modulo.js';
-import { ReportesModulo } from './modulos/reportes/reportes.modulo.js';
-import { ControladorSalud } from './modulos/salud/salud.controlador.js';
-import { UsuariosModulo } from './modulos/usuarios/usuarios.modulo.js';
-import { baseVacia, sembrar } from './semillas/sembrar.js';
+import { AlmacenArchivos } from './common/files/file-storage.js';
+import { ArchivosModulo } from './common/files/files.module.js';
+import { MiddlewareOrigen } from './common/files/origin.js';
+import { AuthComunModulo } from './common/auth/auth-common.module.js';
+import { crearDataSource, opcionesTypeOrm } from './common/db/options.js';
+import { FiltroErrores } from './common/errors/exception-filter.js';
+import { NotificacionesModulo } from './common/notifications/notifications.module.js';
+import { Reloj } from './common/clock/clock.js';
+import { RelojModulo } from './common/clock/clock.module.js';
+import { MiddlewareSimulacion } from './common/simulation/simulation-middleware.js';
+import { crearPipeValidacion } from './common/validation/pipe.js';
+import { ENTORNO, EntornoModulo } from './config/environment.module.js';
+import type { Entorno } from './config/environment.js';
+import { AuthModulo } from './modules/auth/auth.module.js';
+import { CatalogosModulo } from './modules/catalogs/catalogs.module.js';
+import { DispositivosModulo } from './modules/devices/devices.module.js';
+import { ReportesModulo } from './modules/reports/reports.module.js';
+import { ControladorSalud } from './modules/health/health.controller.js';
+import { UsuariosModulo } from './modules/users/users.module.js';
+import { baseVacia, sembrar } from './seeds/seed.js';
 
 @Module({})
 export class AppModule implements NestModule, OnApplicationBootstrap {

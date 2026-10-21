@@ -15,7 +15,7 @@ Las respuestas tienen **exactamente** la forma de los tipos del PRD que ya tiene
 **Avisos push — la parte que programan ustedes:** guardar los tokens de Expo y mandar las push
 la completan los alumnos (`POST /dispositivos`, `DELETE /dispositivos/:tokenExpo` y
 `POST /dispositivos/prueba` responden `501 NO_IMPLEMENTADO` hasta entonces). Empezá por
-`docs/NOTIFICACIONES.md`. Lo demás de la API ya decide cuándo y a quién avisar: registrá el
+`docs/NOTIFICATIONS.md`. Lo demás de la API ya decide cuándo y a quién avisar: registrá el
 teléfono con `POST /dispositivos` (cuando lo programen) y la API le avisa al autor de un
 reporte cuando cambia su estado y cuando alguien se suma (si `avisosActivos` es `true`; se
 cambia con `PATCH /yo`). Para probar sin esperar a un operador: `POST /dispositivos/prueba`.
@@ -213,7 +213,7 @@ operadores no se crean desde la app.
 | `CUADRILLA_DE_OTRA_ZONA` | 422 | Esa cuadrilla trabaja en otra zona. |
 | `DUPLICADO_INVALIDO` | 422 | No se puede marcar como duplicado de ese reporte. |
 | `ESTADO_NO_ADMITE_FOTO` | 422 | La foto del arreglo se sube cuando el reporte está asignado o resuelto. |
-| `NO_IMPLEMENTADO` | 501 | Esta parte la programan ustedes. Mirá docs/NOTIFICACIONES.md. |
+| `NO_IMPLEMENTADO` | 501 | Esta parte la programan ustedes. Mirá docs/NOTIFICATIONS.md. |
 | `ERROR_INTERNO` | 500 | Algo salió mal de nuestro lado. Probá de nuevo en un rato. |
 | `ALMACEN_NO_DISPONIBLE` | 503 | No pudimos acceder a los archivos. Probá de nuevo en un rato. |
 <!-- errores:fin -->
@@ -271,9 +271,9 @@ Cosas que conviene saber:
 
 | Comando | Qué levanta |
 |---|---|
-| `docker compose -f compose.yaml -f compose.almacen-s3.yaml up` | API + SQLite + archivos en S3Proxy |
-| `docker compose -f compose.postgres.yaml -f compose.almacen-s3.yaml up` | API + PostgreSQL + archivos en S3Proxy |
-| `LOCALSTACK_AUTH_TOKEN=… docker compose -f compose.yaml -f compose.almacen-localstack.yaml up` | Lo mismo con LocalStack ("AWS local"; pide una cuenta gratis) |
+| `docker compose -f compose.yaml -f compose.storage-s3.yaml up` | API + SQLite + archivos en S3Proxy |
+| `docker compose -f compose.postgres.yaml -f compose.storage-s3.yaml up` | API + PostgreSQL + archivos en S3Proxy |
+| `LOCALSTACK_AUTH_TOKEN=… docker compose -f compose.yaml -f compose.storage-localstack.yaml up` | Lo mismo con LocalStack ("AWS local"; pide una cuenta gratis) |
 
 La app no se entera: las URLs de las fotos son siempre `<origen>/archivos/<clave>`.
 
@@ -297,4 +297,4 @@ La app no se entera: las URLs de las fotos son siempre `<origen>/archivos/<clave
 - `pnpm test:e2e:matriz`: la misma suite contra PostgreSQL, MySQL y MariaDB en Docker, y los tests de archivos contra S3Proxy.
 - `pnpm archivos:probar`, `pnpm db:probar` y `pnpm publicado:probar <url>`: comprueban una configuración real (necesitan cuentas; no corren en la CI).
 - `pnpm docker:probar`: levanta los cuatro `compose` y los prueba.
-- Reglas del proyecto: `AGENTS.md` y `docs/ESPECIFICACION.md`. Decisiones: `docs/DECISIONES.md`.
+- Reglas del proyecto: `AGENTS.md` y `docs/SPECIFICATION.md`. Decisiones: `docs/DECISIONS.md`.

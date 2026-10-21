@@ -16,15 +16,15 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
-    "test:notificaciones": "vitest run --config ./vitest.config.notificaciones.ts",
-    "test:e2e:matriz": "node scripts/matriz.mjs",
+    "test:notificaciones": "vitest run --config ./vitest.config.notifications.ts",
+    "test:e2e:matriz": "node scripts/matrix.mjs",
     "verificar": "pnpm tipos && pnpm lint && pnpm test && pnpm test:e2e",
-    "contrato:esquema": "ts-json-schema-generator --path \"contrato/*.ts\" --type \"*\" --no-type-check -o contrato/esquema.json && prettier --write contrato/esquema.json",
-    "db:reiniciar": "nest build && node dist/src/semillas/reiniciar.js",
-    "docker:probar": "node scripts/probar-docker.mjs",
-    "archivos:probar": "nest build && node dist/src/herramientas/archivos-probar.js",
-    "db:probar": "nest build && node dist/src/herramientas/db-probar.js",
-    "publicado:probar": "node scripts/publicado-probar.mjs"
+    "contrato:esquema": "ts-json-schema-generator --path \"contract/*.ts\" --type \"*\" --no-type-check -o contract/schema.json && prettier --write contract/schema.json",
+    "db:reiniciar": "nest build && node dist/src/seeds/reset.js",
+    "docker:probar": "node scripts/test-docker.mjs",
+    "archivos:probar": "nest build && node dist/src/tools/test-files.js",
+    "db:probar": "nest build && node dist/src/tools/test-db.js",
+    "publicado:probar": "node scripts/test-published.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1143.0",
