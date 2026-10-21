@@ -25,7 +25,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm verificar
       - name: El esquema del contrato está al día
-        run: git diff --exit-code contrato/esquema.json
+        run: git diff --exit-code contract/schema.json
 
   matriz:
     name: e2e ${{ matrix.motor }} (TZ=${{ matrix.tz }})
@@ -77,4 +77,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: node scripts/probar-docker.mjs
+      - run: node scripts/test-docker.mjs

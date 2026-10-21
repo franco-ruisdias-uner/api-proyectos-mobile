@@ -8,13 +8,13 @@ Lo que cambia en la API, contado para quienes la usan desde la app. Lo más nuev
 
 - **No cambia ninguna respuesta que ya andaba.** Cambia lo que hacen tres rutas que antes funcionaban:
   `POST /dispositivos`, `DELETE /dispositivos/:tokenExpo` y `POST /dispositivos/prueba` responden
-  **501 `NO_IMPLEMENTADO`** («Esta parte la programan ustedes. Mirá docs/NOTIFICACIONES.md.») hasta que
+  **501 `NO_IMPLEMENTADO`** («Esta parte la programan ustedes. Mirá docs/NOTIFICATIONS.md.») hasta que
   ustedes programen el guardado de tokens y el envío. Mismas rutas y mismo contrato (`Dispositivo`,
   `PruebaPush`) cuando estén completas.
 - Nuevo código de error `NO_IMPLEMENTADO` (501).
 - Crear una promo, favoritos, etc. siguen andando: la API sólo escribe en el log
   `Push pendiente de implementar`.
-- Nuevo: `docs/NOTIFICACIONES.md` y `pnpm test:notificaciones` (la consigna: da rojo hasta que la completen).
+- Nuevo: `docs/NOTIFICATIONS.md` y `pnpm test:notificaciones` (la consigna: da rojo hasta que la completen).
 
 ### M9 — Semillas completas
 
@@ -37,7 +37,7 @@ Lo que cambia en la API, contado para quienes la usan desde la app. Lo más nuev
   o la simulación de fallas.
 - `render.yaml` para publicar en Render; `pnpm publicado:probar <url>`, `pnpm db:probar` y
   `pnpm archivos:probar`. `pnpm db:reiniciar` pide `--confirmar` contra una base en la nube.
-- Docker: `compose.almacen-s3.yaml` y `compose.almacen-localstack.yaml` se suman a cualquier compose.
+- Docker: `compose.storage-s3.yaml` y `compose.storage-localstack.yaml` se suman a cualquier compose.
 
 ### M7 — Avisos
 

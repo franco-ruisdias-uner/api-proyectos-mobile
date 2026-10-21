@@ -1,12 +1,12 @@
-import './config/cargar-env.js';
+import './config/load-env.js';
 import { existsSync } from 'node:fs';
 import { networkInterfaces } from 'node:os';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module.js';
-import { configurarApp, OPCIONES_APP } from './configurar-app.js';
-import { validarEntorno } from './config/entorno.js';
+import { configurarApp, OPCIONES_APP } from './setup-app.js';
+import { validarEntorno } from './config/environment.js';
 
 function direccionesDeRed(puerto: number): string[] {
   return Object.values(networkInterfaces())

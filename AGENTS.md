@@ -2,7 +2,7 @@
 
 Guía para los agentes de código que construyen esta API. Leela entera antes de tocar nada.
 Vale para los cinco repos del Trabajo Final 2026; lo propio de cada proyecto está en
-`docs/ESPECIFICACION.md`.
+`docs/SPECIFICATION.md`.
 
 ---
 
@@ -29,13 +29,13 @@ que andar igual en los cuatro.
 | Documento | Qué tiene | Manda sobre |
 |---|---|---|
 | `docs/prd.pdf` | El pedido del cliente. Sus tablas, `interface` y JSON de ejemplo **son el contrato**. | todo lo demás, en forma de datos |
-| `contrato/tipos.ts` | Copia literal de los tipos del PRD. Es lo que tienen los alumnos. | la implementación |
-| `contrato/api.ts` | Tipos que agrega la API (sobre, `Sesion`, `ArchivoSubido`, `Salud` y los extras del proyecto). Se publican a los alumnos junto con la API. | la implementación |
-| `docs/ESPECIFICACION.md` | Endpoints, reglas de negocio, roles, errores, semillas y plan de módulos de **este** proyecto. | este archivo |
+| `contract/types.ts` | Copia literal de los tipos del PRD. Es lo que tienen los alumnos. | la implementación |
+| `contract/api.ts` | Tipos que agrega la API (sobre, `Sesion`, `ArchivoSubido`, `Salud` y los extras del proyecto). Se publican a los alumnos junto con la API. | la implementación |
+| `docs/SPECIFICATION.md` | Endpoints, reglas de negocio, roles, errores, semillas y plan de módulos de **este** proyecto. | este archivo |
 | `AGENTS.md` (este) | Reglas comunes a los cinco proyectos. | — |
-| `docs/DECISIONES.md` | Huecos del PRD y cómo se resolvieron. | se consulta siempre |
+| `docs/DECISIONS.md` | Huecos del PRD y cómo se resolvieron. | se consulta siempre |
 
-Si `ESPECIFICACION.md` contradice a este archivo, gana `ESPECIFICACION.md` (por ejemplo, un
+Si `SPECIFICATION.md` contradice a este archivo, gana `SPECIFICATION.md` (por ejemplo, un
 proyecto puede tener otro registro de usuarios). Si cualquiera de los dos contradice la forma
 de datos del PRD, **frená y preguntá**: no elijas vos.
 
@@ -48,14 +48,14 @@ de datos del PRD, **frená y preguntá**: no elijas vos.
 
 ### Un módulo por vez
 
-`ESPECIFICACION.md` trae un plan de módulos numerados (M0, M1, …). Hacés **uno**, lo
+`SPECIFICATION.md` trae un plan de módulos numerados (M0, M1, …). Hacés **uno**, lo
 verificás, informás y **esperás el OK** antes de arrancar el siguiente. No adelantás trabajo
 de otro módulo "porque quedaba cerca", ni ampliás alcance. Eso ya salió mal antes.
 
 ### El ciclo de cada módulo
 
-1. **Leer.** La sección del módulo en `ESPECIFICACION.md`, las entidades que toca en
-   `contrato/tipos.ts` y el pasaje correspondiente del PRD.
+1. **Leer.** La sección del módulo en `SPECIFICATION.md`, las entidades que toca en
+   `contract/types.ts` y el pasaje correspondiente del PRD.
 2. **Tests de contrato e2e primero** (sección 10.2). Corrélos y **mirá que fallen** por la
    razón correcta (404 porque la ruta no existe, no un error de compilación).
 3. **Tests unitarios de las reglas** (sección 10.1), también en rojo.
@@ -66,7 +66,7 @@ de otro módulo "porque quedaba cerca", ni ampliás alcance. Eso ya salió mal a
 7. **Matriz de motores**: `pnpm test:e2e:matriz` (sección 10.4).
 8. **Verificación independiente**: invocá al subagente `verificador-contrato` (sección 12).
    Corregí lo que encuentre y volvé a correrlo hasta que dé verde.
-9. **Documentación**: Swagger, `README.md` para alumnos, `docs/DECISIONES.md`, `CHANGELOG.md`.
+9. **Documentación**: Swagger, `README.md` para alumnos, `docs/DECISIONS.md`, `CHANGELOG.md`.
 10. **Informe de cierre** (sección 14) y esperás.
 
 Commit chico después de cada paso en verde (sección 11.6).
@@ -76,9 +76,9 @@ Commit chico después de cada paso en verde (sección 11.6).
 Los PRD tienen huecos **a propósito**: están escritos por un "cliente" para que los alumnos
 aprendan a preguntar. Vos no sos el cliente. Cuando algo no está definido:
 
-- Si `docs/DECISIONES.md` ya lo resolvió, aplicás eso.
-- Si `ESPECIFICACION.md` trae un **default provisorio**, lo implementás y lo anotás en
-  `DECISIONES.md` como `PROVISORIO`.
+- Si `docs/DECISIONS.md` ya lo resolvió, aplicás eso.
+- Si `SPECIFICATION.md` trae un **default provisorio**, lo implementás y lo anotás en
+  `DECISIONS.md` como `PROVISORIO`.
 - Si no hay nada, lo anotás como `PENDIENTE` con dos o tres opciones y tu recomendación,
   **y preguntás** antes de implementarlo.
 
@@ -87,12 +87,12 @@ decidís vos sin preguntar.
 
 ### Nunca
 
-- Cambiar un tipo de `contrato/tipos.ts` ni agregarle campos a una respuesta.
+- Cambiar un tipo de `contract/types.ts` ni agregarle campos a una respuesta.
 - Borrar, debilitar o saltear un test para que pase. Nada de `.skip` ni `.only` commiteado.
 - Mockear la base de datos o los repositorios en un test e2e.
 - Agregar una dependencia sin decir para qué y por qué no alcanza con lo que ya hay.
 - Escribir SQL a mano o usar algo que exista en un solo motor (sección 5.4).
-- Usar `new Date()` o `Date.now()` fuera de `src/comun/reloj/` (sección 6).
+- Usar `new Date()` o `Date.now()` fuera de `src/common/clock/` (sección 6).
 - Hacer `git push` o abrir PR sin que te lo pidan.
 
 ---
@@ -149,7 +149,7 @@ La mayoría de los tutoriales son de NestJS 10/11 y TypeORM 0.3. Esto ya no es a
 
 ### 2.2 Arranque del repo (M0)
 
-El repo ya trae `AGENTS.md`, `CLAUDE.md`, `.claude/`, `docs/` y `contrato/`. Generá el proyecto
+El repo ya trae `AGENTS.md`, `CLAUDE.md`, `.claude/`, `docs/` y `contract/`. Generá el proyecto
 de Nest en una carpeta temporal y mové lo generado a la raíz **sin pisar** esos archivos:
 
 ```bash
@@ -202,47 +202,47 @@ resumen: un módulo con dependencias nuevas y cero consultas se nota.
 ├── .dockerignore
 ├── compose.yaml               ← `docker compose up`: API + SQLite + datos de demo
 ├── compose.postgres.yaml      ← lo mismo con PostgreSQL 17 (y .mysql / .mariadb)
-├── compose.almacen-s3.yaml    ← se suma a cualquier compose: archivos en S3Proxy (sección 17)
-├── compose.almacen-localstack.yaml
+├── compose.storage-s3.yaml    ← se suma a cualquier compose: archivos en S3Proxy (sección 17)
+├── compose.storage-localstack.yaml
 ├── compose.matriz.yaml        ← las tres bases y S3Proxy, para los tests
-├── scripts/probar-docker.mjs  ← levanta cada compose y lo prueba (sección 16)
+├── scripts/test-docker.mjs  ← levanta cada compose y lo prueba (sección 16)
 ├── .github/workflows/ci.yml   ← verificar + matriz de motores
-├── contrato/
-│   ├── tipos.ts               ← copia literal de los tipos del PRD (no se toca)
+├── contract/
+│   ├── types.ts               ← copia literal de los tipos del PRD (no se toca)
 │   ├── api.ts                 ← tipos que agrega la API: sobre, Sesion, ArchivoSubido, Salud y los extras del proyecto
-│   └── esquema.json           ← generado desde los dos anteriores (no se edita a mano)
+│   └── schema.json            ← generado desde los dos anteriores (no se edita a mano)
 ├── docs/
 │   ├── prd.pdf
-│   ├── ESPECIFICACION.md
-│   ├── DECISIONES.md
-│   └── informes/              ← un informe de cierre por módulo (modo autónomo, sección 15)
+│   ├── SPECIFICATION.md
+│   ├── DECISIONS.md
+│   └── reports/               ← un informe de cierre por módulo (modo autónomo, sección 15)
 ├── src/
 │   ├── main.ts
 │   ├── app.module.ts
 │   ├── config/                ← esquema y validación de variables de entorno
-│   ├── comun/                 ← lo transversal (ver abajo)
-│   ├── modulos/<modulo>/
-│   │   ├── <entidad>.entidad.ts
+│   ├── common/                ← lo transversal (ver abajo)
+│   ├── modules/<modulo>/
+│   │   ├── <entidad>.entity.ts
 │   │   ├── dto/
-│   │   ├── <modulo>.controlador.ts
-│   │   ├── <modulo>.servicio.ts
-│   │   ├── <modulo>.mapeador.ts     ← entidad → tipo del contrato
-│   │   ├── reglas/                  ← funciones puras, sin Nest ni base
-│   │   └── <modulo>.modulo.ts
-│   └── semillas/
-│       ├── sembrar.ts
-│       ├── datos/
-│       └── medios/            ← imágenes, audio y video de muestra (generados, sin derechos de terceros)
+│   │   ├── <modulo>.controller.ts
+│   │   ├── <modulo>.service.ts
+│   │   ├── <modulo>.mapper.ts     ← entidad → tipo del contrato
+│   │   ├── rules/                   ← funciones puras, sin Nest ni base
+│   │   └── <modulo>.module.ts
+│   └── seeds/
+│       ├── seed.ts
+│       ├── data/
+│       └── media/             ← imágenes, audio y video de muestra (generados, sin derechos de terceros)
 └── test/
-    ├── utilidades/            ← crearApp(), relojFijo, usuarios de prueba, esperarContrato()
+    ├── utilities/             ← crearApp(), relojFijo, usuarios de prueba, esperarContrato()
     ├── e2e/<modulo>.e2e-spec.ts
-    └── verificacion/          ← lo escribe el verificador-contrato (sección 12)
+    └── verification/          ← lo escribe el verificador-contrato (sección 12)
 ```
 
-`src/comun/` tiene, cada cosa en su carpeta: `respuesta/` (sobre y paginación), `errores/`
-(catálogo + filtro de excepciones), `reloj/`, `fechas/`, `ids/`, `db/` (helpers de columnas y
-opciones por motor), `geo/`, `texto/` (normalización para búsqueda), `auth/`, `archivos/`,
-`notificaciones/`, `simulacion/`. En `archivos/` van el puerto `AlmacenArchivos` y un driver
+`src/common/` tiene, cada cosa en su carpeta: `response/` (sobre y paginación), `errors/`
+(catálogo + filtro de excepciones), `clock/`, `dates/`, `ids/`, `db/` (helpers de columnas y
+opciones por motor), `geo/`, `text/` (normalización para búsqueda), `auth/`, `files/`,
+`notifications/`, `simulation/`. En `files/` van el puerto `AlmacenArchivos` y un driver
 por proveedor (sección 17).
 
 **Idioma del código:** el dominio va en castellano y con los mismos nombres que el PRD
@@ -268,9 +268,9 @@ Todas las respuestas tienen **siempre** esta forma:
 ```
 
 - El PRD sólo muestra el caso lista. Para un solo recurso, `meta` va en `null` (no ausente),
-  por la regla de nulos del mismo PRD. *(Decisión común; ver `DECISIONES.md`.)*
+  por la regla de nulos del mismo PRD. *(Decisión común; ver `DECISIONS.md`.)*
 - Los controladores devuelven el sobre de forma explícita con los helpers
-  `respuestaLista(datos, meta)` y `respuestaUno(dato)` de `src/comun/respuesta/`. Nada de
+  `respuestaLista(datos, meta)` y `respuestaUno(dato)` de `src/common/response/`. Nada de
   interceptores que "adivinan" si algo es lista o no.
 - `DELETE` exitoso: **204 sin cuerpo**. Es la única respuesta sin sobre.
 - El error **no lleva otros campos** que `codigo` y `mensaje`: nada de `stack`, `detalles` ni
@@ -280,7 +280,7 @@ Todas las respuestas tienen **siempre** esta forma:
 ### 4.2 Paginación
 
 - Toda lista acepta `?pagina=1&porPagina=20`. Default 20; máximo 100 salvo que
-  `ESPECIFICACION.md` diga otra cosa para un endpoint (los catálogos que el teléfono guarda
+  `SPECIFICATION.md` diga otra cosa para un endpoint (los catálogos que el teléfono guarda
   para usar sin señal suelen necesitar más).
 - `meta.total` es el total **filtrado**, no el de la tabla.
 - Una página fuera de rango devuelve `datos: []` con el `total` correcto, no error.
@@ -289,7 +289,7 @@ Todas las respuestas tienen **siempre** esta forma:
 ### 4.3 Convenciones de datos (las del PRD, sin excepción)
 
 - **Identificadores**: texto con el prefijo del PRD (`lug-004`, `res-1180`). Nunca números.
-  Los nuevos se generan con `nuevoId('lug')` de `src/comun/ids/` → `lug-` + 12 caracteres
+  Los nuevos se generan con `nuevoId('lug')` de `src/common/ids/` → `lug-` + 12 caracteres
   aleatorios `[a-z0-9]`. Las semillas usan los ids exactos de los ejemplos del PRD.
 - **Instantes** (fecha + hora): texto ISO 8601 **con offset `-03:00`** y sin milisegundos:
   `"2026-11-14T21:00:00-03:00"`. Nunca `Z`, nunca un número, nunca un objeto. La zona es
@@ -306,8 +306,8 @@ Todas las respuestas tienen **siempre** esta forma:
 
 ### 4.4 El mapeador: la única puerta de salida
 
-Cada entidad tiene una función `aContrato(entidad): TipoDelPrd` en `<modulo>.mapeador.ts`, con
-el **tipo de retorno importado de `contrato/tipos.ts`**. Así, si falta un campo o sobra uno,
+Cada entidad tiene una función `aContrato(entidad): TipoDelPrd` en `<modulo>.mapper.ts`, con
+el **tipo de retorno importado de `contract/types.ts`**. Así, si falta un campo o sobra uno,
 no compila. Ningún controlador devuelve una entidad de TypeORM directamente.
 
 El mapeador además:
@@ -328,7 +328,7 @@ distancia, ordena, pero no agrega el número.
 ### 4.6 Errores
 
 - **Códigos** en `MAYUSCULAS_CON_GUION_BAJO`, en castellano, estables para siempre. Catálogo
-  único en `src/comun/errores/catalogo.ts` con código, estado HTTP y mensaje.
+  único en `src/common/errors/catalog.ts` con código, estado HTTP y mensaje.
 - **Mensajes** en castellano rioplatense, pensados para **mostrarse tal cual en la pantalla**
   de una persona mayor que no es técnica: cortos, sin jerga, sin ids, sin nombres de campos
   en inglés. "Ese turno ya fue reservado." Sí. "Duplicate entry for key IDX_…" Jamás.
@@ -366,7 +366,7 @@ distancia, ordena, pero no agrega el número.
 | `mysql` | `DB_URL=mysql://…` | `timezone: 'Z'`, charset `utf8mb4`. |
 | `mariadb` | `DB_URL=mysql://…` | Ídem. **XAMPP instala MariaDB, no MySQL.** Con `DB_MOTOR=mysql` contra un servidor MariaDB el esquema no queda estable (verificado): usá `mariadb`. |
 
-Las opciones de TypeORM por motor salen de una sola función en `src/comun/db/opciones.ts`.
+Las opciones de TypeORM por motor salen de una sola función en `src/common/db/options.ts`.
 
 Para una base **administrada en la nube** (Supabase, Neon, Aiven) hay presets con
 `DB_PROVEEDOR`, más `DB_SSL`, `DB_SSL_CA` y `DB_ESQUEMA`: sección 18.1.
@@ -388,7 +388,7 @@ Para una base **administrada en la nube** (Supabase, Neon, Aiven) hay presets co
 
 ### 5.3 Tipos de columna permitidos
 
-Usá **sólo** estos, a través de los helpers de `src/comun/db/columnas.ts`:
+Usá **sólo** estos, a través de los helpers de `src/common/db/columns.ts`:
 
 | Dato | Columna | Por qué |
 |---|---|---|
@@ -424,7 +424,7 @@ preguntá.
   mayúsculas y tildes.
 - **Distancias**: nada geoespacial en la base. Prefiltro por caja (`latitud` y `longitud`
   `Between`) en la consulta, y distancia con haversine + orden en TypeScript
-  (`src/comun/geo/`, testeado unitariamente). Punto dentro de polígono, también ahí.
+  (`src/common/geo/`, testeado unitariamente). Punto dentro de polígono, también ahí.
 - **Unicidad con nulos**: un índice único admite **varios `NULL`** en los cuatro motores
   (verificado). Sirve para "sólo puede haber uno activo": una columna que vale una clave
   mientras el registro está activo y `NULL` cuando no.
@@ -441,7 +441,7 @@ preguntá.
 
 - Todo lo que depende de "ahora" (hoy, vencida, próximos horarios, turno pasado, cancelable
   hasta) usa el servicio `Reloj` (`ahora(): Date`) inyectado. **Prohibido `new Date()` sin
-  argumentos y `Date.now()`** fuera de `src/comun/reloj/`.
+  argumentos y `Date.now()`** fuera de `src/common/clock/`.
 - En tests se usa `RelojFijo`, que se puede mover. En desarrollo, si `RELOJ_FIJO` tiene un
   instante ISO, la API arranca "congelada" en ese momento: sirve para demos y para que los
   alumnos prueben casos como "el último colectivo ya pasó".
@@ -456,7 +456,7 @@ preguntá.
 
 ## 7. Autenticación, roles y validación (base común)
 
-`ESPECIFICACION.md` puede cambiar esto para un proyecto; si no dice nada, vale lo siguiente.
+`SPECIFICATION.md` puede cambiar esto para un proyecto; si no dice nada, vale lo siguiente.
 
 ### 7.1 Endpoints
 
@@ -487,7 +487,7 @@ preguntá.
 
 - **Seguro por defecto**: un guard global exige token en todo. Lo público se marca con
   `@Publico()`, uno por uno. Los PRD piden que para *mirar* no haga falta cuenta; revisá en
-  `ESPECIFICACION.md` qué endpoints son públicos.
+  `SPECIFICATION.md` qué endpoints son públicos.
 - Roles con `@Roles('operador')`. Dueño del recurso: se chequea en el servicio y devuelve
   `SIN_PERMISO` (403).
 - `ValidationPipe` global con `whitelist: true`, `forbidNonWhitelisted: true`,
@@ -518,7 +518,7 @@ preguntá.
   pedido con `AsyncLocalStorage` de `node:async_hooks`, para que el mapeador no reciba el
   request. Hay un test que pide con `Host: 10.0.0.5:3000` y espera URLs con ese origen.
   Una URL que llega en un recurso y no es de esta API se rechaza con `ARCHIVO_NO_SUBIDO`
-  (422), salvo que `ESPECIFICACION.md` diga lo contrario. Un `file://` también.
+  (422), salvo que `SPECIFICATION.md` diga lo contrario. Un `file://` también.
 
 ---
 
@@ -538,7 +538,7 @@ preguntá.
 - Se respeta siempre el interruptor de avisos del usuario (`avisosActivos` o equivalente).
 - Los recordatorios que dependen sólo del usuario ("avisame 10 minutos antes", "dos horas
   antes del turno", avisos de proximidad) son **notificaciones locales del teléfono**: la API
-  no los manda. `ESPECIFICACION.md` lista cuáles son del servidor.
+  no los manda. `SPECIFICATION.md` lista cuáles son del servidor.
 - **El guardado de tokens y el envío los terminan programando los alumnos** (sección 19): se
   construyen completos módulo a módulo y en el último módulo del plan se vacían. Por eso, desde
   M0, el código de dominio **nunca** toca tokens ni Expo: llama a `Avisos.avisar(…)` y nada más.
@@ -567,7 +567,7 @@ describe('PRD §3 — Un máximo de tres reservas activas por persona', () => { 
 
 - `test/e2e/<modulo>.e2e-spec.ts`, con supertest contra la app de Nest completa y la base del
   motor elegido (SQLite en memoria por defecto). **Nada de mocks de repositorios.**
-- `crearApp()` en `test/utilidades/` levanta la app con `RelojFijo`, `NotificadorMemoria` y
+- `crearApp()` en `test/utilities/` levanta la app con `RelojFijo`, `NotificadorMemoria` y
   una base limpia por archivo. Cada test arma sus propios datos con *builders*
   (`crearLugar({ … })`); **no dependen de las semillas de demo** ni del orden.
 - Por cada endpoint, como mínimo:
@@ -587,20 +587,20 @@ describe('PRD §3 — Un máximo de tres reservas activas por persona', () => { 
 
 ### 10.3 Contrato: el cuerpo tiene la forma exacta del PRD
 
-- `pnpm contrato:esquema` genera `contrato/esquema.json` desde `contrato/tipos.ts` y
-  `contrato/api.ts` con
-  `ts-json-schema-generator --path 'contrato/*.ts' --type '*' --no-type-check`. Da
+- `pnpm contrato:esquema` genera `contract/schema.json` desde `contract/types.ts` y
+  `contract/api.ts` con
+  `ts-json-schema-generator --path 'contract/*.ts' --type '*' --no-type-check`. Da
   `additionalProperties: false` y todos los campos como requeridos, así que un campo ausente
   o uno de más falla. (Avisa un peer de TypeScript 5 contra el 6 del proyecto; con
   `--no-type-check` funciona, verificado.)
-- `esperarContrato(cuerpo, 'Lugar')` en `test/utilidades/` valida con `ajv`:
+- `esperarContrato(cuerpo, 'Lugar')` en `test/utilities/` valida con `ajv`:
   - el sobre (`datos` + `meta`, o `error` con exactamente `codigo` y `mensaje`);
   - cada elemento de `datos` contra la definición pedida;
   - que **todo string con forma de fecha y hora** sea `AAAA-MM-DDTHH:MM:SS-03:00`;
   - que ningún id sea número y que ningún string sea `""` donde el tipo admite `null`.
 - Todo test e2e de éxito pasa por `esperarContrato`. Todo test de error valida el sobre de
   error.
-- Hay un test que recorre las definiciones de `contrato/esquema.json` y falla si alguna
+- Hay un test que recorre las definiciones de `contract/schema.json` y falla si alguna
   entidad que la API devuelve no aparece en ningún `esperarContrato(…, '<Entidad>')` de
   `test/` (lo busca en el texto de los archivos). Así ningún tipo queda sin cubrir.
 
@@ -640,7 +640,7 @@ esas:
 |---|---|
 | `pnpm dev` | Levanta la API en `0.0.0.0:3000` con recarga. |
 | `pnpm db:reiniciar` | Borra, crea el esquema y siembra. |
-| `pnpm contrato:esquema` | Regenera `contrato/esquema.json`. |
+| `pnpm contrato:esquema` | Regenera `contract/schema.json`. |
 | `pnpm test` | Unitarios. |
 | `pnpm test:e2e` | E2E en SQLite en memoria. |
 | `pnpm test:e2e:matriz` | E2E en los cuatro motores. |
@@ -714,9 +714,9 @@ El que escribe el código escribe tests que confirman **su propia lectura** del 
 al cerrar cada módulo, lo revisa un agente con contexto limpio que no vio la implementación.
 
 - Definición: `.claude/agents/verificador-contrato.md`.
-- Lee `docs/ESPECIFICACION.md`, `contrato/tipos.ts`, `docs/prd.pdf`, `docs/DECISIONES.md` y
+- Lee `docs/SPECIFICATION.md`, `contract/types.ts`, `docs/prd.pdf`, `docs/DECISIONS.md` y
   los tests existentes. **No lee `src/`**: prueba la API como caja negra.
-- Escribe tests adversariales sólo en `test/verificacion/<modulo>.e2e-spec.ts`: bordes de
+- Escribe tests adversariales sólo en `test/verification/<modulo>.e2e-spec.ts`: bordes de
   fechas, nulos, campos de más, roles cruzados, ids de otro usuario, pedidos repetidos y
   simultáneos, cada código de error.
 - Corre todo (incluida la matriz si hay Docker) y devuelve un informe con lo que falló y cómo
@@ -755,7 +755,7 @@ En castellano rioplatense, con voseo, y sin suponer que saben de backend. Tiene 
 
 Un módulo está terminado cuando:
 
-- [ ] Cada endpoint del módulo en `ESPECIFICACION.md` existe, con la ruta y el método exactos.
+- [ ] Cada endpoint del módulo en `SPECIFICATION.md` existe, con la ruta y el método exactos.
 - [ ] Cada regla del módulo tiene un test que la nombra, y cada código de error, el suyo.
 - [ ] `pnpm verificar` en verde.
 - [ ] Matriz de cuatro motores en verde (o se dice que no hubo Docker).
@@ -766,11 +766,11 @@ Un módulo está terminado cuando:
 - [ ] `verificador-contrato` en verde.
 - [ ] Semillas del módulo cargadas, incluidos los casos feos que pide el PRD, y validadas
       contra el contrato.
-- [ ] Swagger, README, `DECISIONES.md` y `CHANGELOG.md` al día.
-- [ ] `grep -rn "new Date()\|Date.now()" src/` sólo encuentra `src/comun/reloj/`.
+- [ ] Swagger, README, `DECISIONS.md` y `CHANGELOG.md` al día.
+- [ ] `grep -rn "new Date()\|Date.now()" src/` sólo encuentra `src/common/clock/`.
 - [ ] Los mensajes de error y los textos del README están en castellano rioplatense.
 
-Informe de cierre (en el chat; en modo autónomo, además en `docs/informes/<Mx>.md`, sección 15):
+Informe de cierre (en el chat; en modo autónomo, además en `docs/reports/<Mx>.md`, sección 15):
 
 ```
 ## Módulo Mx — <nombre>: terminado
@@ -778,7 +778,7 @@ Informe de cierre (en el chat; en modo autónomo, además en `docs/informes/<Mx>
 Endpoints: <lista método + ruta>
 Tests: <n> unitarios, <n> e2e, <n> de verificación · matriz: sqlite ✓ postgres ✓ mysql ✓ mariadb ✓
 Documentación consultada: <librerías vía Context7, o "Context7 no disponible: tipos de node_modules">
-Decisiones tomadas: <ids de DECISIONES.md, con una línea cada una>
+Decisiones tomadas: <ids de DECISIONS.md, con una línea cada una>
 Pendientes que necesitan respuesta: <lista o "ninguno">
 Lo que no hice y por qué: <lista o "nada">
 Siguiente módulo propuesto: Mx+1 — <nombre>. Espero el OK.
@@ -796,17 +796,17 @@ las secciones 1 y 14 dicen de preguntar y esperar.
   arrancás el siguiente: lo lanza el orquestador cuando el tuyo pase sus controles.
 - **No preguntes.** Las herramientas para preguntar no están disponibles.
   - Decisión `PENDIENTE` de la especificación → implementás el default de su tabla y la anotás
-    en `docs/DECISIONES.md` como `PROVISORIA (autónomo)`.
+    en `docs/DECISIONS.md` como `PROVISORIA (autónomo)`.
   - Hueco nuevo, que no está en ningún documento → elegís la opción más conservadora compatible
     con el PRD (la que no agrega campos, no cambia formas y deja más puertas abiertas), la
     implementás y la anotás como `PROVISORIA (autónomo)` con las alternativas que descartaste.
   - La especificación contradice la forma de datos del PRD → **no** lo resolvés vos:
-    implementás el resto del módulo, anotás `BLOQUEANTE` en `docs/DECISIONES.md` y terminás con
+    implementás el resto del módulo, anotás `BLOQUEANTE` en `docs/DECISIONS.md` y terminás con
     estado `BLOQUEADO`.
 - El pedido dice si hay Docker. Si no hay, la matriz corre sólo en SQLite y lo anotás en el
   informe: no es motivo para no terminar.
 - Al `verificador-contrato` lo invocás **en primer plano** y esperás su informe.
-- El informe de cierre (sección 14) va también a `docs/informes/<Mx>.md`, y su **primera línea**
+- El informe de cierre (sección 14) va también a `docs/reports/<Mx>.md`, y su **primera línea**
   es exactamente una de estas:
 
   ```
@@ -821,8 +821,8 @@ las secciones 1 y 14 dicen de preguntar y esperar.
   aceptarlo.
 - Al terminar, **todo commiteado** (`git status` limpio). Lo generado (`node_modules`, `dist`,
   `coverage`, la base SQLite, `archivos/`, `.env`) va en `.gitignore`.
-- **No modifiques** `AGENTS.md`, `CLAUDE.md`, `docs/ESPECIFICACION.md`, `docs/prd.pdf`,
-  `contrato/tipos.ts` ni `.claude/agents/`, y **no crees** un `.mcp.json`. El orquestador
+- **No modifiques** `AGENTS.md`, `CLAUDE.md`, `docs/SPECIFICATION.md`, `docs/prd.pdf`,
+  `contract/types.ts` ni `.claude/agents/`, y **no crees** un `.mcp.json`. El orquestador
   compara esos archivos con la versión inicial y rechaza el módulo si cambiaron.
 - Si te lanzan de nuevo sobre un módulo que no pasó, puede haber trabajo a medias: empezá por
   `git status`, `git log` y el informe anterior, y seguí desde ahí.
@@ -957,7 +957,7 @@ en los puertos 55432, 53306 y 53307, más S3Proxy (sección 17.3), para
 
 ### 16.3 La prueba (`pnpm docker:probar`)
 
-`scripts/probar-docker.mjs`, sin dependencias. Para cada uno de los cuatro compose, con un
+`scripts/test-docker.mjs`, sin dependencias. Para cada uno de los cuatro compose, con un
 nombre de proyecto propio y puertos que no choquen (`PUERTO=39990`, `PUERTO_DB=39991`):
 
 1. `docker compose up -d --build --wait`;
@@ -987,7 +987,7 @@ proveedor necesita.
 ### 17.1 El puerto
 
 ```ts
-// src/comun/archivos/almacen-archivos.ts
+// src/common/files/file-storage.ts
 export interface LecturaArchivo {
   flujo: Readable;          // node:stream
   bytesTotales: number;     // tamaño completo del archivo
@@ -1038,7 +1038,7 @@ Se elige con **una sola variable**, `ARCHIVOS_PROVEEDOR`:
 - "Claves" son `S3_ACCESS_KEY_ID` y `S3_SECRET_ACCESS_KEY`.
 - `S3_ENDPOINT` y `S3_FORZAR_PATH_STYLE`, si están, **pisan** lo que diga el preset (sirve para
   cualquier otro servicio compatible con S3 sin tocar código).
-- Los presets son una **tabla de datos** en `src/comun/archivos/proveedores.ts` y una función
+- Los presets son una **tabla de datos** en `src/common/files/providers.ts` y una función
   pura `configuracionS3(entorno) → { endpoint, region, forcePathStyle, … } | error` con test
   unitario por proveedor (incluidas las variables que faltan y el mensaje que da).
 - Endpoints verificados en la documentación de cada proveedor (septiembre de 2026): Supabase
@@ -1066,14 +1066,14 @@ Cosas que la documentación vieja dice mal o no dice:
 Dos compose que **se suman** a cualquiera de los de la sección 16 (no llevan `name:` propio):
 
 ```bash
-docker compose -f compose.yaml -f compose.almacen-s3.yaml up
-LOCALSTACK_AUTH_TOKEN=… docker compose -f compose.postgres.yaml -f compose.almacen-localstack.yaml up
+docker compose -f compose.yaml -f compose.storage-s3.yaml up
+LOCALSTACK_AUTH_TOKEN=… docker compose -f compose.postgres.yaml -f compose.storage-localstack.yaml up
 ```
 
 | Archivo | Servicio | Y en `api` |
 |---|---|---|
-| `compose.almacen-s3.yaml` | `s3`: `andrewgaul/s3proxy`, puerto 8080, `S3PROXY_AUTHORIZATION=none`, `JCLOUDS_PROVIDER=filesystem`, `JCLOUDS_FILESYSTEM_BASEDIR=/data` en un volumen | `ARCHIVOS_PROVEEDOR=s3proxy`, `ARCHIVOS_CREAR_BUCKET=true`, `S3_BUCKET=archivos`, claves de mentira |
-| `compose.almacen-localstack.yaml` | `localstack`: `localstack/localstack`, puerto 4566, `SERVICES=s3`, `LOCALSTACK_AUTH_TOKEN: "${LOCALSTACK_AUTH_TOKEN:?Falta LOCALSTACK_AUTH_TOKEN. …}"`, **entre comillas** (sin comillas, el mensaje rompe el YAML; verificado), para que compose falle con un mensaje claro si falta | `ARCHIVOS_PROVEEDOR=localstack`, lo mismo que arriba |
+| `compose.storage-s3.yaml` | `s3`: `andrewgaul/s3proxy`, puerto 8080, `S3PROXY_AUTHORIZATION=none`, `JCLOUDS_PROVIDER=filesystem`, `JCLOUDS_FILESYSTEM_BASEDIR=/data` en un volumen | `ARCHIVOS_PROVEEDOR=s3proxy`, `ARCHIVOS_CREAR_BUCKET=true`, `S3_BUCKET=archivos`, claves de mentira |
+| `compose.storage-localstack.yaml` | `localstack`: `localstack/localstack`, puerto 4566, `SERVICES=s3`, `LOCALSTACK_AUTH_TOKEN: "${LOCALSTACK_AUTH_TOKEN:?Falta LOCALSTACK_AUTH_TOKEN. …}"`, **entre comillas** (sin comillas, el mensaje rompe el YAML; verificado), para que compose falle con un mensaje claro si falta | `ARCHIVOS_PROVEEDOR=localstack`, lo mismo que arriba |
 
 Para los proveedores en la nube no hay compose: se ponen las variables en `.env` (el
 `.env.example` trae un bloque comentado por proveedor, con dónde conseguir cada dato).
@@ -1086,7 +1086,7 @@ las imágenes van fijas, verificadas contra el registro. `compose.matriz.yaml` l
 
 ### 17.4 Tests
 
-- **Suite de contrato del puerto** (`test/almacen/contrato-almacen.ts`), **la misma** para los
+- **Suite de contrato del puerto** (`test/storage/storage-contract.ts`), **la misma** para los
   dos adaptadores: guardar y leer devuelve los mismos bytes y el mismo tipo; un rango (bytes 10
   a 19) devuelve esos 10 bytes con `bytesTotales` correcto; el último byte; una clave que no
   existe tira `ArchivoNoEncontrado`; `existe`; `borrar`; claves con varias `/`; un archivo de
@@ -1100,8 +1100,8 @@ las imágenes van fijas, verificadas contra el registro. `compose.matriz.yaml` l
   es para que la cátedra o un grupo comprueben su configuración.
 - **Semillas**: los medios de demo se suben **por el puerto** al sembrar, así existen en
   cualquier proveedor.
-- `pnpm docker:probar` suma `compose.yaml` + `compose.almacen-s3.yaml` (sube un archivo y lo
-  baja), y `compose.almacen-localstack.yaml` sólo si hay `LOCALSTACK_AUTH_TOKEN`.
+- `pnpm docker:probar` suma `compose.yaml` + `compose.storage-s3.yaml` (sube un archivo y lo
+  baja), y `compose.storage-localstack.yaml` sólo si hay `LOCALSTACK_AUTH_TOKEN`.
 
 ### 17.5 Cuándo se hace
 
@@ -1110,7 +1110,7 @@ las imágenes van fijas, verificadas contra el registro. `compose.matriz.yaml` l
   principio.
 - **Módulo «Nube»** (el anteúltimo del plan): el adaptador S3 con los
   presets, S3Proxy y LocalStack en Docker, `pnpm archivos:probar` y la suite contra los dos
-  adaptadores. Si hace falta tocar algo fuera de `src/comun/archivos/`, es que el puerto quedó
+  adaptadores. Si hace falta tocar algo fuera de `src/common/files/`, es que el puerto quedó
   mal diseñado en M0: se corrige ahí y se anota en el informe. En el mismo módulo van los
   presets de base de datos y la publicación (sección 18).
 
@@ -1154,7 +1154,7 @@ servicio necesita. Sin `DB_PROVEEDOR`, todo sigue como en la sección 5.1.
 - `DB_ESQUEMA` (sólo PostgreSQL) es el esquema donde van las tablas. La API lo crea al arrancar
   si no existe (`queryRunner.createSchema(nombre, true)`, sin SQL a mano) y le dice a TypeORM
   que use ése.
-- Los presets son una tabla en `src/comun/db/proveedores.ts` y una función pura
+- Los presets son una tabla en `src/common/db/providers.ts` y una función pura
   `configuracionBase(entorno)` con test unitario por proveedor: URLs buenas, URLs equivocadas y
   el mensaje en castellano de cada error.
 - `DB_URL` puede traer caracteres raros en la contraseña: se parsea con `URL` y se decodifica,
@@ -1244,7 +1244,7 @@ en una rama aparte.
 
 ### 19.2 El diseño (desde M0)
 
-En `src/comun/notificaciones/`:
+En `src/common/notifications/`:
 
 ```ts
 export interface MensajePush {
@@ -1277,7 +1277,7 @@ export interface EnviadorPush {
   `DeviceNotRegistered`. Confirmá el formato de la respuesta de Expo con Context7. Con
   `EXPO_PUSH_URL` configurable, los tests usan un servidor HTTP falso y no salen a internet.
 - Los tests de dominio verifican **qué decidió `Avisos`** (a quién y con qué texto) con dobles
-  en memoria de los dos puertos (están en `test/utilidades/`), no lo que llegó a Expo. Así
+  en memoria de los dos puertos (están en `test/utilities/`), no lo que llegó a Expo. Así
   siguen en verde cuando el almacén y el enviador quedan vacíos.
 
 **Repos que ya estaban construidos con otro diseño** (un puerto `Notificador`,
@@ -1287,7 +1287,7 @@ verde y un commit propio (`refactor: notificaciones en dos puertos`). Recién de
 
 ### 19.3 El último módulo: vaciar
 
-1. Con todo en verde, se escribe la **consigna ejecutable**: `test/notificaciones/`, con su
+1. Con todo en verde, se escribe la **consigna ejecutable**: `test/notifications/`, con su
    propia configuración de Vitest y el script `pnpm test:notificaciones` (**afuera** de
    `pnpm verificar`). Prueba los endpoints `/dispositivos` (alta 201, idempotente, el token pasa
    al usuario actual, baja 204, `prueba`) y el enviador contra el servidor falso de Expo (forma
@@ -1296,22 +1296,22 @@ verde y un commit propio (`refactor: notificaciones en dos puertos`). Recién de
 2. Con la solución completa y esa consigna en verde, se crea la rama
    **`solucion-notificaciones`** en ese commit.
 3. En `main`, las dos implementaciones se reemplazan por `AlmacenTokensPorHacer` y
-   `EnviadorPorHacer`, en `src/notificaciones-alumnos/`, con comentarios
+   `EnviadorPorHacer`, en `src/student-notifications/`, con comentarios
    `// TODO(alumnos):` que explican qué hace cada método **sin darles el código**. Mientras
    estén vacías:
    - `POST /dispositivos`, `DELETE /dispositivos/:tokenExpo` y `POST /dispositivos/prueba`
      responden **501 `NO_IMPLEMENTADO`**: "Esta parte la programan ustedes. Mirá
-     docs/NOTIFICACIONES.md.";
+     docs/NOTIFICATIONS.md.";
    - `Avisos.avisar` escribe en el log `Push pendiente de implementar: <título> → <n> usuarios`
      y sigue: los flujos de la app nunca se rompen.
-   - Los tests de `/dispositivos` y del enviador que estaban en `test/e2e/`, `test/integracion/`
-     o `test/verificacion/` **se mudan** a `test/notificaciones/` (no se borran: son parte de
+   - Los tests de `/dispositivos` y del enviador que estaban en `test/e2e/`, `test/integration/`
+     o `test/verification/` **se mudan** a `test/notifications/` (no se borran: son parte de
      la consigna). En `main` queda un test e2e que comprueba los 501 con el sobre de error.
      Al cerrar el módulo, el verificador comprueba eso mismo: los 501, y que los demás flujos
      que avisan sigan respondiendo bien.
 4. Se borra lo que ya no se usa en `main` (`expo-server-sdk` si había, el modelo de dispositivos si
    quedó, variables de entorno sin uso), salvo lo que la consigna necesita.
-5. **`docs/NOTIFICACIONES.md`**, para los alumnos, en castellano rioplatense: qué decide la
+5. **`docs/NOTIFICATIONS.md`**, para los alumnos, en castellano rioplatense: qué decide la
    API y qué les toca a ellos, qué archivos tocar, qué entidad y qué tabla les conviene crear,
    cómo correr `pnpm test:notificaciones`, cómo probar con Expo Go y
    `POST /dispositivos/prueba`, y enlaces a la documentación de Expo. Pistas, no solución.

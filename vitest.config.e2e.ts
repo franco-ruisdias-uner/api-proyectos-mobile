@@ -9,8 +9,8 @@ export default defineConfig({
     root: './',
     include: ['test/**/*.e2e-spec.ts'],
     // La consigna de los alumnos corre aparte: `pnpm test:notificaciones` (AGENTS §19.3).
-    exclude: ['**/node_modules/**', 'test/notificaciones/**'],
-    setupFiles: ['test/utilidades/entorno-e2e.ts'],
+    exclude: ['**/node_modules/**', 'test/notifications/**'],
+    setupFiles: ['test/utilities/e2e-environment.ts'],
     fileParallelism: !motorCompartido,
     testTimeout: 20_000,
     hookTimeout: 60_000,

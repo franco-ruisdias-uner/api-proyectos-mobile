@@ -26,7 +26,7 @@
   "include": [
     "src",
     "test",
-    "contrato",
+    "contract",
     "scripts/**/*.ts",
     "*.ts"
   ]

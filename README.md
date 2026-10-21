@@ -193,7 +193,7 @@ comercio las da de alta el Centro Comercial.
   parte del trabajo de ustedes. Mientras no lo completen, `POST /dispositivos`,
   `DELETE /dispositivos/:tokenExpo` y `POST /dispositivos/prueba` responden `501 NO_IMPLEMENTADO` y el
   resto de la app anda igual (la API sólo anota en el log «Push pendiente de implementar»). Qué
-  tocar, qué tabla crear y cómo probar con `pnpm test:notificaciones`: `docs/NOTIFICACIONES.md`.
+  tocar, qué tabla crear y cómo probar con `pnpm test:notificaciones`: `docs/NOTIFICATIONS.md`.
   Una vez completo: registrás el token de `expo-notifications` con `POST /dispositivos` y lo probás con
   `POST /dispositivos/prueba`. La API manda una push cuando un comercio crea una
   promoción: les llega a quienes lo tienen en favoritos o tienen su rubro en `rubrosDeInteres`, si
@@ -277,7 +277,7 @@ comercio las da de alta el Centro Comercial.
 | 422 | `FECHA_EN_EL_FUTURO` | La fecha no puede ser posterior a este momento. |
 | 422 | `ARCHIVO_NO_SUBIDO` | Primero hay que subir la foto o el video. |
 | 500 | `ERROR_INTERNO` | Algo salió mal de nuestro lado. Probá de nuevo en un rato. |
-| 501 | `NO_IMPLEMENTADO` | Esta parte la programan ustedes. Mirá docs/NOTIFICACIONES.md. |
+| 501 | `NO_IMPLEMENTADO` | Esta parte la programan ustedes. Mirá docs/NOTIFICATIONS.md. |
 | 503 | `ALMACEN_NO_DISPONIBLE` | No pudimos acceder a los archivos. Probá de nuevo en un rato. |
 <!-- /tabla:errores -->
 
@@ -326,12 +326,12 @@ entero y por rango, y lo borra).
 Con Docker podés probar un S3 de juguete sumando un segundo archivo:
 
 ```bash
-docker compose -f compose.yaml -f compose.almacen-s3.yaml up
-docker compose -f compose.postgres.yaml -f compose.almacen-s3.yaml up
+docker compose -f compose.yaml -f compose.storage-s3.yaml up
+docker compose -f compose.postgres.yaml -f compose.storage-s3.yaml up
 ```
 
 (LocalStack, "AWS local", pide una cuenta gratis y su token:
-`LOCALSTACK_AUTH_TOKEN=… docker compose -f compose.yaml -f compose.almacen-localstack.yaml up`.)
+`LOCALSTACK_AUTH_TOKEN=… docker compose -f compose.yaml -f compose.storage-localstack.yaml up`.)
 
 > Firebase Storage no se puede usar: exige una cuenta con tarjeta (plan Blaze).
 
@@ -401,4 +401,4 @@ Cosas que conviene saber:
 cuatro motores y S3Proxy, con Docker), `pnpm test:notificaciones` (la consigna de los alumnos: en
 `main` da rojo a propósito, en la rama `solucion-notificaciones` da verde), `pnpm docker:probar` (los compose de punta a punta, también con S3Proxy) y
 `pnpm docs:readme` (regenera las tablas de arriba). Las reglas del proyecto están en
-`AGENTS.md` y `docs/ESPECIFICACION.md`; las decisiones, en `docs/DECISIONES.md`.
+`AGENTS.md` y `docs/SPECIFICATION.md`; las decisiones, en `docs/DECISIONS.md`.

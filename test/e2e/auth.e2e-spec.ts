@@ -1,8 +1,8 @@
 import { JwtService } from '@nestjs/jwt';
-import { Usuario } from '../../src/modulos/usuarios/usuario.entidad.js';
-import { type AppDePrueba, crearApp } from '../utilidades/crear-app.js';
-import { esperarContrato, esperarError } from '../utilidades/contrato.js';
-import { CONTRASENA_DE_PRUEBA, crearUsuario } from '../utilidades/usuarios.js';
+import { Usuario } from '../../src/modules/users/user.entity.js';
+import { type AppDePrueba, crearApp } from '../utilities/create-app.js';
+import { esperarContrato, esperarError } from '../utilities/contract.js';
+import { CONTRASENA_DE_PRUEBA, crearUsuario } from '../utilities/users.js';
 
 const registro = (extra: Record<string, unknown> = {}) => ({
   nombre: 'Marta Giménez',

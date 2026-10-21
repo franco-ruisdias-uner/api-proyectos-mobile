@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { CATALOGO } from '../../src/comun/errores/catalogo.js';
-import { type AppDePrueba, crearApp } from '../utilidades/crear-app.js';
+import { CATALOGO } from '../../src/common/errors/catalog.js';
+import { type AppDePrueba, crearApp } from '../utilities/create-app.js';
 
 /**
  * Las tablas de endpoints y de errores del README salen de Swagger y del catálogo
