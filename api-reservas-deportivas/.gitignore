@@ -1,0 +1,14 @@
+node_modules/
+/dist/
+/coverage/
+/datos/
+/archivos/
+*.sqlite
+*.sqlite-journal
+.env
+.DS_Store
+*.tsbuildinfo
+.vitest-tmp/
+contrato/*.js
+contrato/*.js.map
+contrato/*.d.ts

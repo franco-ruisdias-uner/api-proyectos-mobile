@@ -1,0 +1,39 @@
+# Blueprint de Render (AGENTS §18.2): publica la API desde el Dockerfile, gratis y sin tarjeta.
+# La base y los archivos van en Supabase. Render te pide los valores marcados con sync: false.
+services:
+  - type: web
+    name: api-reservas-deportivas
+    runtime: docker
+    plan: free
+    healthCheckPath: /salud
+    envVars:
+      - key: ENTORNO
+        value: publicado
+      - key: CONFIAR_PROXY
+        value: "true"
+      - key: DB_PROVEEDOR
+        value: supabase
+      - key: ARCHIVOS_PROVEEDOR
+        value: supabase
+      - key: DB_SINCRONIZAR
+        value: "true"
+      - key: SEMBRAR_SI_VACIA
+        value: "true"
+      - key: NOTIFICACIONES
+        value: expo
+      # Cadena del «Session pooler» de Supabase (puerto 5432).
+      - key: DB_URL
+        sync: false
+      # Una clave larga y propia (32 caracteres o más), no la de desarrollo.
+      - key: JWT_SECRETO
+        generateValue: true
+      - key: SUPABASE_PROYECTO
+        sync: false
+      - key: S3_REGION
+        sync: false
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false

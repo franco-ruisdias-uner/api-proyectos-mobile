@@ -1,0 +1,545 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ArchivoSubido": {
+      "additionalProperties": false,
+      "description": "Respuesta de POST /archivos.",
+      "properties": {
+        "bytes": {
+          "type": "number"
+        },
+        "tipo": {
+          "enum": [
+            "imagen",
+            "audio",
+            "video"
+          ],
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "tipo",
+        "bytes"
+      ],
+      "type": "object"
+    },
+    "Bloqueo": {
+      "additionalProperties": false,
+      "description": "Bloqueo de un espacio (D12). Sin `inicio` ni `fin`, cubre el día entero. Sólo lo usan los endpoints del personal.",
+      "properties": {
+        "espacioId": {
+          "type": "string"
+        },
+        "fecha": {
+          "type": "string"
+        },
+        "fin": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "inicio": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "motivo": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "espacioId",
+        "fecha",
+        "inicio",
+        "fin",
+        "motivo"
+      ],
+      "type": "object"
+    },
+    "Coordenadas": {
+      "additionalProperties": false,
+      "properties": {
+        "latitud": {
+          "type": "number"
+        },
+        "longitud": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "latitud",
+        "longitud"
+      ],
+      "type": "object"
+    },
+    "Deporte": {
+      "additionalProperties": false,
+      "properties": {
+        "color": {
+          "type": "string"
+        },
+        "icono": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "nombre": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "nombre",
+        "icono",
+        "color"
+      ],
+      "type": "object"
+    },
+    "Dispositivo": {
+      "additionalProperties": false,
+      "description": "Respuesta de POST /dispositivos: el teléfono quedó anotado para recibir push.",
+      "properties": {
+        "plataforma": {
+          "enum": [
+            "ios",
+            "android"
+          ],
+          "type": "string"
+        },
+        "tokenExpo": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "tokenExpo",
+        "plataforma"
+      ],
+      "type": "object"
+    },
+    "Espacio": {
+      "additionalProperties": false,
+      "properties": {
+        "activo": {
+          "type": "boolean"
+        },
+        "capacidad": {
+          "type": "number"
+        },
+        "complejo": {
+          "type": "string"
+        },
+        "coordenadas": {
+          "$ref": "#/definitions/Coordenadas"
+        },
+        "deporteId": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "iluminacion": {
+          "type": "boolean"
+        },
+        "imagenes": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "nombre": {
+          "type": "string"
+        },
+        "precioPorHora": {
+          "type": "number"
+        },
+        "reglas": {
+          "type": "string"
+        },
+        "superficie": {
+          "type": "string"
+        },
+        "techado": {
+          "type": "boolean"
+        },
+        "videoUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "nombre",
+        "deporteId",
+        "complejo",
+        "superficie",
+        "techado",
+        "iluminacion",
+        "capacidad",
+        "precioPorHora",
+        "coordenadas",
+        "imagenes",
+        "videoUrl",
+        "reglas",
+        "activo"
+      ],
+      "type": "object"
+    },
+    "EstadoReserva": {
+      "enum": [
+        "confirmada",
+        "cancelada",
+        "cumplida",
+        "ausente"
+      ],
+      "type": "string"
+    },
+    "EstadoTurno": {
+      "enum": [
+        "libre",
+        "reservado",
+        "fijo",
+        "mantenimiento"
+      ],
+      "type": "string"
+    },
+    "Meta": {
+      "additionalProperties": false,
+      "description": "Paginación de toda respuesta de lista.",
+      "properties": {
+        "pagina": {
+          "type": "number"
+        },
+        "porPagina": {
+          "type": "number"
+        },
+        "total": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "total",
+        "pagina",
+        "porPagina"
+      ],
+      "type": "object"
+    },
+    "PruebaDePush": {
+      "additionalProperties": false,
+      "description": "Respuesta de POST /dispositivos/prueba: a cuántos teléfonos tuyos se mandó la prueba.",
+      "properties": {
+        "dispositivos": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "dispositivos"
+      ],
+      "type": "object"
+    },
+    "Reserva": {
+      "additionalProperties": false,
+      "properties": {
+        "cancelableHasta": {
+          "type": "string"
+        },
+        "cantidadPersonas": {
+          "type": "number"
+        },
+        "codigoQr": {
+          "type": "string"
+        },
+        "creadaEn": {
+          "type": "string"
+        },
+        "espacioId": {
+          "type": "string"
+        },
+        "estado": {
+          "$ref": "#/definitions/EstadoReserva"
+        },
+        "id": {
+          "type": "string"
+        },
+        "ingresoEn": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "turnoId": {
+          "type": "string"
+        },
+        "usuarioId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "turnoId",
+        "espacioId",
+        "usuarioId",
+        "cantidadPersonas",
+        "codigoQr",
+        "estado",
+        "ingresoEn",
+        "creadaEn",
+        "cancelableHasta"
+      ],
+      "type": "object"
+    },
+    "ReservaFija": {
+      "additionalProperties": false,
+      "properties": {
+        "activa": {
+          "type": "boolean"
+        },
+        "desde": {
+          "type": "string"
+        },
+        "dia": {
+          "enum": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "type": "number"
+        },
+        "espacioId": {
+          "type": "string"
+        },
+        "fin": {
+          "type": "string"
+        },
+        "hasta": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "inicio": {
+          "type": "string"
+        },
+        "titular": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "espacioId",
+        "titular",
+        "dia",
+        "inicio",
+        "fin",
+        "desde",
+        "hasta",
+        "activa"
+      ],
+      "type": "object"
+    },
+    "RespuestaError": {
+      "additionalProperties": false,
+      "description": "Error: { error: { codigo, mensaje } } — sin otros campos.",
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "codigo": {
+              "type": "string"
+            },
+            "mensaje": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "codigo",
+            "mensaje"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "error"
+      ],
+      "type": "object"
+    },
+    "Rol": {
+      "enum": [
+        "jugador",
+        "encargado",
+        "administrador"
+      ],
+      "type": "string"
+    },
+    "Salud": {
+      "additionalProperties": false,
+      "description": "Respuesta de GET /salud.",
+      "properties": {
+        "almacen": {
+          "enum": [
+            "local",
+            "aws",
+            "supabase",
+            "r2",
+            "b2",
+            "s3proxy",
+            "localstack"
+          ],
+          "type": "string"
+        },
+        "estado": {
+          "const": "ok",
+          "type": "string"
+        },
+        "motor": {
+          "enum": [
+            "better-sqlite3",
+            "postgres",
+            "mysql",
+            "mariadb"
+          ],
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "estado",
+        "motor",
+        "almacen",
+        "version"
+      ],
+      "type": "object"
+    },
+    "Sesion": {
+      "additionalProperties": false,
+      "description": "Respuesta de POST /auth/registro y POST /auth/ingreso.",
+      "properties": {
+        "token": {
+          "type": "string"
+        },
+        "usuario": {
+          "$ref": "#/definitions/Usuario"
+        }
+      },
+      "required": [
+        "token",
+        "usuario"
+      ],
+      "type": "object"
+    },
+    "Turno": {
+      "additionalProperties": false,
+      "properties": {
+        "espacioId": {
+          "type": "string"
+        },
+        "estado": {
+          "$ref": "#/definitions/EstadoTurno"
+        },
+        "fecha": {
+          "type": "string"
+        },
+        "fin": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "inicio": {
+          "type": "string"
+        },
+        "motivoBloqueo": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "precio": {
+          "type": "number"
+        },
+        "reservaId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "espacioId",
+        "fecha",
+        "inicio",
+        "fin",
+        "estado",
+        "reservaId",
+        "motivoBloqueo",
+        "precio"
+      ],
+      "type": "object"
+    },
+    "Usuario": {
+      "additionalProperties": false,
+      "properties": {
+        "ausencias": {
+          "type": "number"
+        },
+        "cancelacionesTardias": {
+          "type": "number"
+        },
+        "email": {
+          "type": "string"
+        },
+        "espaciosFavoritos": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "nombre": {
+          "type": "string"
+        },
+        "rol": {
+          "$ref": "#/definitions/Rol"
+        },
+        "telefono": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "nombre",
+        "email",
+        "telefono",
+        "rol",
+        "espaciosFavoritos",
+        "cancelacionesTardias",
+        "ausencias"
+      ],
+      "type": "object"
+    }
+  }
+}
