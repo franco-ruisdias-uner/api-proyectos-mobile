@@ -1,0 +1,83 @@
+# CI (AGENTS §10.4): `pnpm verificar` y la suite e2e contra los cuatro motores, con TZ=UTC y con
+# la zona de Buenos Aires para cazar dependencias de la zona de la máquina. Aparte, la prueba de
+# los compose de Docker (AGENTS §16.3).
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tz: [UTC, America/Argentina/Buenos_Aires]
+    env:
+      TZ: ${{ matrix.tz }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm verificar
+
+  matriz:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        motor: [postgres, mysql, mariadb]
+        tz: [UTC, America/Argentina/Buenos_Aires]
+        include:
+          - motor: postgres
+            url: postgres://api:api@127.0.0.1:55432/api
+          - motor: mysql
+            url: mysql://api:api@127.0.0.1:53306/api
+          - motor: mariadb
+            url: mysql://api:api@127.0.0.1:53307/api
+    services:
+      postgres:
+        image: postgres:17
+        env: { POSTGRES_USER: api, POSTGRES_PASSWORD: api, POSTGRES_DB: api }
+        ports: ["55432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U api -d api" --health-interval 2s --health-timeout 3s --health-retries 60
+      mysql:
+        image: mysql:8.4
+        env: { MYSQL_ROOT_PASSWORD: raiz, MYSQL_USER: api, MYSQL_PASSWORD: api, MYSQL_DATABASE: api }
+        ports: ["53306:3306"]
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -uapi -papi" --health-interval 2s --health-timeout 3s --health-retries 90
+      mariadb:
+        image: mariadb:11
+        env: { MARIADB_ROOT_PASSWORD: raiz, MARIADB_USER: api, MARIADB_PASSWORD: api, MARIADB_DATABASE: api }
+        ports: ["53307:3306"]
+        options: >-
+          --health-cmd "healthcheck.sh --connect --innodb_initialized" --health-interval 2s --health-timeout 3s --health-retries 90
+    env:
+      TZ: ${{ matrix.tz }}
+      DB_MOTOR: ${{ matrix.motor }}
+      DB_URL: ${{ matrix.url }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:e2e
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: node scripts/test-docker.mjs

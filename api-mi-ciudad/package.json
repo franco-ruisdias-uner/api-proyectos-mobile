@@ -1,0 +1,82 @@
+{
+  "name": "api-mi-ciudad",
+  "version": "0.2.0",
+  "description": "API de Mi Ciudad · Guía turística de Colón (Trabajo Final 2026, UNER)",
+  "author": "",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "scripts": {
+    "build": "nest build",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "dev": "nest start --watch",
+    "start": "node dist/src/main.js",
+    "db:reiniciar": "nest build && node dist/src/seeds/reset.js",
+    "contrato:esquema": "ts-json-schema-generator --path \"contract/*.ts\" --type \"*\" --no-type-check --out contract/schema.json",
+    "readme:tablas": "ACTUALIZAR_README=1 vitest run --config ./vitest.config.e2e.ts test/e2e/readme.e2e-spec.ts",
+    "lint": "oxlint --deny-warnings src/ test/ scripts/",
+    "tipos": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
+    "test:notificaciones": "vitest run --config ./vitest.config.notifications.ts",
+    "test:e2e:matriz": "node scripts/matrix.mjs",
+    "verificar": "pnpm tipos && pnpm lint && pnpm test && pnpm test:e2e",
+    "docker:probar": "node scripts/test-docker.mjs",
+    "db:probar": "nest build && node dist/src/tools/test-db.js",
+    "archivos:probar": "nest build && node dist/src/tools/test-files.js",
+    "publicado:probar": "node scripts/test-published.mjs"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1142.0",
+    "@aws-sdk/s3-request-presigner": "^3.1142.0",
+    "@date-fns/tz": "^1.5.0",
+    "@nestjs/common": "^12.0.1",
+    "@nestjs/config": "^12.0.1",
+    "@nestjs/core": "^12.0.1",
+    "@nestjs/jwt": "^12.0.2",
+    "@nestjs/platform-express": "^12.0.1",
+    "@nestjs/swagger": "^12.0.2",
+    "@nestjs/typeorm": "^12.0.2",
+    "better-sqlite3": "^12.11.1",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "date-fns": "^4.4.0",
+    "mysql2": "^3.24.4",
+    "pg": "^8.23.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "typeorm": "^1.1.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^12.0.0",
+    "@nestjs/mau": "^0.2.6",
+    "@nestjs/schematics": "^12.0.0",
+    "@nestjs/testing": "^12.0.1",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/express": "^5.0.0",
+    "@types/multer": "^2.2.0",
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.23.1",
+    "@types/supertest": "^7.0.0",
+    "@vitest/coverage-v8": "^4.1.2",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "oxlint": "^1.58.0",
+    "prettier": "^3.4.2",
+    "source-map-support": "^0.5.21",
+    "supertest": "^7.0.0",
+    "ts-json-schema-generator": "^2.9.0",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3"
+    ]
+  }
+}

@@ -1,0 +1,25 @@
+# `docker compose -f compose.postgres.yaml up`: la API con PostgreSQL 17.
+# La base se puede mirar con DBeaver en localhost:5433 (usuario api, contraseña api).
+name: api-mi-ciudad-postgres
+services:
+  api:
+    extends: { file: compose.yaml, service: api }
+    environment:
+      DB_MOTOR: postgres
+      DB_URL: postgres://api:api@postgres:5432/api
+    depends_on:
+      postgres: { condition: service_healthy }
+  postgres:
+    image: postgres:17
+    environment: { POSTGRES_USER: api, POSTGRES_PASSWORD: api, POSTGRES_DB: api }
+    ports: ["${PUERTO_DB:-5433}:5432"]
+    volumes: [postgres:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U api -d api"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+volumes:
+  datos:
+  archivos:
+  postgres:
