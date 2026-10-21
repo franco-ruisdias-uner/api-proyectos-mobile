@@ -1,0 +1,76 @@
+import { Body, Controller, Delete, HttpCode, Param, Post } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import type { Dispositivo, PruebaPush, RespuestaUno } from '../../../contract/api.js';
+import { UsuarioActual, type UsuarioSesion } from '../auth/decorators.js';
+import { ErrorApi } from '../errors/error-api.js';
+import { respuestaUno } from '../response/response.js';
+import { DocErrores } from '../../swagger/error-docs.js';
+import { DispositivosServicio } from './devices.service.js';
+import { FORMATO_TOKEN_EXPO, RegistrarDispositivoDto } from './dto/register-device.dto.js';
+
+@ApiTags('Notificaciones')
+@ApiBearerAuth()
+@Controller('dispositivos')
+export class DispositivosControlador {
+  constructor(private readonly dispositivos: DispositivosServicio) {}
+
+  @Post()
+  @HttpCode(201)
+  @ApiOperation({
+    summary: 'Registrar el teléfono para recibir push (lo completan ustedes)',
+    description:
+      'Responde 501 hasta que los alumnos completen el guardado de tokens (docs/NOTIFICATIONS.md). ' +
+      'Con sesión. Manda el token de `expo-notifications`. Repetirlo no duplica nada; si el token ' +
+      'era de otra cuenta (se cambió de usuario en el teléfono), pasa a la tuya.',
+  })
+  @ApiResponse({
+    status: 201,
+    example: {
+      datos: { tokenExpo: 'ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]', plataforma: 'android' },
+      meta: null,
+    },
+  })
+  @DocErrores('VALIDACION_FALLIDA', 'NO_AUTENTICADO', 'NO_IMPLEMENTADO')
+  async registrar(
+    @UsuarioActual() usuario: UsuarioSesion,
+    @Body() cuerpo: RegistrarDispositivoDto,
+  ): Promise<RespuestaUno<Dispositivo>> {
+    return respuestaUno(
+      await this.dispositivos.registrar(usuario.id, cuerpo.tokenExpo, cuerpo.plataforma),
+    );
+  }
+
+  @Post('prueba')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Mandarme una push de prueba (lo completan ustedes)',
+    description:
+      'Responde 501 hasta que los alumnos completen el guardado y el envío (docs/NOTIFICATIONS.md). ' +
+      'Con sesión. Manda una notificación a todos tus teléfonos registrados. Sirve para depurar.',
+  })
+  @ApiResponse({ status: 200, example: { datos: { dispositivos: 1 }, meta: null } })
+  @DocErrores('NO_AUTENTICADO', 'NO_IMPLEMENTADO')
+  async probar(@UsuarioActual() usuario: UsuarioSesion): Promise<RespuestaUno<PruebaPush>> {
+    return respuestaUno(await this.dispositivos.probar(usuario.id));
+  }
+
+  @Delete(':tokenExpo')
+  @HttpCode(204)
+  @ApiOperation({
+    summary: 'Dar de baja el teléfono (lo completan ustedes)',
+    description:
+      'Responde 501 hasta que los alumnos completen el guardado de tokens (docs/NOTIFICATIONS.md). ' +
+      'Con sesión. Al cerrar sesión. Si el token no estaba registrado, igual responde 204.',
+  })
+  @ApiResponse({ status: 204, description: 'Dado de baja (sin cuerpo)' })
+  @DocErrores('VALIDACION_FALLIDA', 'NO_AUTENTICADO', 'NO_IMPLEMENTADO')
+  async darDeBaja(
+    @UsuarioActual() usuario: UsuarioSesion,
+    @Param('tokenExpo') tokenExpo: string,
+  ): Promise<void> {
+    if (!FORMATO_TOKEN_EXPO.test(tokenExpo)) {
+      throw new ErrorApi('VALIDACION_FALLIDA', 'El token de notificaciones no es válido.');
+    }
+    await this.dispositivos.darDeBaja(usuario.id, tokenExpo);
+  }
+}

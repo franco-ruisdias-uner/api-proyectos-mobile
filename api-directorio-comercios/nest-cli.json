@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/nest-cli",
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "src",
+  "entryFile": "src/main",
+  "compilerOptions": {
+    "deleteOutDir": true,
+    "assets": [
+      {
+        "include": "seeds/media/*.{png,mp4}",
+        "outDir": "dist"
+      }
+    ]
+  }
+}

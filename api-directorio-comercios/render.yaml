@@ -1,0 +1,44 @@
+# Blueprint de Render (https://render.com/docs/blueprint-spec): publica la API desde el Dockerfile.
+# Los valores que dicen `sync: false` los pide Render al crear el servicio (no se guardan en git).
+services:
+  - type: web
+    name: api-directorio-comercios
+    runtime: docker
+    plan: free
+    healthCheckPath: /salud
+    envVars:
+      - key: ENTORNO
+        value: publicado
+      - key: CONFIAR_PROXY
+        value: "true"
+      - key: SIMULACION_HABILITADA
+        value: "false"
+      - key: NOTIFICACIONES
+        value: expo
+      - key: DB_PROVEEDOR
+        value: supabase
+      - key: DB_SINCRONIZAR
+        value: "true"
+      - key: SEMBRAR_SI_VACIA
+        value: "true"
+      - key: ARCHIVOS_PROVEEDOR
+        value: supabase
+      # Cadena del «Session pooler» de Supabase (Connect → Session pooler, puerto 5432).
+      - key: DB_URL
+        sync: false
+      # Una clave larga y propia (32 caracteres o más).
+      - key: JWT_SECRETO
+        sync: false
+      # El identificador del proyecto de Supabase.
+      - key: SUPABASE_PROYECTO
+        sync: false
+      # La región del proyecto, por ejemplo sa-east-1.
+      - key: S3_REGION
+        sync: false
+      # El bucket que creaste en Storage.
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
