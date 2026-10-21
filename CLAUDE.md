@@ -1,2 +1,2 @@
 @AGENTS.md
-@docs/ESPECIFICACION.md
+@docs/SPECIFICATION.md

@@ -23,7 +23,7 @@ ENV NODE_ENV=production
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
-COPY --from=build /app/src/semillas/medios ./src/semillas/medios
+COPY --from=build /app/src/seeds/media ./src/seeds/media
 # Las carpetas de los volúmenes, con dueño node ANTES de cambiar de usuario: si no, se
 # montan como root y la API no puede escribir la base ni las fotos.
 RUN mkdir -p /app/datos /app/archivos && chown -R node:node /app/datos /app/archivos

@@ -1,11 +1,11 @@
 import { Controller, Get, Post, Body } from '@nestjs/common';
 import { IsInt, Min, IsDefined } from 'class-validator';
-import { Publico, Roles } from '../../src/comun/auth/decoradores.js';
-import { ErrorDeApi } from '../../src/comun/errores/error-de-api.js';
-import { respuestaUno } from '../../src/comun/respuesta/respuesta.js';
-import { type AppDePrueba, crearApp } from '../utilidades/crear-app.js';
-import { esperarContrato, esperarError } from '../utilidades/contrato.js';
-import { crearUsuario } from '../utilidades/usuarios.js';
+import { Publico, Roles } from '../../src/common/auth/decorators.js';
+import { ErrorDeApi } from '../../src/common/errors/error-api.js';
+import { respuestaUno } from '../../src/common/response/response.js';
+import { type AppDePrueba, crearApp } from '../utilities/create-app.js';
+import { esperarContrato, esperarError } from '../utilities/contract.js';
+import { crearUsuario } from '../utilities/users.js';
 
 class CuerpoDePrueba {
   @IsDefined({ message: 'Falta la cantidad.' })

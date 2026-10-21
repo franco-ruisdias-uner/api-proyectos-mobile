@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { leerConfiguracion } from './configuracion.js';
+import { leerConfiguracion } from './environment.js';
 
 // El Blueprint de Render (AGENTS §18.2) y la configuración de la API tienen que decir lo mismo.
 const yaml = readFileSync('render.yaml', 'utf8');

@@ -9,7 +9,7 @@ cambia la forma de ninguna respuesta: sólo se agregan cosas.
 
 - **Los tres endpoints de `/dispositivos` los completan ustedes** (guardar el token de Expo y mandar la push):
   hasta entonces responden `501` con el código nuevo `NO_IMPLEMENTADO`. La forma de las respuestas exitosas no cambia.
-- Guía en `docs/NOTIFICACIONES.md` y `pnpm test:notificaciones` para comprobar lo que programen.
+- Guía en `docs/NOTIFICATIONS.md` y `pnpm test:notificaciones` para comprobar lo que programen.
 - Todo lo demás sigue igual: publicar un aviso no se rompe aunque las push no estén programadas.
 - Variable nueva (opcional): `EXPO_PUSH_URL`, la dirección de la API de push de Expo.
 
@@ -29,8 +29,8 @@ No cambia ninguna respuesta de la API: es todo para poder **publicarla** con una
 - **Archivos en la nube:** `ARCHIVOS_PROVEEDOR` = `local` (default) · `supabase` · `aws` · `r2` · `b2` · `s3proxy` ·
   `localstack`. Las URLs de los archivos siguen siendo `<origen>/archivos/<clave>`, con soporte de `Range`.
   `GET /salud` informa el proveedor en `almacen`.
-- **Docker con archivos en S3:** `docker compose -f compose.yaml -f compose.almacen-s3.yaml up` (también
-  `compose.almacen-localstack.yaml`, que pide `LOCALSTACK_AUTH_TOKEN`).
+- **Docker con archivos en S3:** `docker compose -f compose.yaml -f compose.storage-s3.yaml up` (también
+  `compose.storage-localstack.yaml`, que pide `LOCALSTACK_AUTH_TOKEN`).
 - **Base administrada:** `DB_PROVEEDOR` = `supabase` · `neon` · `aiven-postgres` · `aiven-mysql`, con `DB_SSL`,
   `DB_SSL_CA` y `DB_ESQUEMA`. Revisa que `DB_URL` sea la correcta y, si no, te dice cuál copiar.
 - **Publicar en Render:** `render.yaml` y el paso a paso en el README (sección 11). Con `ENTORNO=publicado` la API no
@@ -49,7 +49,7 @@ No cambia ninguna respuesta de la API: es todo para poder **publicarla** con una
 - **Confirmar:** `POST /reportes-demora/:id/confirmaciones` (201 con el reporte actualizado; 200 si ya habías
   confirmado). No se confirma el propio ni uno de más de 90 minutos.
 - **Dirección:** `GET /reportes-demora/resumen?desde&hasta&agrupar=linea|parada` devuelve `ResumenDemoras[]`
-  (tipo nuevo en `contrato/api.ts`; la app de los alumnos no lo necesita).
+  (tipo nuevo en `contract/api.ts`; la app de los alumnos no lo necesita).
 - **Errores nuevos:** `REPORTE_NO_ENCONTRADO` (404), `LINEA_NO_PARA_EN_PARADA`, `REPORTE_VENCIDO`,
   `CONFIRMACION_PROPIA`, `FECHA_EN_EL_FUTURO` (422), `REPORTE_YA_ENVIADO` e `ID_EN_USO` (409).
 - **Datos de demo:** `rep-3390` (de Julián, línea 5, `par-101`, con dos confirmaciones), dos reportes más
@@ -92,7 +92,7 @@ No cambia ninguna respuesta de la API: es todo para poder **publicarla** con una
   línea según la tabla de hoy; si no alcanzan, los de mañana **con la tabla de mañana** (su
   `hora` es menor que la actual). Sólo devuelve horas de tabla, nunca inventa minutos.
 - **Feriados:** `GET /feriados?anio=2026`. Devuelve el tipo nuevo `Feriado { fecha, nombre }`
-  (en `contrato/api.ts`: **copialo a tu proyecto**). Un feriado usa la tabla `feriado` aunque
+  (en `contract/api.ts`: **copialo a tu proyecto**). Un feriado usa la tabla `feriado` aunque
   caiga sábado o domingo.
 - **Datos de demo:** la tabla de horarios de las líneas activas (la 5 y la 14 con ida y
   vuelta; `hor-4410` es el del PRD), la línea 13 que termina a las 21:00, y los feriados de
@@ -122,7 +122,7 @@ No cambia ninguna respuesta de la API: es todo para poder **publicarla** con una
 - **Notificaciones:** `POST /dispositivos`, `DELETE /dispositivos/:tokenExpo` y
   `POST /dispositivos/prueba`.
 - **Salud:** `GET /salud`, para probar desde el teléfono si llega a la API.
-- **Tipos nuevos** en `contrato/api.ts`: `Meta`, `RespuestaLista`, `RespuestaUno`,
+- **Tipos nuevos** en `contract/api.ts`: `Meta`, `RespuestaLista`, `RespuestaUno`,
   `RespuestaError`, `Sesion`, `ArchivoSubido`, `Salud`, `Dispositivo` y `PruebaDePush`.
 - **Para probar la app:** cabecera `X-Simular` (`error-500`, `demora-3000`) y `RELOJ_FIJO`
   para congelar la hora de la API.

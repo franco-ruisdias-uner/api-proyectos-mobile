@@ -62,7 +62,7 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: node scripts/matriz.mjs ${{ matrix.motor }}
+      - run: node scripts/matrix.mjs ${{ matrix.motor }}
 
   almacen-s3:
     name: archivos sobre S3 (S3Proxy)
@@ -87,11 +87,11 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: node scripts/matriz.mjs almacen-s3
+      - run: node scripts/matrix.mjs almacen-s3
 
   docker:
     name: docker compose (los cuatro)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: node scripts/probar-docker.mjs
+      - run: node scripts/test-docker.mjs

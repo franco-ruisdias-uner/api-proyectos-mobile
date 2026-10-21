@@ -8,7 +8,7 @@ demora de los pasajeros.
 Devuelve **exactamente** los tipos del PRD, los mismos que tenés en `src/tipos/`. Cuando
 cambies tus mocks por `fetch`, los datos encajan sin tocar los tipos. Los tipos que agrega la
 API (el sobre de las respuestas, la sesión, los archivos) están en
-[`contrato/api.ts`](contrato/api.ts): copialos a tu proyecto.
+[`contract/api.ts`](contract/api.ts): copialos a tu proyecto.
 
 > **Estado:** la API está completa: red (líneas, paradas, búsqueda, cercanas y QR), horarios
 > (tabla, próximos y feriados), cuenta y favoritos, avisos con push, reportes de demora y la
@@ -59,11 +59,11 @@ almacenamiento tipo Amazon S3 (como el que vas a usar publicado), sumá el emula
 de los comandos de arriba:
 
 ```bash
-docker compose -f compose.yaml -f compose.almacen-s3.yaml up
-docker compose -f compose.postgres.yaml -f compose.almacen-s3.yaml up
+docker compose -f compose.yaml -f compose.storage-s3.yaml up
+docker compose -f compose.postgres.yaml -f compose.storage-s3.yaml up
 ```
 
-(Hay otro, `compose.almacen-localstack.yaml`, que pide una cuenta gratis de LocalStack y la
+(Hay otro, `compose.storage-localstack.yaml`, que pide una cuenta gratis de LocalStack y la
 variable `LOCALSTACK_AUTH_TOKEN`; con el de S3 alcanza.) La app no nota la diferencia.
 
 - **Frenar:** `Ctrl + C`, o `docker compose down` desde otra terminal.
@@ -276,7 +276,7 @@ hasta 30 MB. Los videos se pueden reproducir con `expo-video` directo desde la U
 > **Esta parte la completan ustedes.** Guardar los tokens y mandar las push no vienen hechos:
 > `POST /dispositivos`, `POST /dispositivos/prueba` y `DELETE /dispositivos/:tokenExpo` responden
 > `501 NO_IMPLEMENTADO` hasta que los programen. Guía y pistas en
-> [`docs/NOTIFICACIONES.md`](docs/NOTIFICACIONES.md); para comprobar su trabajo, `pnpm test:notificaciones`.
+> [`docs/NOTIFICATIONS.md`](docs/NOTIFICATIONS.md); para comprobar su trabajo, `pnpm test:notificaciones`.
 
 1. Pedí permiso y obtené el token con `expo-notifications`.
 2. Registralo: `POST /dispositivos` con `{ "tokenExpo": "ExponentPushToken[…]", "plataforma": "android" }`.
@@ -294,7 +294,7 @@ la app: la API no las manda.
   guardala en el teléfono: tiene que servir sin señal.
 - Para elegir la tabla (`habil`, `sabado`, `domingo` o `feriado`) sin conexión, guardá también
   `GET /feriados?anio=2026` y `?anio=2027`. **`Feriado` no está en el PRD:** está en
-  [`contrato/api.ts`](contrato/api.ts). Un feriado gana sobre el sábado y el domingo.
+  [`contract/api.ts`](contract/api.ts). Un feriado gana sobre el sábado y el domingo.
 - `GET /paradas/:id/proximos` te da los siguientes pasos de cada línea. Si ya no hay más
   servicio hoy, vienen los de mañana a primera hora, con el `tipoDeDia` de mañana: se
   reconocen porque su `hora` es menor que la hora de ahora.
@@ -331,7 +331,7 @@ usalo para decidir qué hacer. El **mensaje** está en castellano y se puede mos
 | `LINEA_NO_PARA_EN_PARADA` | 422 | Esa línea no para en esta parada. |
 | `REPORTE_VENCIDO` | 422 | Ese reporte ya es viejo para confirmarlo. |
 | `ERROR_INTERNO` | 500 | Algo salió mal. Probá de nuevo en un rato. |
-| `NO_IMPLEMENTADO` | 501 | Esta parte la programan ustedes. Mirá docs/NOTIFICACIONES.md. |
+| `NO_IMPLEMENTADO` | 501 | Esta parte la programan ustedes. Mirá docs/NOTIFICATIONS.md. |
 | `ALMACEN_NO_DISPONIBLE` | 503 | No pudimos acceder a los archivos. Probá de nuevo en un rato. |
 <!-- errores:fin -->
 
@@ -456,7 +456,7 @@ Si el servidor rechaza el certificado, la API te dice si usar `DB_SSL=si-sin-ver
 ---
 
 Para la cátedra: las reglas de construcción están en `AGENTS.md`, la especificación del
-proyecto en `docs/ESPECIFICACION.md` y las decisiones sobre los huecos del PRD en
-`docs/DECISIONES.md`. `pnpm verificar` corre tipos, lint y todos los tests;
+proyecto en `docs/SPECIFICATION.md` y las decisiones sobre los huecos del PRD en
+`docs/DECISIONS.md`. `pnpm verificar` corre tipos, lint y todos los tests;
 `pnpm test:e2e:matriz` corre los e2e contra los cuatro motores (y los archivos contra S3Proxy) y
 `pnpm docker:probar` prueba los compose.

@@ -3,7 +3,7 @@ import { networkInterfaces } from 'node:os';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import { ErrorDeConfiguracion, leerConfiguracion } from './config/configuracion.js';
+import { ErrorDeConfiguracion, leerConfiguracion } from './config/environment.js';
 
 function direccionesDeRed(puerto: number): string[] {
   return Object.values(networkInterfaces())
@@ -28,7 +28,7 @@ async function arrancar(): Promise<void> {
   }
 
   const { AppModule } = await import('./app.module.js');
-  const { configurarAplicacion } = await import('./aplicacion.js');
+  const { configurarAplicacion } = await import('./setup-app.js');
   let app: NestExpressApplication;
   try {
     app = await NestFactory.create<NestExpressApplication>(AppModule, { abortOnError: false });
