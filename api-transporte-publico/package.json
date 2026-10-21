@@ -1,0 +1,79 @@
+{
+  "name": "api-transporte-publico",
+  "version": "0.1.0",
+  "description": "API del Trabajo Final — Transporte Público · Paraná",
+  "author": "",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "scripts": {
+    "build": "nest build && node scripts/entrypoint.mjs",
+    "dev": "nest start --watch",
+    "start": "node dist/main.js",
+    "db:reiniciar": "pnpm build && node dist/src/seeds/reset.js",
+    "contrato:esquema": "ts-json-schema-generator --path 'contract/*.ts' --type '*' --no-type-check -o contract/schema.json",
+    "docs:readme": "pnpm build && node dist/src/documentation/generate-readme.js",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "lint": "oxlint --deny-warnings src/ test/ && prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
+    "test:notificaciones": "vitest run --config ./vitest.config.notifications.ts",
+    "test:e2e:matriz": "node scripts/matrix.mjs",
+    "verificar": "tsc --noEmit -p tsconfig.json && pnpm lint && pnpm test && pnpm test:e2e",
+    "docker:probar": "node scripts/test-docker.mjs",
+    "archivos:probar": "pnpm build && node dist/src/tools/test-files.js",
+    "db:probar": "pnpm build && node dist/src/tools/test-db.js",
+    "publicado:probar": "node scripts/test-published.mjs"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1144.0",
+    "@aws-sdk/s3-request-presigner": "^3.1144.0",
+    "@date-fns/tz": "^1.5.0",
+    "@nestjs/common": "^12.0.1",
+    "@nestjs/config": "^12.0.1",
+    "@nestjs/core": "^12.0.1",
+    "@nestjs/jwt": "^12.0.2",
+    "@nestjs/platform-express": "^12.0.1",
+    "@nestjs/swagger": "^12.0.2",
+    "@nestjs/typeorm": "^12.0.2",
+    "better-sqlite3": "^12.11.1",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "date-fns": "^4.4.0",
+    "mysql2": "^3.24.5",
+    "pg": "^8.23.1",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "typeorm": "^1.1.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^12.0.0",
+    "@nestjs/mau": "^0.2.6",
+    "@nestjs/schematics": "^12.0.0",
+    "@nestjs/testing": "^12.0.1",
+    "@types/express": "^5.0.0",
+    "@types/multer": "^2.3.0",
+    "@types/node": "^24.0.0",
+    "@types/supertest": "^7.0.0",
+    "@vitest/coverage-v8": "^4.1.2",
+    "ajv": "^8.20.0",
+    "oxlint": "^1.58.0",
+    "prettier": "^3.4.2",
+    "source-map-support": "^0.5.21",
+    "supertest": "^7.0.0",
+    "ts-json-schema-generator": "^2.9.0",
+    "typescript": "^6.0.2",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^4.1.2"
+  },
+  "packageManager": "pnpm@10.34.6",
+  "engines": {
+    "node": ">=24"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3"
+    ]
+  }
+}

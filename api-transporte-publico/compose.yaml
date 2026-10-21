@@ -1,0 +1,27 @@
+# docker compose up → API + SQLite (en un volumen) con los datos de demo.
+name: api-transporte-publico
+services:
+  api:
+    build: .
+    ports:
+      - "${PUERTO:-3000}:3000"
+    environment:
+      PUERTO: "3000"
+      PUERTO_PUBLICADO: "${PUERTO:-3000}"
+      DB_MOTOR: better-sqlite3
+      DB_ARCHIVO: /app/datos/api.sqlite
+      DB_SINCRONIZAR: "true"
+      SEMBRAR_SI_VACIA: "true"
+      JWT_SECRETO: solo-para-desarrollo-no-usar-en-produccion
+      DIRECTORIO_ARCHIVOS: /app/archivos
+      NOTIFICACIONES: expo
+      SIMULACION_HABILITADA: "true"
+      URL_PUBLICA: ${URL_PUBLICA:-}
+      RELOJ_FIJO: ${RELOJ_FIJO:-}
+    volumes:
+      - datos:/app/datos
+      - archivos:/app/archivos
+    restart: unless-stopped
+volumes:
+  datos:
+  archivos:

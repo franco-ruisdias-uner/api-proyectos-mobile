@@ -1,0 +1,48 @@
+# Sólo las bases, en tmpfs, para `pnpm test:e2e:matriz` (AGENTS §10.4).
+# S3Proxy (sin volumen) sirve para los tests del adaptador S3 (AGENTS §17.4).
+name: api-transporte-publico-matriz
+services:
+  postgres:
+    image: postgres:17
+    environment: { POSTGRES_USER: api, POSTGRES_PASSWORD: api, POSTGRES_DB: api }
+    ports: ["55432:5432"]
+    tmpfs: [/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U api -d api"]
+      interval: 2s
+      timeout: 3s
+      retries: 60
+  mysql:
+    image: mysql:8.4
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    environment: { MYSQL_ROOT_PASSWORD: root, MYSQL_DATABASE: api, MYSQL_USER: api, MYSQL_PASSWORD: api }
+    ports: ["53306:3306"]
+    tmpfs: [/var/lib/mysql]
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uapi -papi"]
+      interval: 2s
+      timeout: 3s
+      retries: 90
+  mariadb:
+    image: mariadb:11
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    environment: { MARIADB_ROOT_PASSWORD: root, MARIADB_DATABASE: api, MARIADB_USER: api, MARIADB_PASSWORD: api }
+    ports: ["53307:3306"]
+    tmpfs: [/var/lib/mysql]
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 2s
+      timeout: 3s
+      retries: 90
+  s3:
+    image: andrewgaul/s3proxy:sha-9a9b1ee
+    environment:
+      S3PROXY_ENDPOINT: http://0.0.0.0:8080
+      S3PROXY_AUTHORIZATION: none
+      JCLOUDS_PROVIDER: transient
+    ports: ["58080:8080"]
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080"]
+      interval: 2s
+      timeout: 3s
+      retries: 60
