@@ -1,15 +1,15 @@
-import './config/cargar-env.js';
+import './config/load-env.js';
 import { networkInterfaces } from 'node:os';
 import { existsSync } from 'node:fs';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import { AlmacenNoDisponible } from './comun/archivos/almacen-archivos.js';
+import { AlmacenNoDisponible } from './common/files/file-storage.js';
 import { AppModule } from './app.module.js';
-import { configurarApp } from './configurar-app.js';
-import { ENTORNO } from './config/entorno.modulo.js';
-import type { Entorno } from './config/entorno.js';
-import { traducirErrorDeConexion } from './comun/db/proveedores.js';
+import { configurarApp } from './setup-app.js';
+import { ENTORNO } from './config/environment.module.js';
+import type { Entorno } from './config/environment.js';
+import { traducirErrorDeConexion } from './common/db/providers.js';
 
 function direccionesDeRed(): string[] {
   return Object.values(networkInterfaces())

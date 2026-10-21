@@ -7,7 +7,7 @@ cambia la forma de ninguna respuesta: sólo se agregan cosas.
 
 - `POST /dispositivos`, `POST /dispositivos/prueba` y `DELETE /dispositivos/:tokenExpo` responden **501
   `NO_IMPLEMENTADO`** hasta que ustedes programen el guardado de tokens y el envío de push. Mirá
-  `docs/NOTIFICACIONES.md` y corré `pnpm test:notificaciones`.
+  `docs/NOTIFICATIONS.md` y corré `pnpm test:notificaciones`.
 - El resto de la API no cambia: cuando se suspende o cancela un evento, la API anota la push pendiente en el log y sigue.
 - Error nuevo: `NO_IMPLEMENTADO` (501).
 

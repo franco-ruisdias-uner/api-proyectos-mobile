@@ -1,0 +1,34 @@
+# Se SUMA a cualquiera de los compose de la API: los archivos (fotos, audios, videos) quedan en
+# S3Proxy, un emulador de S3 que no pide cuenta ni claves. Ejemplos:
+#   docker compose -f compose.yaml -f compose.storage-s3.yaml up
+#   docker compose -f compose.postgres.yaml -f compose.storage-s3.yaml up
+# Volver a cero: `docker compose -f … down -v`.
+# El emulador no se publica en la computadora: la API le habla por la red interna de Docker.
+services:
+  api:
+    environment:
+      ARCHIVOS_PROVEEDOR: s3proxy
+      ARCHIVOS_CREAR_BUCKET: "true"
+      S3_BUCKET: archivos
+      S3_ACCESS_KEY_ID: clave-de-mentira
+      S3_SECRET_ACCESS_KEY: secreto-de-mentira
+    depends_on:
+      s3: { condition: service_healthy }
+  s3:
+    image: andrewgaul/s3proxy:4.1.1
+    environment:
+      S3PROXY_ENDPOINT: http://0.0.0.0:8080
+      S3PROXY_AUTHORIZATION: none
+      JCLOUDS_PROVIDER: filesystem
+      JCLOUDS_FILESYSTEM_BASEDIR: /data
+    volumes: [almacen-s3:/data]
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          bash -c 'exec 3<>"/dev/tcp/127.0.0.1/8080" && printf "GET /healthz HTTP/1.0\r\n\r\n" >&3 && head -n 1 <&3 | grep -q " 200 "'
+      interval: 3s
+      timeout: 3s
+      retries: 40
+volumes:
+  almacen-s3:

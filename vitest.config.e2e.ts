@@ -8,8 +8,8 @@ export default defineConfig({
     root: './',
     include: ['test/**/*.e2e-spec.ts'],
     // La consigna de los alumnos corre aparte (pnpm test:notificaciones, AGENTS §19.3).
-    exclude: ['test/notificaciones/**', '**/node_modules/**'],
-    setupFiles: ['test/utilidades/entorno-test.ts'],
+    exclude: ['test/notifications/**', '**/node_modules/**'],
+    setupFiles: ['test/utilities/e2e-environment.ts'],
     testTimeout: 30_000,
     hookTimeout: 60_000,
     // SQLite en memoria: una base por app, se puede en paralelo. Los otros motores comparten

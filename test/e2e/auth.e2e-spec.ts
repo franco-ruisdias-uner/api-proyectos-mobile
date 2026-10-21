@@ -1,8 +1,8 @@
 import { JwtService } from '@nestjs/jwt';
-import { crearApp, type AppDePrueba } from '../utilidades/crear-app.js';
-import { esperarContrato, esperarError } from '../utilidades/contrato.js';
-import { conSesion, registrarTurista } from '../utilidades/builders.js';
-import { UsuarioEntidad } from '../../src/modulos/usuarios/usuario.entidad.js';
+import { crearApp, type AppDePrueba } from '../utilities/create-app.js';
+import { esperarContrato, esperarError } from '../utilities/contract.js';
+import { conSesion, registrarTurista } from '../utilities/builders.js';
+import { UsuarioEntidad } from '../../src/modules/users/user.entity.js';
 
 describe('AGENTS §7.1 — POST /auth/registro', () => {
   let ctx: AppDePrueba;

@@ -7,7 +7,7 @@ y audioguías.
 Hasta ahora trabajaron con datos inventados detrás de `src/servicios/lugares.ts`. Esta API
 devuelve **exactamente** los tipos del PRD que ya tienen en `src/tipos/`: cuando cambien el mock
 por `fetch`, no tienen que tocar los tipos. Lo único nuevo es el "sobre" de cada respuesta y
-algunos tipos que agrega la API (`contrato/api.ts`: `Sesion`, `ArchivoSubido`, `Salud`…).
+algunos tipos que agrega la API (`contract/api.ts`: `Sesion`, `ArchivoSubido`, `Salud`…).
 
 > **Estado:** la API está completa: cuentas y `/yo`, archivos, notificaciones, `/salud`, catálogo
 > (categorías, lugares, búsqueda, cercanía, QR y audioguías), agenda, favoritos, Mi recorrido
@@ -282,7 +282,7 @@ según el `codigo`, que no cambia nunca.
 | 422 | `FECHA_EN_EL_FUTURO` | La fecha de la visita no puede ser posterior a este momento. |
 | 422 | `CATEGORIA_NO_ENCONTRADA` | Alguna de las categorías elegidas no existe. |
 | 500 | `ERROR_INTERNO` | Algo salió mal de nuestro lado. Probá de nuevo en un rato. |
-| 501 | `NO_IMPLEMENTADO` | Esta parte la programan ustedes. Mirá docs/NOTIFICACIONES.md. |
+| 501 | `NO_IMPLEMENTADO` | Esta parte la programan ustedes. Mirá docs/NOTIFICATIONS.md. |
 | 503 | `ALMACEN_NO_DISPONIBLE` | No pudimos acceder a los archivos. Probá de nuevo en un rato. |
 <!-- /tabla:errores -->
 

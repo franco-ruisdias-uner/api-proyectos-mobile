@@ -1,6 +1,6 @@
-import { crearApp, type AppDePrueba } from '../utilidades/crear-app.js';
-import { esperarContrato, esperarError } from '../utilidades/contrato.js';
-import { crearLugar } from '../utilidades/builders.js';
+import { crearApp, type AppDePrueba } from '../utilities/create-app.js';
+import { esperarContrato, esperarError } from '../utilities/contract.js';
+import { crearLugar } from '../utilities/builders.js';
 
 describe('PRD §4 y R6 — GET /lugares/qr/:codigo', () => {
   let ctx: AppDePrueba;

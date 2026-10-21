@@ -1,9 +1,9 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { CATALOGO_ERRORES } from '../../src/comun/errores/catalogo.js';
-import { crearDocumentoSwagger } from '../../src/configurar-app.js';
-import { crearApp, type AppDePrueba } from '../utilidades/crear-app.js';
+import { CATALOGO_ERRORES } from '../../src/common/errors/catalog.js';
+import { crearDocumentoSwagger } from '../../src/setup-app.js';
+import { crearApp, type AppDePrueba } from '../utilities/create-app.js';
 
 /**
  * AGENTS §13: las tablas de endpoints y de errores del README salen de Swagger y del catálogo,
