@@ -1,7 +1,7 @@
 // Lo común de la API (AGENTS §4, §11.4): sobre, errores, salud, simulación, Swagger.
-import { type AppDePrueba, crearApp } from '../utilidades/crear-app.js';
-import { esperarContrato, esperarError } from '../utilidades/contrato.js';
-import type { Salud } from '../../contrato/api.js';
+import { type AppDePrueba, crearApp } from '../utilities/create-app.js';
+import { esperarContrato, esperarError } from '../utilities/contract.js';
+import type { Salud } from '../../contract/api.js';
 
 describe('GET /salud — lo primero que prueban desde el teléfono', () => {
   let a: AppDePrueba;
@@ -41,7 +41,7 @@ describe('AGENTS §4.6 — Errores genéricos con el sobre exacto', () => {
   });
 
   it('RUTA_NO_ENCONTRADA (404) con sesión válida', async () => {
-    const { registrarJugador } = await import('../utilidades/usuarios.js');
+    const { registrarJugador } = await import('../utilities/users.js');
     const { token } = await registrarJugador(a);
     esperarError(
       await a.http().get('/no-existe').set('Authorization', `Bearer ${token}`),

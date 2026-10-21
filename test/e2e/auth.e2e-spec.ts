@@ -1,9 +1,9 @@
 // AGENTS §7 y ESPECIFICACION §1: registro (con teléfono obligatorio), ingreso, /yo.
-import type { Sesion } from '../../contrato/api.js';
-import type { Usuario } from '../../contrato/tipos.js';
-import { type AppDePrueba, crearApp } from '../utilidades/crear-app.js';
-import { esperarContrato, esperarError } from '../utilidades/contrato.js';
-import { crearUsuario, registrarJugador } from '../utilidades/usuarios.js';
+import type { Sesion } from '../../contract/api.js';
+import type { Usuario } from '../../contract/types.js';
+import { type AppDePrueba, crearApp } from '../utilities/create-app.js';
+import { esperarContrato, esperarError } from '../utilities/contract.js';
+import { crearUsuario, registrarJugador } from '../utilities/users.js';
 
 const valido = () => ({
   nombre: 'Emiliano Ruiz',

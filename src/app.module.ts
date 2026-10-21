@@ -2,20 +2,20 @@ import { type DynamicModule, Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { ArchivosModulo } from './comun/archivos/archivos.modulo.js';
-import { AuthModulo } from './comun/auth/auth.modulo.js';
-import { opcionesDeBase } from './comun/db/opciones.js';
-import { NotificacionesModulo } from './comun/notificaciones/notificaciones.modulo.js';
-import { RelojModulo } from './comun/reloj/reloj.modulo.js';
-import { Configuracion, validarEntorno } from './config/configuracion.js';
-import { AdministracionModulo } from './modulos/administracion/administracion.modulo.js';
-import { EspaciosModulo } from './modulos/espacios/espacios.modulo.js';
-import { IngresosModulo } from './modulos/ingresos/ingresos.modulo.js';
-import { ReservasModulo } from './modulos/reservas/reservas.modulo.js';
-import { SaludModulo } from './modulos/salud/salud.modulo.js';
-import { TurnosModulo } from './modulos/turnos/turnos.modulo.js';
-import { UsuariosModulo } from './modulos/usuarios/usuarios.modulo.js';
-import { SemillasModulo } from './semillas/semillas.modulo.js';
+import { ArchivosModulo } from './common/files/files.module.js';
+import { AuthModulo } from './common/auth/auth.module.js';
+import { opcionesDeBase } from './common/db/options.js';
+import { NotificacionesModulo } from './common/notifications/notifications.module.js';
+import { RelojModulo } from './common/clock/clock.module.js';
+import { Configuracion, validarEntorno } from './config/environment.js';
+import { AdministracionModulo } from './modules/admin/admin.module.js';
+import { EspaciosModulo } from './modules/venues/venues.module.js';
+import { IngresosModulo } from './modules/check-ins/check-ins.module.js';
+import { ReservasModulo } from './modules/bookings/bookings.module.js';
+import { SaludModulo } from './modules/health/health.module.js';
+import { TurnosModulo } from './modules/slots/slots.module.js';
+import { UsuariosModulo } from './modules/users/users.module.js';
+import { SemillasModulo } from './seeds/seeds.module.js';
 
 export interface OpcionesAppModule {
   /** Variables de entorno explícitas (tests). Si no viene, se leen .env y el proceso. */

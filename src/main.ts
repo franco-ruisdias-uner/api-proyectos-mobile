@@ -10,9 +10,9 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 if (existsSync('.env')) process.loadEnvFile('.env');
 
 const { AppModule } = await import('./app.module.js');
-const { configurarApp } = await import('./app.configurar.js');
+const { configurarApp } = await import('./setup-app.js');
 const { Configuracion, ErrorDeConfiguracion, validarEntorno } =
-  await import('./config/configuracion.js');
+  await import('./config/environment.js');
 
 const logger = new Logger('API');
 // Primero la configuración, para que un .env mal armado dé un mensaje claro y nada más.

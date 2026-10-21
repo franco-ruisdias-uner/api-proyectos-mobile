@@ -5,7 +5,7 @@
   },
   "include": [
     "src",
-    "contrato"
+    "contract"
   ],
   "exclude": [
     "node_modules",

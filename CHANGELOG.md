@@ -8,11 +8,11 @@ Nada cambia en la forma de las respuestas que usa la app salvo lo siguiente:
 
 - `POST /dispositivos`, `DELETE /dispositivos/<tokenExpo>` y `POST /dispositivos/prueba`
   **los completan ustedes**: hasta entonces responden `501` con el código nuevo
-  `NO_IMPLEMENTADO` ("Esta parte la programan ustedes. Mirá docs/NOTIFICACIONES.md."). Las
+  `NO_IMPLEMENTADO` ("Esta parte la programan ustedes. Mirá docs/NOTIFICATIONS.md."). Las
   rutas, los cuerpos y las respuestas de éxito son los de siempre.
 - Los avisos de la app (bloqueos, turnos liberados) siguen sin romper nada: sin la parte de
   ustedes, la push queda anotada en el log de la API y no se manda.
-- Guía nueva: [`docs/NOTIFICACIONES.md`](docs/NOTIFICACIONES.md). Tests para comprobar su
+- Guía nueva: [`docs/NOTIFICATIONS.md`](docs/NOTIFICATIONS.md). Tests para comprobar su
   trabajo: `pnpm test:notificaciones`.
 
 ## 0.9.0 — Semillas completas y README (M8)

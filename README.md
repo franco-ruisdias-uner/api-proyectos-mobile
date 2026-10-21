@@ -7,12 +7,12 @@ para entrar y administración de bloqueos y reservas fijas.
 
 Tu app ya tiene sus tipos en `src/tipos/`, copiados del PRD. **Esta API devuelve exactamente
 esos tipos**: no tenés que cambiar nada cuando pases del mock a `fetch`. Lo que agrega la API
-(el sobre de las respuestas, la sesión, los archivos) está en `contrato/api.ts`.
+(el sobre de las respuestas, la sesión, los archivos) está en `contract/api.ts`.
 
 > **Estado:** la API está completa salvo la parte de notificaciones que programan ustedes:
 > guardar los tokens de Expo y mandar las push. Los tres endpoints de `/dispositivos`
 > responden `501` hasta que lo hagan; la guía está en
-> [`docs/NOTIFICACIONES.md`](docs/NOTIFICACIONES.md). Los cambios para ustedes se anotan en [`CHANGELOG.md`](CHANGELOG.md).
+> [`docs/NOTIFICATIONS.md`](docs/NOTIFICATIONS.md). Los cambios para ustedes se anotan en [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
@@ -195,7 +195,7 @@ encargado ubica a quien no vino).
 | `PATCH` | `/espacios/<id>` | 🛡 | Cambia el precio: `{ precioPorHora }`, entero mayor que cero. |
 | `POST` | `/archivos` | 🔒 | Sube una foto, un audio o un video. 201 con `{ url, tipo, bytes }`. |
 | `GET` | `/archivos/<clave>` | 🌐 | Baja un archivo (admite `Range` para adelantar audio y video). |
-| `POST` | `/dispositivos` | 🔒 | **Lo completan ustedes** (501 hasta entonces, ver `docs/NOTIFICACIONES.md`). Anota el token de Expo del teléfono para recibir push. |
+| `POST` | `/dispositivos` | 🔒 | **Lo completan ustedes** (501 hasta entonces, ver `docs/NOTIFICATIONS.md`). Anota el token de Expo del teléfono para recibir push. |
 | `DELETE` | `/dispositivos/<tokenExpo>` | 🔒 | **Lo completan ustedes.** Deja de recibir push en ese teléfono. 204. |
 | `POST` | `/dispositivos/prueba` | 🔒 | **Lo completan ustedes.** Te manda una push de prueba y dice a cuántos teléfonos. |
 
@@ -241,7 +241,7 @@ encargado ubica a quien no vino).
 | `RESERVA_CANCELADA` | 422 | Esa reserva está cancelada. |
 | `TURNO_PASADO` | 422 | Ese turno ya pasó. |
 | `ERROR_INTERNO` | 500 | Algo salió mal de nuestro lado. Probá de nuevo en un rato. |
-| `NO_IMPLEMENTADO` | 501 | Esta parte la programan ustedes. Mirá docs/NOTIFICACIONES.md. |
+| `NO_IMPLEMENTADO` | 501 | Esta parte la programan ustedes. Mirá docs/NOTIFICATIONS.md. |
 | `ALMACEN_NO_DISPONIBLE` | 503 | No pudimos acceder a los archivos. Probá de nuevo en un rato. |
 <!-- errores:fin -->
 
@@ -311,12 +311,12 @@ Lo que tenés que saber:
 Para probar los archivos fuera del disco (como si fuera la nube) sumá un segundo compose:
 
 ```bash
-docker compose -f compose.yaml -f compose.almacen-s3.yaml up
+docker compose -f compose.yaml -f compose.storage-s3.yaml up
 ```
 
 Los archivos van a S3Proxy y la app ni se entera: las URLs siguen siendo
 `http://<IP>:3000/archivos/<clave>`. Con "AWS local" (pide cuenta y token gratis en
-LocalStack): `LOCALSTACK_AUTH_TOKEN=… docker compose -f compose.postgres.yaml -f compose.almacen-localstack.yaml up`.
+LocalStack): `LOCALSTACK_AUTH_TOKEN=… docker compose -f compose.postgres.yaml -f compose.storage-localstack.yaml up`.
 
 ## 12. Problemas frecuentes
 
