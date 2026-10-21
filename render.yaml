@@ -5,7 +5,7 @@ services:
     name: api-lectura-medidores
     runtime: docker
     plan: free
-    healthCheckPath: /salud
+    healthCheckPath: /health
     envVars:
       - key: APP_ENV
         value: production

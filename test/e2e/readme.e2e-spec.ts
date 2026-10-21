@@ -4,8 +4,8 @@ import {
   MARCAS,
   tablaDeEndpoints,
   tablaDeErrores,
-} from '../../src/documentacion/tablas.js';
-import { type AppDePrueba, crearApp } from '../utilidades/crear-app.js';
+} from '../../src/documentation/tables.js';
+import { type AppDePrueba, crearApp } from '../utilities/create-app.js';
 
 describe('AGENTS §13 — Las tablas del README salen del catálogo y de Swagger', () => {
   let c: AppDePrueba;

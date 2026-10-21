@@ -20,6 +20,6 @@
     "noImplicitOverride": false,
     "types": ["vitest/globals", "node"]
   },
-  "include": ["src", "test", "contrato", "*.ts"],
+  "include": ["src", "test", "contract", "*.ts"],
   "exclude": ["node_modules", "dist", "docs", "coverage"]
 }

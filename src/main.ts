@@ -3,8 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module.js';
-import { logAccessUrls } from './comun/http/access-urls.js';
-import { createLogger } from './comun/http/logger.js';
+import { logAccessUrls } from './common/http/access-urls.js';
+import { createLogger } from './common/http/logger.js';
 import type { AppConfigService } from './config/configuration.js';
 import { setupApp } from './setup-app.js';
 

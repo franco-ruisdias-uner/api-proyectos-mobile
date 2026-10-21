@@ -4,6 +4,17 @@ Todo lo que cambia en la API, escrito para los grupos que la usan desde la app.
 
 ## [Sin publicar]
 
+### Sesión
+
+- `POST /auth/ingreso` ahora también devuelve `refreshToken` (junto con `token` y `usuario`).
+- **Endpoint nuevo**: `POST /auth/refresco` con `{ "refreshToken": "…" }`. Devuelve una sesión nueva.
+  El token de acceso sigue durando 12 horas; el de refresco dura 30 días y se usa una sola vez.
+  Si no sirve, la respuesta es 401 `NO_AUTENTICADO` (hay que ingresar de nuevo).
+- El blanqueo de contraseña de la administración invalida también los tokens de refresco.
+- **Se quitó** `POST /auth/salida`. La sesión termina cuando vence el token (12 h), cuando vence
+  o se usa el de refresco (30 días), o cuando la administración blanquea la contraseña. La app
+  puede borrar el token en el teléfono; el servidor lo sigue aceptando hasta que pase una de esas.
+
 ### Configuración y arranque
 
 - **Las variables del `.env` cambiaron de nombre** (ahora en inglés): `PUERTO` → `PORT`, `ENTORNO` → `APP_ENV`
@@ -21,10 +32,10 @@ Todo lo que cambia en la API, escrito para los grupos que la usan desde la app.
 
 - **Los tres endpoints de `/dispositivos` los completan ustedes**: `POST /dispositivos`, `POST /dispositivos/prueba` y
   `DELETE /dispositivos/:tokenExpo` responden **501 `NO_IMPLEMENTADO`** ("Esta parte la programan ustedes. Mirá
-  docs/NOTIFICACIONES.md.") hasta que programen el guardado de los tokens de Expo y el envío de las push. La forma de
+  docs/NOTIFICATIONS.md.") hasta que programen el guardado de los tokens de Expo y el envío de las push. La forma de
   las respuestas, las rutas y la validación no cambian.
 - Código de error nuevo: `NO_IMPLEMENTADO` (501).
-- `pnpm test:notificaciones` corre la consigna (`test/notificaciones/`); `docs/NOTIFICACIONES.md` explica qué hacer.
+- `pnpm test:notificaciones` corre la consigna (`test/notifications/`); `docs/NOTIFICATIONS.md` explica qué hacer.
 - Mientras tanto, los flujos que avisan (asignar una ruta) siguen andando: la push se anota en el log y no se manda.
 
 ### M8 — Semillas completas y README
@@ -44,7 +55,7 @@ Todo lo que cambia en la API, escrito para los grupos que la usan desde la app.
 - **Publicación**: `render.yaml`, `ENTORNO=publicado` (no arranca con una configuración de juguete) y
   `CONFIAR_PROXY=true` para que las URLs de archivos salgan `https://` detrás del proxy de Render.
 - Herramientas: `pnpm db:probar`, `pnpm archivos:probar`, `pnpm publicado:probar <url>`. Compose nuevos:
-  `compose.almacen-s3.yaml` y `compose.almacen-localstack.yaml`.
+  `compose.storage-s3.yaml` y `compose.storage-localstack.yaml`.
 - Sin cambios en ningún endpoint, respuesta ni código de error.
 
 ### M6 — Avisos
@@ -84,7 +95,7 @@ Todo lo que cambia en la API, escrito para los grupos que la usan desde la app.
   deja de listarse y de contarse (no se borra: se sigue pudiendo pedir por id). Entre novedades, la de
   `fechaHora` más reciente.
 - La descarga de la ruta trae las novedades vigentes, y `GET /rutas/:id/avance` las cuenta en `conNovedad`.
-- Tipo nuevo en `contrato/api.ts`: `ResumenNovedades`. Error nuevo: `NOVEDAD_NO_ENCONTRADA`.
+- Tipo nuevo en `contract/api.ts`: `ResumenNovedades`. Error nuevo: `NOVEDAD_NO_ENCONTRADA`.
 - Datos de demo: las 20 novedades de Brasil (`nov-3312` es la del PRD, con nota de voz).
 
 ### M3 — Lecturas
@@ -110,7 +121,7 @@ Todo lo que cambia en la API, escrito para los grupos que la usan desde la app.
   `descargadaEn` y pasa la ruta a `en_curso`.
 - **Administración**: `GET /rutas`, `POST /rutas` y `PATCH /rutas/:id`. El id es
   `rut-<numero>-<bimestre>` y el orden de `suministroIds` es el recorrido: nadie lo reordena.
-- Tipos nuevos en `contrato/api.ts`: `PaqueteRuta` y `AvanceRuta`.
+- Tipos nuevos en `contract/api.ts`: `PaqueteRuta` y `AvanceRuta`.
 - Errores nuevos: `LECTOR_NO_ENCONTRADO`, `RUTA_NO_ENCONTRADA`, `RUTA_YA_EXISTE`, `RUTA_YA_CERRADA`
   ("Esa ruta fue cerrada el 14/09."), `RUTA_EN_CURSO`, `SUMINISTRO_REPETIDO` y
   `SUMINISTRO_EN_OTRA_RUTA`.

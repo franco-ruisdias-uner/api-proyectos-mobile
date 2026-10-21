@@ -1,13 +1,13 @@
-import { type AppDePrueba, crearApp } from '../utilidades/crear-app.js';
-import { esperarContrato, esperarError } from '../utilidades/contrato.js';
-import { bearer, conSesion } from '../utilidades/usuarios.js';
+import { type AppDePrueba, crearApp } from '../utilities/create-app.js';
+import { esperarContrato, esperarError } from '../utilities/contract.js';
+import { bearer, conSesion } from '../utilities/users.js';
 
 describe('M0 — Base común', () => {
   let c: AppDePrueba;
   beforeAll(async () => (c = await crearApp()));
   afterAll(() => c.cerrar());
 
-  describe('AGENTS §11.4 — GET /salud', () => {
+  describe('AGENTS §11.4 — GET /health', () => {
     it('es público y dice motor, almacén y versión', async () => {
       const r = await c.http().get('/salud').expect(200);
       esperarContrato(r.body, 'Salud');
@@ -88,7 +88,6 @@ describe('M0 — Base común', () => {
         expect.arrayContaining([
           '/salud',
           '/auth/ingreso',
-          '/auth/salida',
           '/yo',
           '/usuarios',
           '/usuarios/{id}',

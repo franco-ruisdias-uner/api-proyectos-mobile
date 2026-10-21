@@ -1,13 +1,13 @@
-import { type AppDePrueba, crearApp } from '../utilidades/crear-app.js';
-import { esperarContrato, esperarError } from '../utilidades/contrato.js';
+import { type AppDePrueba, crearApp } from '../utilities/create-app.js';
+import { esperarContrato, esperarError } from '../utilities/contract.js';
 import {
   bearer,
   conSesion,
   crearUsuario,
   ingresar,
-} from '../utilidades/usuarios.js';
+} from '../utilities/users.js';
 
-describe('M0 — Ingreso y salida', () => {
+describe('M0 — Ingreso', () => {
   let c: AppDePrueba;
   beforeAll(async () => (c = await crearApp()));
   afterAll(() => c.cerrar());
@@ -35,6 +35,8 @@ describe('M0 — Ingreso y salida', () => {
         rutasAsignadas: [],
       });
       expect(r.body.datos.token).toMatch(/^[\w-]+\.[\w-]+\.[\w-]+$/);
+      expect(r.body.datos.refreshToken).toEqual(expect.any(String));
+      expect(r.body.datos.refreshToken.length).toBeGreaterThan(20);
     });
 
     it('R1 — el legajo se compara sin distinguir mayúsculas (y sin espacios alrededor)', async () => {
@@ -132,45 +134,136 @@ describe('M0 — Ingreso y salida', () => {
     });
   });
 
-  describe('ESPECIFICACION R2 — POST /auth/salida invalida todos los tokens del usuario', () => {
-    it('ingresar, salir y usar el token viejo → 401', async () => {
+  describe('POST /auth/refresco — renueva la sesión', () => {
+    const ingresarConRefresco = async () => {
       const u = await crearUsuario(c);
-      const token = await ingresar(c, u);
       const r = await c
         .http()
-        .post('/auth/salida')
-        .set(bearer(token))
-        .expect(204);
-      expect(r.text).toBe('');
+        .post('/auth/ingreso')
+        .send({ legajo: u.legajo, contrasena: u.contrasena })
+        .expect(200);
+      return {
+        usuario: u,
+        token: r.body.datos.token as string,
+        refreshToken: r.body.datos.refreshToken as string,
+      };
+    };
+
+    it('devuelve un token nuevo que anda, y otro token de refresco', async () => {
+      const { refreshToken } = await ingresarConRefresco();
+      const r = await c
+        .http()
+        .post('/auth/refresco')
+        .send({ refreshToken })
+        .expect(200);
+      esperarContrato(r.body, 'Sesion');
+      expect(r.body.datos.refreshToken).not.toBe(refreshToken);
+      await c.http().get('/yo').set(bearer(r.body.datos.token)).expect(200);
+    });
+
+    it('el token de refresco usado no sirve de nuevo', async () => {
+      const { refreshToken } = await ingresarConRefresco();
+      await c.http().post('/auth/refresco').send({ refreshToken }).expect(200);
       esperarError(
-        (await c.http().get('/yo').set(bearer(token)).expect(401)).body,
+        (
+          await c
+            .http()
+            .post('/auth/refresco')
+            .send({ refreshToken })
+            .expect(401)
+        ).body,
         'NO_AUTENTICADO',
       );
     });
 
-    it('cierra también la sesión del otro teléfono, y se puede volver a ingresar', async () => {
-      const u = await crearUsuario(c);
-      const telefonoA = await ingresar(c, u);
-      c.reloj.avanzar(1000);
-      const telefonoB = await ingresar(c, u);
-      await c.http().post('/auth/salida').set(bearer(telefonoB)).expect(204);
-      await c.http().get('/yo').set(bearer(telefonoA)).expect(401);
-      const nuevo = await ingresar(c, u);
-      await c.http().get('/yo').set(bearer(nuevo)).expect(200);
+    it('dos refrescos simultáneos del mismo token: uno pasa y el otro da 401', async () => {
+      const { refreshToken } = await ingresarConRefresco();
+      const [a, b] = await Promise.all([
+        c.http().post('/auth/refresco').send({ refreshToken }),
+        c.http().post('/auth/refresco').send({ refreshToken }),
+      ]);
+      expect([a.status, b.status].sort()).toEqual([200, 401]);
+      const fallo = a.status === 401 ? a : b;
+      esperarError(fallo.body, 'NO_AUTENTICADO');
     });
 
-    it('no cierra las sesiones de otros usuarios', async () => {
-      const otro = await conSesion(c, 'lector');
-      const yo = await conSesion(c, 'lector');
-      await c.http().post('/auth/salida').set(bearer(yo.token)).expect(204);
-      await c.http().get('/yo').set(bearer(otro.token)).expect(200);
+    it('con el token de acceso vencido, el de refresco sigue sirviendo', async () => {
+      const inicio = c.reloj.ahora();
+      const { token, refreshToken } = await ingresarConRefresco();
+      c.reloj.avanzar(12 * 3600 * 1000 + 1000);
+      await c.http().get('/yo').set(bearer(token)).expect(401);
+      const r = await c
+        .http()
+        .post('/auth/refresco')
+        .send({ refreshToken })
+        .expect(200);
+      await c.http().get('/yo').set(bearer(r.body.datos.token)).expect(200);
+      c.reloj.fijar(inicio);
     });
 
-    it('sin token → 401', async () => {
+    it('a los 30 días el token de refresco vence', async () => {
+      const inicio = c.reloj.ahora();
+      const { refreshToken } = await ingresarConRefresco();
+      c.reloj.avanzar(30 * 24 * 3600 * 1000);
       esperarError(
-        (await c.http().post('/auth/salida').expect(401)).body,
+        (
+          await c
+            .http()
+            .post('/auth/refresco')
+            .send({ refreshToken })
+            .expect(401)
+        ).body,
         'NO_AUTENTICADO',
       );
+      c.reloj.fijar(inicio);
+    });
+
+    it('blanquear la contraseña invalida el token de refresco', async () => {
+      const admin = await conSesion(c, 'administracion');
+      const { usuario, refreshToken } = await ingresarConRefresco();
+      await c
+        .http()
+        .patch(`/usuarios/${usuario.id}`)
+        .set(bearer(admin.token))
+        .send({ contrasena: 'blanqueada-123' })
+        .expect(200);
+      esperarError(
+        (
+          await c
+            .http()
+            .post('/auth/refresco')
+            .send({ refreshToken })
+            .expect(401)
+        ).body,
+        'NO_AUTENTICADO',
+      );
+    });
+
+    it('un token desconocido → 401', async () => {
+      esperarError(
+        (
+          await c
+            .http()
+            .post('/auth/refresco')
+            .send({ refreshToken: 'no-existe' })
+            .expect(401)
+        ).body,
+        'NO_AUTENTICADO',
+      );
+    });
+
+    it.each([
+      [{}, 'Falta el token de refresco.'],
+      [{ refreshToken: '' }, 'Falta el token de refresco.'],
+      [{ refreshToken: 1 }, 'Falta el token de refresco.'],
+      [
+        { refreshToken: 'x', token: 'y' },
+        'El dato "token" no corresponde a este pedido.',
+      ],
+    ])('%o → 400 VALIDACION_FALLIDA', async (cuerpo, mensaje) => {
+      const r = await c.http().post('/auth/refresco').send(cuerpo).expect(400);
+      esperarError(r.body, 'VALIDACION_FALLIDA');
+      expect(r.body.error.mensaje).toBe(mensaje);
     });
   });
 });

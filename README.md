@@ -10,7 +10,7 @@ cambian el mock por `fetch`, no tienen que tocar los tipos.
 
 > **Estado:** la API está completa: base, suministros y medidores, rutas, lecturas, novedades, cierre de ruta, avisos,
 > nube y datos de demo. Lo único que falta es lo que programan ustedes: **el guardado de tokens de Expo y el envío de
-> push**. Los tres endpoints de `/dispositivos` responden 501 hasta que lo hagan: mirá `docs/NOTIFICACIONES.md` y
+> push**. Los tres endpoints de `/dispositivos` responden 501 hasta que lo hagan: mirá `docs/NOTIFICATIONS.md` y
 > corré `pnpm test:notificaciones` (empieza en rojo).
 
 ---
@@ -165,10 +165,12 @@ reordena nunca.
 ## 6. Cómo se usa
 
 - **Ingresar**: `POST /auth/ingreso` con `{ "legajo": "L-011", "contrasena": "lectura" }`.
-  Devuelve `{ datos: { token, usuario }, meta: null }`.
+  Devuelve `{ datos: { token, refreshToken, usuario }, meta: null }`.
 - **El token** va en cada pedido, en la cabecera `Authorization: Bearer <token>`. Dura
   **12 horas** (los teléfonos se comparten entre turnos).
-- **Salir**: `POST /auth/salida` cierra la sesión **en todos los teléfonos** de ese usuario.
+- **Renovar**: `POST /auth/refresco` con `{ "refreshToken": "…" }` devuelve una sesión nueva
+  (otro `token` y otro `refreshToken`). El de refresco dura **30 días** y se usa una sola vez.
+  Si venció, ya se usó, o la administración blanqueó la contraseña, hay que ingresar de nuevo.
 - **No hay registro**: las cuentas las crea la administración (`POST /usuarios`).
 - **Fotos y audios en dos pasos**: primero subís el archivo con `POST /archivos`
   (`multipart/form-data`, campo `archivo`) y te devuelve una `url`; después mandás esa `url` en
@@ -190,11 +192,11 @@ reordena nunca.
 
 ### Tipos que agrega la API
 
-Además de los del PRD, la API usa estos tipos (están en `contrato/api.ts`; copiá los que
+Además de los del PRD, la API usa estos tipos (están en `contract/api.ts`; copiá los que
 necesites):
 
 ```ts
-interface Sesion { token: string; usuario: Usuario }
+interface Sesion { token: string; refreshToken: string; usuario: Usuario }
 interface ArchivoSubido { url: string; tipo: "imagen" | "audio" | "video"; bytes: number }
 interface Salud { estado: "ok"; motor: string; almacen: string; version: string }
 interface Dispositivo { tokenExpo: string; plataforma: "ios" | "android" }
@@ -239,7 +241,7 @@ interface PruebaPush { dispositivos: number }
 | `GET` | `/novedades/:id` | Con sesión (cualquier rol) | Una novedad |
 | `GET` | `/rutas/:id/novedades` | Con sesión (cualquier rol) | Las novedades vigentes de una ruta |
 | `POST` | `/auth/ingreso` | Público: no hace falta sesión | Ingresar con legajo y contraseña |
-| `POST` | `/auth/salida` | Con sesión (cualquier rol) | Salir: cierra todas las sesiones del usuario |
+| `POST` | `/auth/refresco` | Público: no hace falta sesión | Renovar la sesión con el token de refresco |
 <!-- tabla-endpoints:fin -->
 
 ### Códigos de error
@@ -277,7 +279,7 @@ interface PruebaPush { dispositivos: number }
 | `SUMINISTRO_REPETIDO` | 422 | Hay un suministro repetido en la ruta. |
 | `DEMASIADOS_PEDIDOS` | 429 | Hiciste demasiados intentos seguidos. Esperá un minuto y probá de nuevo. |
 | `ERROR_INTERNO` | 500 | Algo salió mal de nuestro lado. Probá de nuevo en un rato. |
-| `NO_IMPLEMENTADO` | 501 | Esta parte la programan ustedes. Mirá docs/NOTIFICACIONES.md. |
+| `NO_IMPLEMENTADO` | 501 | Esta parte la programan ustedes. Mirá docs/NOTIFICATIONS.md. |
 | `ALMACEN_NO_DISPONIBLE` | 503 | No pudimos acceder a los archivos. Probá de nuevo en un rato. |
 <!-- tabla-errores:fin -->
 
@@ -287,7 +289,7 @@ La API manda **una** push: cuando la administración le asigna una ruta a un lec
 `POST /rutas` o al cambiarle el `lectorId` con `PATCH /rutas/:id`), el lector nuevo recibe *"Tenés una ruta
 nueva: 07 Barrio Brasil."*, con `datos: { tipo: "ruta_nueva", rutaId }` para abrir esa ruta. Para recibirla, la app
 registra su token con `POST /dispositivos` y puede probarlo con `POST /dispositivos/prueba` (**los dos, y el `DELETE`, los
-completan ustedes**: responden 501 `NO_IMPLEMENTADO` hasta entonces; ver `docs/NOTIFICACIONES.md`). No hay interruptor de
+completan ustedes**: responden 501 `NO_IMPLEMENTADO` hasta entonces; ver `docs/NOTIFICATIONS.md`). No hay interruptor de
 avisos (el `Usuario` no lo tiene). El recordatorio de las 17 con lecturas sin subir es **local del teléfono**: la
 API no lo manda. Si Expo falla, la ruta se crea igual.
 
@@ -364,11 +366,11 @@ Los archivos se guardan en una carpeta (`STORAGE_PROVIDER=local`) o en cualquier
 app no se entera: las URLs son siempre `<dirección de la API>/archivos/<clave>`. Para probar un S3 sin cuenta:
 
 ```bash
-docker compose -f compose.yaml -f compose.almacen-s3.yaml up
+docker compose -f compose.yaml -f compose.storage-s3.yaml up
 ```
 
-(Con otra base: `docker compose -f compose.postgres.yaml -f compose.almacen-s3.yaml up`.) También hay
-`compose.almacen-localstack.yaml`, que necesita un token gratis de LocalStack (`LOCALSTACK_AUTH_TOKEN`).
+(Con otra base: `docker compose -f compose.postgres.yaml -f compose.storage-s3.yaml up`.) También hay
+`compose.storage-localstack.yaml`, que necesita un token gratis de LocalStack (`LOCALSTACK_AUTH_TOKEN`).
 
 ## 10. Problemas frecuentes
 
@@ -380,7 +382,7 @@ docker compose -f compose.yaml -f compose.almacen-s3.yaml up
 | El teléfono no conecta | Sección 4: misma wifi, IP de la compu (no `localhost`), firewall. |
 | `Could not locate the bindings file` (better-sqlite3) | Corré `pnpm install` de nuevo con Node 24. Si usás npm en vez de pnpm, no anda: usá pnpm. |
 | Con XAMPP, errores raros al crear tablas | Poné `DB_ENGINE=mariadb`. |
-| Responde `NO_AUTENTICADO` de golpe | El token venció (12 horas), o alguien hizo `POST /auth/salida` con tu usuario en otro teléfono. Volvé a ingresar. |
+| Responde `NO_AUTENTICADO` de golpe | El token venció (12 horas), o la administración blanqueó la contraseña. Volvé a ingresar. |
 | `La API no puede arrancar: …bucket…` o `…credenciales…` | Los archivos en la nube: `pnpm archivos:probar` dice cuál variable revisar (`S3_BUCKET`, `S3_REGION`, las claves). |
 | `La DB_URL de Supabase tiene que ser…` | Usá el *Session pooler* (puerto 5432), no la conexión directa ni el modo transacción. `pnpm db:probar` prueba la conexión. |
 | Docker: `port is already allocated` | Otro contenedor usa el puerto. `docker ps` para ver cuál, o `PORT=3001 docker compose up`. |
@@ -392,10 +394,10 @@ docker compose -f compose.yaml -f compose.almacen-s3.yaml up
 | Comando | Qué hace |
 |---|---|
 | `pnpm verificar` | Tipos + lint + tests unitarios + e2e con SQLite. |
-| `pnpm test:notificaciones` | La consigna de las notificaciones (`test/notificaciones/`): en rojo hasta que programen el guardado de tokens y el envío. |
+| `pnpm test:notificaciones` | La consigna de las notificaciones (`test/notifications/`): en rojo hasta que programen el guardado de tokens y el envío. |
 | `pnpm test:e2e:matriz` | Los e2e contra SQLite, PostgreSQL, MySQL y MariaDB (con Docker, más los archivos contra S3Proxy). |
 | `pnpm docker:probar` | Levanta los cuatro compose (y el de S3Proxy) y los prueba. |
 | `pnpm db:probar` / `pnpm archivos:probar` | Prueban la base y los archivos con la configuración del `.env` (no corren en la CI: necesitan cuentas). |
 | `pnpm publicado:probar <url>` | Prueba una API ya publicada: `/salud`, fotos con `https` y `Range`. |
-| `pnpm contrato:esquema` | Regenera `contrato/esquema.json` desde `contrato/*.ts`. |
+| `pnpm contrato:esquema` | Regenera `contract/schema.json` desde `contract/*.ts`. |
 | `pnpm docs:readme` | Regenera las tablas de endpoints y errores de este README. |

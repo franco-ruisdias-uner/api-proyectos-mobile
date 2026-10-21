@@ -1,8 +1,5 @@
 import { type ConfigType, registerAs } from '@nestjs/config';
-import {
-  hasS3Problems,
-  s3ConfigFromEnv,
-} from '../comun/archivos/proveedores.js';
+import { hasS3Problems, s3ConfigFromEnv } from '../common/files/providers.js';
 import { type Env, validateEnv } from './env.validation.js';
 
 // Los archivos (fotos, audios, videos): en una carpeta, o en un servicio compatible con S3.

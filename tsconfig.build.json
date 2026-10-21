@@ -4,6 +4,6 @@
     "rootDir": ".",
     "tsBuildInfoFile": "./dist/tsconfig.build.tsbuildinfo"
   },
-  "include": ["src", "contrato"],
+  "include": ["src", "contract"],
   "exclude": ["node_modules", "test", "dist", "docs", "**/*spec.ts"]
 }

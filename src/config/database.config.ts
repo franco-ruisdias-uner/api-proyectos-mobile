@@ -1,5 +1,5 @@
 import { type ConfigType, registerAs } from '@nestjs/config';
-import { dbPresetFromEnv, hasDbProblems } from '../comun/db/proveedores.js';
+import { dbPresetFromEnv, hasDbProblems } from '../common/db/providers.js';
 import { type Env, validateEnv } from './env.validation.js';
 
 // La base de datos. Con DB_PROVIDER (supabase, neon, aiven-…) el preset completa motor, SSL

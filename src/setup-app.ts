@@ -2,10 +2,12 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import type { AppConfigService } from './config/configuration.js';
-import { crearValidationPipe } from './comun/errores/validacion.js';
-import { middlewareOrigen } from './comun/origen/origen.js';
-import { versionDeLaApi } from './comun/salud/version.js';
-import { middlewareSimulacion } from './comun/simulacion/simulacion.js';
+import { crearValidationPipe } from './common/errors/validation.js';
+import { middlewareOrigen } from './common/context/request-context.js';
+import { apiVersion } from './common/health/version.js';
+import { middlewareSimulacion } from './common/simulation/simulation.js';
+import path from 'node:path';
+import { writeFileSync } from 'node:fs';
 
 /**
  * Lo que se configura sobre la app de Express, en este orden. Lo usa main.ts y también los
@@ -53,7 +55,7 @@ export function setupApp(
   }
   app.useGlobalPipes(crearValidationPipe());
 
-  const documento = new DocumentBuilder()
+  const configuracion = new DocumentBuilder()
     .setTitle('API · Lectura de Medidores · Chajarí')
     .setDescription(
       'API del Trabajo Final 2026 (Desarrollo para Móviles · UNER), a partir del PRD «Lectura de Medidores» ' +
@@ -63,13 +65,22 @@ export function setupApp(
         'Para usar los endpoints con candado, ingresá con `POST /auth/ingreso` y tocá **Authorize** con el token.\n\n' +
         'Cabecera `X-Simular`: `error-500` o `demora-3000`, para probar errores y demoras.',
     )
-    .setVersion(versionDeLaApi())
+    .setVersion(apiVersion())
+    .addServer(
+      `http://localhost:${config.get('app.port', { infer: true })}`,
+      'Esta computadora',
+    )
     .addBearerAuth()
     .build();
-  SwaggerModule.setup(
-    'docs',
-    app,
-    () => SwaggerModule.createDocument(app, documento),
-    { jsonDocumentUrl: 'docs-json' },
-  );
+  // El documento completo (con las rutas). Bruno importa swagger.json; sin `paths` lo rechaza.
+  const documento = SwaggerModule.createDocument(app, configuracion);
+  // En los tests no se escribe: cada e2e pisaría el archivo en la raíz del repo.
+  if (config.get('app.env', { infer: true }) !== 'test') {
+    writeFileSync(
+      path.resolve(process.cwd(), 'swagger.json'),
+      JSON.stringify(documento, null, 2),
+      { encoding: 'utf8' },
+    );
+  }
+  SwaggerModule.setup('docs', app, documento, { jsonDocumentUrl: 'docs-json' });
 }

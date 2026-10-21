@@ -4,15 +4,12 @@
 // (base, archivos, auth…) es trabajo de los `*.config.ts`.
 
 import { z } from 'zod';
-import {
-  hasS3Problems,
-  s3ConfigFromEnv,
-} from '../comun/archivos/proveedores.js';
+import { hasS3Problems, s3ConfigFromEnv } from '../common/files/providers.js';
 import {
   dbPresetFromEnv,
   hasDbProblems,
   SCHEMA_NAME,
-} from '../comun/db/proveedores.js';
+} from '../common/db/providers.js';
 
 export const APP_ENVS = ['development', 'test', 'production'] as const;
 export const DB_ENGINES = [

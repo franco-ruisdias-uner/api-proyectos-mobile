@@ -12,21 +12,21 @@ import {
   configNamespaces,
 } from './config/configuration.js';
 import { validateEnv } from './config/env.validation.js';
-import { ArchivosModulo } from './comun/archivos/archivos.modulo.js';
-import { crearDataSource, opcionesDeBase } from './comun/db/opciones.js';
-import { FiltroExcepciones } from './comun/errores/filtro-excepciones.js';
-import { RateLimitModule } from './comun/http/rate-limit.js';
-import { RequestLoggerMiddleware } from './comun/http/request-logger.middleware.js';
-import { RelojModulo } from './comun/reloj/reloj.modulo.js';
-import { SaludControlador } from './comun/salud/salud.controlador.js';
-import { AuthModulo } from './modulos/auth/auth.modulo.js';
-import { DispositivosModulo } from './modulos/dispositivos/dispositivos.modulo.js';
-import { LecturasModulo } from './modulos/lecturas/lecturas.modulo.js';
-import { NovedadesModulo } from './modulos/novedades/novedades.modulo.js';
-import { RutasModulo } from './modulos/rutas/rutas.modulo.js';
-import { SuministrosModulo } from './modulos/suministros/suministros.modulo.js';
-import { UsuariosModulo } from './modulos/usuarios/usuarios.modulo.js';
-import { SemillasModulo } from './semillas/semillas.modulo.js';
+import { ArchivosModulo } from './common/files/files.module.js';
+import { crearDataSource, opcionesDeBase } from './common/db/options.js';
+import { FiltroExcepciones } from './common/errors/exception-filter.js';
+import { RateLimitModule } from './common/http/rate-limit.js';
+import { RequestLoggerMiddleware } from './common/http/request-logger.middleware.js';
+import { RelojModulo } from './common/clock/clock.module.js';
+import { HealthControlador } from './common/health/health.controller.js';
+import { AuthModulo } from './modules/auth/auth.module.js';
+import { DispositivosModulo } from './modules/devices/devices.module.js';
+import { LecturasModulo } from './modules/readings/readings.module.js';
+import { NovedadesModulo } from './modules/issues/issues.module.js';
+import { RutasModulo } from './modules/routes/routes.module.js';
+import { SuministrosModulo } from './modules/supplies/supplies.module.js';
+import { UsuariosModulo } from './modules/users/users.module.js';
+import { SemillasModulo } from './seeds/seeds.module.js';
 
 @Module({
   imports: [
@@ -58,7 +58,7 @@ import { SemillasModulo } from './semillas/semillas.modulo.js';
     AuthModulo,
     SemillasModulo,
   ],
-  controllers: [SaludControlador],
+  controllers: [HealthControlador],
   providers: [{ provide: APP_FILTER, useClass: FiltroExcepciones }],
 })
 export class AppModule implements NestModule {

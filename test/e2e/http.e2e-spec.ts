@@ -1,6 +1,6 @@
-import { esperarError } from '../utilidades/contrato.js';
-import { type AppDePrueba, crearApp } from '../utilidades/crear-app.js';
-import { crearUsuario } from '../utilidades/usuarios.js';
+import { esperarError } from '../utilities/contract.js';
+import { type AppDePrueba, crearApp } from '../utilities/create-app.js';
+import { crearUsuario } from '../utilities/users.js';
 
 // Lo que main.ts le pone a la app antes de las rutas: cabeceras de seguridad (helmet), CORS
 // y el límite de pedidos (@nestjs/throttler).
