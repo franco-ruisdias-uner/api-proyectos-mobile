@@ -13,11 +13,11 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "${PUERTO_DB:-5432}:5432"
+      - '${PUERTO_DB:-5432}:5432'
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
       interval: 3s
       timeout: 3s
       retries: 40
@@ -30,7 +30,7 @@ services:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
     ports:
-      - "${PUERTO_PGADMIN:-8080}:80"
+      - '${PUERTO_PGADMIN:-8080}:80'
     volumes:
       - ./data/pgadmin:/var/lib/pgadmin
     depends_on:
@@ -46,22 +46,23 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "${PUERTO_API:-3000}:3000"
+      - '${PUERTO_API:-3000}:3000'
     environment:
-      PUERTO: "3000"
+      PUERTO: '3000'
       ENTORNO: desarrollo
       DB_MOTOR: postgres
       DB_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      DB_SINCRONIZAR: "true"
-      SEMBRAR_SI_VACIA: "true"
+      DB_SINCRONIZAR: 'true'
+      SEMBRAR_SI_VACIA: 'true'
       # Datos de demo del grupo (los de los mocks de la app). Sacalo para usar la demo de la cátedra.
       SEMILLAS: grupo
       JWT_SECRETO: ${JWT_SECRETO}
       DIRECTORIO_ARCHIVOS: /app/archivos
+      EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN}
       # Las push quedan fuera de alcance: solo se escriben en la consola de la API.
       NOTIFICACIONES: registro
-      SIMULACION_HABILITADA: "true"
-      URL_PUBLICA: ""
+      SIMULACION_HABILITADA: 'true'
+      URL_PUBLICA: ''
     volumes:
       - ./data/archivos:/app/archivos
     restart: unless-stopped

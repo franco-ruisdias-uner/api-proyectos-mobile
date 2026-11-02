@@ -202,8 +202,7 @@ rechazado   → (final)
 | Cambia el estado de un reporte (cualquier `CambioDeEstado` salvo el `recibido` inicial) | El autor, si tiene `avisosActivos` | **Push del servidor** |
 | Alguien se suma a un reporte | El autor, si tiene `avisosActivos` | **Push del servidor** |
 
-Los adherentes no reciben los cambios de estado (D13). El texto de la push dice el código y el
-estado nuevo en castellano ("Tu reporte GCHU-2026-00412 fue asignado a una cuadrilla").
+Los adherentes no reciben los cambios de estado (D13). El texto de la push dice el [tipo de reporte + 'en' + Dirección] y el estado nuevo en castellano ("Tu reporte Bache en Av. Colon 1550 fue asignado a una cuadrilla").
 
 ---
 
