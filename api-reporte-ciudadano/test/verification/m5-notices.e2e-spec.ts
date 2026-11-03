@@ -132,7 +132,7 @@ describe('Especificación §7 — forma y texto de la push de estado', () => {
       const e = await avisos();
       expect(e).toHaveLength(1);
       expect(e[0]!.tokenExpo).toBe(t);
-      expect(e[0]!.cuerpo).toContain(r.codigo);
+      expect(e[0]!.cuerpo).toContain('Bache en ');
       expect(e[0]!.cuerpo).toMatch(re);
       expect(e[0]!.titulo.trim()).not.toBe('');
       expect(`${e[0]!.titulo} ${e[0]!.cuerpo}`).not.toMatch(JERGA);
@@ -149,7 +149,7 @@ describe('Especificación §7 — forma y texto de la push de estado', () => {
     expect(res.status).toBe(200);
     const e = await avisos();
     expect(e).toHaveLength(1);
-    expect(e[0]!.cuerpo).toContain(r.codigo);
+    expect(e[0]!.cuerpo).toContain('Bache en ');
     expect(e[0]!.cuerpo).toMatch(/cuadrilla/i);
     expect(e[0]!.cuerpo).not.toContain(cua);
   });
@@ -358,7 +358,7 @@ describe('Especificación §7 — push por adhesión', () => {
     const e = await avisos();
     expect(e).toHaveLength(2);
     expect(e.every((m) => m.tokenExpo === t)).toBe(true);
-    expect(e[0]!.cuerpo).toContain(r.codigo);
+    expect(e[0]!.cuerpo).toContain('Bache en ');
     expect(e[0]!.cuerpo).toContain('1');
     expect(e[1]!.cuerpo).toContain('2');
     expect(`${e[0]!.titulo} ${e[0]!.cuerpo}`).not.toMatch(JERGA);
@@ -445,9 +445,9 @@ describe('Especificación R13 / D5 (PROVISORIA) — push al marcar duplicado', (
     expect(e).toHaveLength(2);
     const alDup = e.find((m) => m.tokenExpo === tDup)!;
     const alOri = e.find((m) => m.tokenExpo === tOri)!;
-    expect(alDup.cuerpo).toContain(dup.codigo);
+    expect(alDup.cuerpo).toContain('Bache en ');
     expect(alDup.cuerpo).toMatch(/rechazad/i);
-    expect(alOri.cuerpo).toContain(original.codigo);
+    expect(alOri.cuerpo).toContain('Bache en ');
     expect(alOri.cuerpo).toContain('1');
   });
 
@@ -526,9 +526,9 @@ describe('Especificación R13 / D5 (PROVISORIA) — push al marcar duplicado', (
   });
 });
 
-describe('Especificación §7 — creación de reportes no manda push', () => {
-  it('el recibido inicial no avisa a nadie', async () => {
-    await dispositivo(autor);
+describe('Especificación §7 — creación de reportes no avisa al autor', () => {
+  it('el recibido inicial no avisa al autor', async () => {
+    const tAutor = await dispositivo(autor);
     const foto = await subirArchivo(ctx, autor);
     const res = await ctx
       .http()
@@ -538,11 +538,11 @@ describe('Especificación §7 — creación de reportes no manda push', () => {
         cuerpoReporte(foto, tipoId, { creadoEn: '2026-09-14T09:59:00-03:00' }),
       );
     expect(res.status).toBe(201);
-    expect(await avisos()).toHaveLength(0);
+    expect((await avisos()).map((m) => m.tokenExpo)).not.toContain(tAutor);
   });
 
-  it('reenviar el POST con el mismo id (200) tampoco avisa', async () => {
-    await dispositivo(autor);
+  it('reenviar el POST con el mismo id (200) tampoco avisa al autor', async () => {
+    const tAutor = await dispositivo(autor);
     const foto = await subirArchivo(ctx, autor);
     const cuerpo = cuerpoReporte(foto, tipoId, {
       id: 'rep-ver5-idem',
@@ -559,7 +559,7 @@ describe('Especificación §7 — creación de reportes no manda push', () => {
       .set(...autor.auth)
       .send(cuerpo);
     expect(b.status).toBe(200);
-    expect(await avisos()).toHaveLength(0);
+    expect((await avisos()).map((m) => m.tokenExpo)).not.toContain(tAutor);
   });
 });
 

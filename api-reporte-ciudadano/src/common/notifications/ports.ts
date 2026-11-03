@@ -8,6 +8,8 @@ export interface MensajePush {
   cuerpo: string;
   /** Datos para que la app abra la pantalla que corresponde al tocar la notificación. */
   datos: Record<string, string>;
+  /** Canal de Android (`channelId`); por defecto `default`. */
+  canal?: string;
 }
 
 /** Dónde viven los tokens de Expo de cada usuario. */

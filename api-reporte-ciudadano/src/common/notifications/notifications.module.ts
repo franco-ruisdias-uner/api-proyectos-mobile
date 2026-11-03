@@ -2,8 +2,9 @@ import { Global, Module, type OnApplicationShutdown } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ENTORNO } from '../../config/environment.module.js';
 import type { Entorno } from '../../config/environment.js';
-import { AlmacenTokensPorHacer } from '../../student-notifications/todo-token-store.js';
-import { EnviadorPorHacer } from '../../student-notifications/todo-sender.js';
+import { AlmacenTokensTypeOrm } from '../../student-notifications/typeorm-token-store.js';
+import { EnviadorExpo } from '../../student-notifications/expo-sender.js';
+import { Dispositivo } from '../../modules/devices/device.entity.js';
 import { Usuario } from '../../modules/users/user.entity.js';
 import { Avisos } from './notices.service.js';
 import { EnviadorRegistro } from './registry-sender.js';
@@ -15,15 +16,18 @@ import {
 
 @Global()
 @Module({
-  imports: [TypeOrmModule.forFeature([Usuario])],
+  imports: [TypeOrmModule.forFeature([Usuario, Dispositivo])],
   providers: [
-    { provide: ALMACEN_TOKENS_PUSH, useClass: AlmacenTokensPorHacer },
+    { provide: ALMACEN_TOKENS_PUSH, useClass: AlmacenTokensTypeOrm },
     {
       provide: ENVIADOR_PUSH,
       inject: [ENTORNO],
       useFactory: (entorno: Entorno): EnviadorPush =>
         entorno.NOTIFICACIONES === 'expo'
-          ? new EnviadorPorHacer(entorno.EXPO_PUSH_URL)
+          ? new EnviadorExpo(
+              entorno.EXPO_PUSH_URL,
+              entorno.EXPO_ACCESS_TOKEN ?? undefined,
+            )
           : new EnviadorRegistro(),
     },
     Avisos,

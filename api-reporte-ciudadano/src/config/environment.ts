@@ -48,6 +48,8 @@ export interface Entorno {
   NOTIFICACIONES: (typeof NOTIFICACIONES)[number];
   /** Dirección del servicio push de Expo (los tests apuntan a uno falso). */
   EXPO_PUSH_URL: string;
+  /** Opcional: sólo con "enhanced push security" activado en Expo. */
+  EXPO_ACCESS_TOKEN: string | null;
   RELOJ_FIJO: Date | null;
   SIMULACION_HABILITADA: boolean;
   SEMBRAR_SI_VACIA: boolean;
@@ -257,6 +259,7 @@ export function validarEntorno(crudo: Crudo): Entorno {
     NOTIFICACIONES: opcion('NOTIFICACIONES', NOTIFICACIONES, 'expo'),
     EXPO_PUSH_URL:
       texto('EXPO_PUSH_URL') ?? 'https://exp.host/--/api/v2/push/send',
+    EXPO_ACCESS_TOKEN: texto('EXPO_ACCESS_TOKEN') ?? null,
     RELOJ_FIJO,
     SIMULACION_HABILITADA,
     SEMBRAR_SI_VACIA: booleano('SEMBRAR_SI_VACIA', false),

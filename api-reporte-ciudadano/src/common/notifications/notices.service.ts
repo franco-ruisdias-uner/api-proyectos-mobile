@@ -18,6 +18,7 @@ export interface Aviso {
   titulo: string;
   cuerpo: string;
   datos?: Record<string, string>;
+  canal?: string;
 }
 
 @Injectable()
@@ -80,6 +81,7 @@ export class Avisos {
           titulo: aviso.titulo,
           cuerpo: aviso.cuerpo,
           datos: aviso.datos ?? {},
+          canal: aviso.canal,
         },
       ]);
       if (tokensInvalidos.length > 0) {

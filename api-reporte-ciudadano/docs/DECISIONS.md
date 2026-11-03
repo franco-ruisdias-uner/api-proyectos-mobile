@@ -363,3 +363,19 @@ Decisión:
   verificación de M0) se mudaron a `test/notifications/` y usan un Expo falso.
 Alternativa descartada: que `guardar` devuelva si creó o no (cambia el puerto que ya pide §19.2).
 Consecuencia en el contrato: ninguna en las formas; se agrega el código `NO_IMPLEMENTADO` (501).
+
+### P26 — Notificaciones completadas por el grupo
+Estado: PROVISORIA (autónomo)
+Hueco: el spec del grupo pide push a operadores por reporte nuevo, textos con tipo + dirección y
+canales de Android por tipo; el esqueleto de M8 no lo traía.
+Decisión:
+- Se completaron los puertos con `AlmacenTokensTypeOrm` (entidad `Dispositivo`, upsert atómico por
+  token) y `EnviadorExpo` (`fetch`, tandas de 100, `DeviceNotRegistered` → se descarta el token,
+  `EXPO_ACCESS_TOKEN` opcional como `Authorization: Bearer`). Se mantiene `/dispositivos`; no se usa
+  `expo-server-sdk` ni `@nestjs/event-emitter` (se sigue llamando a `Avisos` tras el commit).
+- Los textos usan [tipo + 'en' + dirección] (§7), no el código. `datos` suma `tipo: nuevo` y el
+  mensaje lleva `channelId` (`estado`, `adhesion`, `nuevo-reporte`; por defecto `default`).
+- Reporte nuevo (sólo si se creó, no en reintentos) avisa a todos los operadores con avisos activos,
+  incluso al que lo creó. El autor no recibe nada por el `recibido` inicial.
+- Se quitaron los tests que verificaban el 501 de `/dispositivos` (ya no aplica).
+Consecuencia en el contrato: ninguna.

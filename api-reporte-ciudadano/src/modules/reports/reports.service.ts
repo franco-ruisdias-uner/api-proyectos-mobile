@@ -37,6 +37,7 @@ import {
 } from './dto/map-filter.dto.js';
 import { FotoDeReporte } from './photo.entity.js';
 import { Reporte } from './report.entity.js';
+import { AvisosDeReportes } from './report-notices.service.js';
 import {
   correlativoSiguiente,
   formatearCodigo,
@@ -74,16 +75,20 @@ export class ServicioReportes {
     private readonly zonas: ServicioZonas,
     private readonly archivos: ServicioArchivos,
     private readonly reloj: Reloj,
+    private readonly avisos: AvisosDeReportes,
   ) {}
 
   /** Crea el reporte (R1 a R7). Idempotente por `id` (AGENTS §10.5): `creado` dice si es nuevo. */
-  crear(
+  async crear(
     autor: Usuario,
     dto: CrearReporteDto,
   ): Promise<ReporteCompleto & { creado: boolean }> {
     const tarea = this.cola.then(() => this.crearAhora(autor, dto));
     this.cola = tarea.catch(() => undefined);
-    return tarea;
+    const resultado = await tarea;
+    // Después de confirmar la transacción; sólo si el reporte es nuevo (no un reintento).
+    if (resultado.creado) await this.avisos.reporteNuevo(resultado.reporte);
+    return resultado;
   }
 
   async obtener(id: string): Promise<ReporteCompleto> {

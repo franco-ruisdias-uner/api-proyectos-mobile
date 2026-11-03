@@ -59,8 +59,8 @@ services:
       JWT_SECRETO: ${JWT_SECRETO}
       DIRECTORIO_ARCHIVOS: /app/archivos
       EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN}
-      # Las push quedan fuera de alcance: solo se escriben en la consola de la API.
-      NOTIFICACIONES: registro
+      # expo: manda las push por Expo (registro: solo las escribe en la consola de la API).
+      NOTIFICACIONES: expo
       SIMULACION_HABILITADA: 'true'
       URL_PUBLICA: ''
     volumes:

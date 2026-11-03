@@ -201,6 +201,7 @@ rechazado   → (final)
 |---|---|---|
 | Cambia el estado de un reporte (cualquier `CambioDeEstado` salvo el `recibido` inicial) | El autor, si tiene `avisosActivos` | **Push del servidor** |
 | Alguien se suma a un reporte | El autor, si tiene `avisosActivos` | **Push del servidor** |
+| Se crea un reporte nuevo | Todos los usuarios con rol `operador` que tengan `avisosActivos` (también quien lo creó, si fuera operador) | **Push del servidor** («Nuevo reporte: Bache en Av. Colon 1550») |
 
 Los adherentes no reciben los cambios de estado (D13). El texto de la push dice el [tipo de reporte + 'en' + Dirección] y el estado nuevo en castellano ("Tu reporte Bache en Av. Colon 1550 fue asignado a una cuadrilla").
 

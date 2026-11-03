@@ -65,7 +65,7 @@ describe('Especificación §7 — push por cambio de estado', () => {
     await ctx.esperarAvisos();
     expect(ctx.notificador.enviadas).toHaveLength(1);
     expect(ctx.notificador.enviadas[0]).toMatchObject({
-      cuerpo: `Tu reporte ${r.codigo} está en revisión.`,
+      cuerpo: `Tu reporte Bache en Rocamora 1240 está en revisión.`,
       datos: { tipo: 'estado', reporteId: r.id, estado: 'en_revision' },
     });
   });
@@ -81,8 +81,8 @@ describe('Especificación §7 — push por cambio de estado', () => {
     }
     await ctx.esperarAvisos();
     expect(ctx.notificador.enviadas.map((m) => m.cuerpo)).toEqual([
-      `Tu reporte ${r.codigo} fue asignado a una cuadrilla.`,
-      `Tu reporte ${r.codigo} fue asignado a una cuadrilla.`,
+      `Tu reporte Bache en Rocamora 1240 fue asignado a una cuadrilla.`,
+      `Tu reporte Bache en Rocamora 1240 fue asignado a una cuadrilla.`,
     ]);
   });
 
@@ -93,8 +93,8 @@ describe('Especificación §7 — push por cambio de estado', () => {
     await estado(b.id, { estado: 'rechazado', comentario: 'No corresponde.' });
     await ctx.esperarAvisos();
     expect(ctx.notificador.enviadas.map((m) => m.cuerpo)).toEqual([
-      `Tu reporte ${a.codigo} fue resuelto.`,
-      `Tu reporte ${b.codigo} fue rechazado.`,
+      `Tu reporte Bache en Rocamora 1240 fue resuelto.`,
+      `Tu reporte Bache en Rocamora 1240 fue rechazado.`,
     ]);
   });
 
@@ -162,7 +162,7 @@ describe('Especificación §7 — push por cambio de estado', () => {
     expect(res.status).toBe(200);
     await ctx.esperarAvisos();
     expect(ctx.notificador.enviadas.map((m) => m.cuerpo)).toEqual([
-      `Tu reporte ${dup.codigo} fue rechazado.`,
+      `Tu reporte Bache en Rocamora 1240 fue rechazado.`,
     ]);
     // repetir el pedido no cambia nada, tampoco avisa de nuevo
     ctx.notificador.limpiar();
@@ -190,7 +190,7 @@ describe('Especificación §7 — push por cambio de estado', () => {
       .send({ originalId: original.id });
     await ctx.esperarAvisos();
     expect(ctx.notificador.enviadas.map((m) => m.cuerpo)).toEqual([
-      `Un vecino más se sumó a tu reporte ${original.codigo}. Ya son 1.`,
+      `Un vecino más se sumó a tu reporte Bache en Rocamora 1240. Ya son 1.`,
     ]);
   });
 });
@@ -207,7 +207,7 @@ describe('Especificación §7 — push por adhesión', () => {
     await ctx.esperarAvisos();
     expect(ctx.notificador.enviadas).toHaveLength(1);
     expect(ctx.notificador.enviadas[0]).toMatchObject({
-      cuerpo: `Un vecino más se sumó a tu reporte ${r.codigo}. Ya son 1.`,
+      cuerpo: `Un vecino más se sumó a tu reporte Bache en Rocamora 1240. Ya son 1.`,
       datos: { tipo: 'adhesion', reporteId: r.id },
     });
   });
